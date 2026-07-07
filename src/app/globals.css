@@ -1,0 +1,55 @@
+@import "tailwindcss";
+
+@theme inline {
+  --color-cream: #FFF8F0;
+  --color-burger: #E85D04;
+  --color-mustard: #FFB703;
+  --color-mint: #06D6A0;
+  --color-carbon: #2B2D42;
+  --color-rose: #EF476F;
+  --color-night: #0F0F23;
+  --color-card: #1a1a2e;
+}
+
+@font-face {
+  font-family: 'Bebas Neue';
+  src: url(https://fonts.gstatic.com/s/bebasneue/v14/JTUSjIg69CK48gW7PXooxW4.ttf) format('truetype');
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'JetBrains Mono';
+  src: url(https://fonts.gstatic.com/s/jetbrainsmono/v20/tDbY2o-flEEny0FZhsfKu5WU4zr3E_BX0PnT6RDJ.woff2) format('woff2');
+  font-display: swap;
+}
+
+body {
+  background: var(--color-cream);
+  color: var(--color-carbon);
+  -webkit-font-smoothing: antialiased;
+}
+
+input:focus {
+  outline: 2px solid var(--color-burger);
+  outline-offset: 2px;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 3px;
+}
+
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 5px rgba(232, 93, 4, 0.3); }
+  50% { box-shadow: 0 0 20px rgba(232, 93, 4, 0.6); }
+}
+
+.alert-glow {
+  animation: pulse-glow 1.5s ease-in-out infinite;
+}

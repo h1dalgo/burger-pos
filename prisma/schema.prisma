@@ -1,0 +1,187 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Category {
+  id           String    @id @default(uuid()) @db.Uuid
+  name         String
+  displayOrder Int       @map("display_order")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  products     Product[]
+
+  @@map("categories")
+}
+
+model Product {
+  id             String    @id @default(uuid()) @db.Uuid
+  categoryId     String    @map("category_id") @db.Uuid
+  name           String
+  description    String
+  basePrice      Decimal   @map("base_price") @db.Decimal(10, 2)
+  imageUrl       String?   @map("image_url")
+  isAvailable    Boolean   @default(true) @map("is_available")
+  hasVariation   Boolean   @default(false) @map("has_variation")
+  createdAt      DateTime  @default(now()) @map("created_at")
+
+  category          Category              @relation(fields: [categoryId], references: [id])
+  variations        ProductVariation[]
+  defaultIngredients DefaultIngredient[]
+  extraIngredients   ExtraIngredient[]
+  requiredSelections RequiredSelection[]
+  orderItems         OrderItem[]
+
+  @@map("products")
+}
+
+model ProductVariation {
+  id              String  @id @default(uuid()) @db.Uuid
+  productId       String  @map("product_id") @db.Uuid
+  name            String
+  additionalPrice Decimal @default(0) @map("additional_price") @db.Decimal(10, 2)
+  isAvailable     Boolean @default(true) @map("is_available")
+
+  product Product @relation(fields: [productId], references: [id])
+
+  @@map("product_variations")
+}
+
+model RequiredSelection {
+  id            String  @id @default(uuid()) @db.Uuid
+  productId     String  @map("product_id") @db.Uuid
+  label         String
+  maxSelections Int     @default(1) @map("max_selections")
+
+  product Product                   @relation(fields: [productId], references: [id])
+  options RequiredSelectionOption[]
+
+  @@map("required_selections")
+}
+
+model RequiredSelectionOption {
+  id                  String  @id @default(uuid()) @db.Uuid
+  requiredSelectionId String  @map("required_selection_id") @db.Uuid
+  name                String
+  additionalPrice     Decimal @default(0) @map("additional_price") @db.Decimal(10, 2)
+  isAvailable         Boolean @default(true) @map("is_available")
+
+  requiredSelection RequiredSelection @relation(fields: [requiredSelectionId], references: [id])
+
+  @@map("required_selection_options")
+}
+
+model DefaultIngredient {
+  id        String  @id @default(uuid()) @db.Uuid
+  productId String  @map("product_id") @db.Uuid
+  name      String
+
+  product Product @relation(fields: [productId], references: [id])
+
+  @@map("default_ingredients")
+}
+
+model ExtraIngredient {
+  id          String  @id @default(uuid()) @db.Uuid
+  productId   String  @map("product_id") @db.Uuid
+  name        String
+  basePrice   Decimal @default(1.00) @map("base_price") @db.Decimal(10, 2)
+  isAvailable Boolean @default(true) @map("is_available")
+
+  product Product @relation(fields: [productId], references: [id])
+
+  @@map("extra_ingredients")
+}
+
+enum OrderStatus {
+  PENDING
+  IN_PREPARATION
+  READY
+  DELIVERED
+}
+
+enum PaymentMethod {
+  CASH
+  MOBILE_PAYMENT
+  CARD
+}
+
+model Order {
+  id            String        @id @default(uuid()) @db.Uuid
+  displayId     Int           @default(autoincrement()) @map("display_id")
+  customerName  String        @map("customer_name")
+  tableNumber   String        @map("table_number")
+  status        OrderStatus   @default(PENDING)
+  paymentMethod PaymentMethod @map("payment_method")
+  totalAmount   Decimal       @map("total_amount") @db.Decimal(10, 2)
+  createdAt     DateTime      @default(now()) @map("created_at")
+  updatedAt     DateTime      @updatedAt @map("updated_at")
+
+  items OrderItem[]
+
+  @@map("orders")
+}
+
+model OrderItem {
+  id          String  @id @default(uuid()) @db.Uuid
+  orderId     String  @map("order_id") @db.Uuid
+  productId   String  @map("product_id") @db.Uuid
+  productName String  @map("product_name")
+  quantity    Int
+  unitPrice   Decimal @map("unit_price") @db.Decimal(10, 2)
+  subtotal    Decimal @db.Decimal(10, 2)
+
+  order              Order                        @relation(fields: [orderId], references: [id])
+  product            Product                      @relation(fields: [productId], references: [id])
+  variation          OrderItemVariation?
+  removedIngredients OrderItemRemovedIngredient[]
+  addedExtras        OrderItemAddedExtra[]
+  selections         OrderItemSelection[]
+
+  @@map("order_items")
+}
+
+model OrderItemVariation {
+  id              String  @id @default(uuid()) @db.Uuid
+  orderItemId     String  @unique @map("order_item_id") @db.Uuid
+  variationName   String  @map("variation_name")
+  additionalPrice Decimal @map("additional_price") @db.Decimal(10, 2)
+
+  orderItem OrderItem @relation(fields: [orderItemId], references: [id])
+
+  @@map("order_item_variations")
+}
+
+model OrderItemRemovedIngredient {
+  id              String @id @default(uuid()) @db.Uuid
+  orderItemId     String  @map("order_item_id") @db.Uuid
+  ingredientName  String @map("ingredient_name")
+
+  orderItem OrderItem @relation(fields: [orderItemId], references: [id])
+
+  @@map("order_item_removed_ingredients")
+}
+
+model OrderItemAddedExtra {
+  id              String  @id @default(uuid()) @db.Uuid
+  orderItemId     String  @map("order_item_id") @db.Uuid
+  extraName       String  @map("extra_name")
+  price           Decimal @db.Decimal(10, 2)
+
+  orderItem OrderItem @relation(fields: [orderItemId], references: [id])
+
+  @@map("order_item_added_extras")
+}
+
+model OrderItemSelection {
+  id                 String @id @default(uuid()) @db.Uuid
+  orderItemId        String @map("order_item_id") @db.Uuid
+  selectionLabel     String @map("selection_label")
+  selectedOptionName String @map("selected_option_name")
+
+  orderItem OrderItem @relation(fields: [orderItemId], references: [id])
+
+  @@map("order_item_selections")
+}
