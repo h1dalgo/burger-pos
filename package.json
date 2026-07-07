@@ -4,8 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "node server.js",
-    "build": "next build",
-    "start": "NODE_ENV=production node server.js",
+    "build": "npx prisma generate --config=prisma.config.ts && next build",
+    "start": "npx prisma db push --config=prisma.config.ts && node server.js",
     "lint": "eslint",
     "db:generate": "prisma generate --config=prisma.config.ts",
     "db:push": "prisma db push --config=prisma.config.ts",
