@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "node server.js",
     "build": "npx prisma generate --config=prisma.config.ts && next build",
-    "start": "npx prisma db push --config=prisma.config.ts && node scripts/ensure-seed.mjs && node server.js",
+    "start": "npx prisma db push --config=prisma.config.ts && npx tsx prisma/seed.ts && node server.js",
     "lint": "eslint",
     "db:generate": "prisma generate --config=prisma.config.ts",
     "db:push": "prisma db push --config=prisma.config.ts",
