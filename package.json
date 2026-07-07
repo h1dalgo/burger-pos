@@ -11,7 +11,7 @@
     "db:push": "prisma db push --config=prisma.config.ts",
     "db:seed": "npx tsx prisma/seed.ts",
     "db:studio": "prisma studio --config=prisma.config.ts",
-    "postinstall": "prisma generate --config=prisma.config.ts"
+    "postinstall": "prisma generate"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.8.0",
@@ -31,16 +31,16 @@
     "socket.io-client": "^4.8.3",
     "tailwind-merge": "^3.6.0",
     "zod": "^4.4.3",
-    "zustand": "^5.0.14"
+    "zustand": "^5.0.14",
+    "@tailwindcss/postcss": "^4",
+    "tailwindcss": "^4"
   },
   "devDependencies": {
-    "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.2.10",
-    "tailwindcss": "^4",
     "tsx": "^4.23.0",
     "typescript": "^5"
   }
