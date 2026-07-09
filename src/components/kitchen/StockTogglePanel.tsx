@@ -23,6 +23,24 @@ export default function StockTogglePanel({ onClose }: Props) {
 
   const toggleAvailability = async (type: string, id: string, current: boolean) => {
     const newAvailable = !current;
+
+    setCategories((prev) =>
+      prev.map((cat) => ({
+        ...cat,
+        products: cat.products.map((p) => {
+          if (type === 'product' && p.id === id) {
+            return { ...p, isAvailable: newAvailable };
+          }
+          return {
+            ...p,
+            variations: p.variations?.map((v) =>
+              type === 'variation' && v.id === id ? { ...v, isAvailable: newAvailable } : v
+            ),
+          };
+        }),
+      }))
+    );
+
     applyStockUpdate({ type, id, isAvailable: newAvailable } as any);
 
     await fetch('/api/stock', {
