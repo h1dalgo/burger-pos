@@ -32,7 +32,12 @@ export default function ProductCard({ product, isAvailable, onSelect, index }: P
         </div>
       )}
 
-      <div className="flex items-start justify-between gap-3">
+      <div className="flex items-start gap-3">
+        {product.imageUrl && (
+          <div className="w-20 h-20 rounded-xl overflow-hidden flex-shrink-0 bg-gray-100">
+            <img src={product.imageUrl} alt={product.name} className="w-full h-full object-cover" />
+          </div>
+        )}
         <div className="flex-1 min-w-0">
           <h3 className="font-bold text-[#2B2D42] text-base truncate">
             {product.name}
