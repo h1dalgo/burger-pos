@@ -11,7 +11,7 @@ interface Props {
 interface Variation { name: string; additionalPrice: string }
 interface Extra { name: string; basePrice: string }
 interface SelectionOption { name: string; additionalPrice: string }
-interface RequiredSelection { label: string; maxSelections: number; options: SelectionOption[] }
+interface RequiredSelection { label: string; maxSelections: any; options: SelectionOption[] }
 
 export default function ProductForm({ product }: Props) {
   const router = useRouter();
@@ -105,7 +105,7 @@ export default function ProductForm({ product }: Props) {
         </div>
         <div>
           <label className="block text-sm text-gray-400 mb-1">Precio Base *</label>
-          <input type="number" step="0.01" value={basePrice} onChange={e => setBasePrice(e.target.value)} className={inputClass} required />
+          <input value={basePrice} onChange={e => setBasePrice(e.target.value)} className={inputClass} required />
         </div>
         <div>
           <label className="block text-sm text-gray-400 mb-1">Categoría *</label>
@@ -138,7 +138,7 @@ export default function ProductForm({ product }: Props) {
           {variations.map((v, i) => (
             <div key={i} className="flex gap-2 items-center">
               <input placeholder="Nombre" value={v.name} onChange={e => { const val = e.target.value; setVariations(prev => prev.map((item, idx) => idx === i ? { ...item, name: val } : item)); }} className={`${inputClass} flex-1`} />
-              <input type="number" step="0.01" placeholder="$0.00" value={v.additionalPrice} onChange={e => { const val = e.target.value; setVariations(prev => prev.map((item, idx) => idx === i ? { ...item, additionalPrice: val } : item)); }} className={`${inputClass} w-20`} />
+              <input placeholder="$0.00" value={v.additionalPrice} onChange={e => { const val = e.target.value; setVariations(prev => prev.map((item, idx) => idx === i ? { ...item, additionalPrice: val } : item)); }} className={`${inputClass} w-20`} />
               <button type="button" onClick={() => setVariations(prev => prev.filter((_, j) => j !== i))}><X className="w-4 h-4 text-[#EF476F]" /></button>
             </div>
           ))}
@@ -160,7 +160,7 @@ export default function ProductForm({ product }: Props) {
         {extras.map((e, i) => (
           <div key={i} className="flex gap-2 items-center">
             <input placeholder="Nombre" value={e.name} onChange={ev => { const val = ev.target.value; setExtras(prev => prev.map((item, idx) => idx === i ? { ...item, name: val } : item)); }} className={`${inputClass} flex-1`} />
-            <input type="number" step="0.01" placeholder="$1.00" value={e.basePrice} onChange={ev => { const val = ev.target.value; setExtras(prev => prev.map((item, idx) => idx === i ? { ...item, basePrice: val } : item)); }} className={`${inputClass} w-20`} />
+            <input placeholder="$1.00" value={e.basePrice} onChange={ev => { const val = ev.target.value; setExtras(prev => prev.map((item, idx) => idx === i ? { ...item, basePrice: val } : item)); }} className={`${inputClass} w-20`} />
             <button type="button" onClick={() => setExtras(prev => prev.filter((_, j) => j !== i))}><X className="w-4 h-4 text-[#EF476F]" /></button>
           </div>
         ))}
@@ -174,7 +174,7 @@ export default function ProductForm({ product }: Props) {
               <input placeholder="Ej: Salsas extras" value={sel.label} onChange={e => { const val = e.target.value; setSelections(prev => prev.map((item, idx) => idx === i ? { ...item, label: val } : item)); }} className={`${inputClass} flex-1`} />
               <div className="flex items-center gap-1 text-xs text-gray-400">
                 <span>Máx:</span>
-                <input type="number" min="1" value={sel.maxSelections} onChange={e => { const val = e.target.value; setSelections(prev => prev.map((item, idx) => idx === i ? { ...item, maxSelections: parseInt(val) || 1 } : item)); }} className="w-12 px-2 py-1 rounded bg-[#0F0F23] border border-gray-700 text-white text-center" />
+                <input value={sel.maxSelections} onChange={e => { const val = e.target.value; setSelections(prev => prev.map((item, idx) => idx === i ? { ...item, maxSelections: val } : item)); }} className="w-12 px-2 py-1 rounded bg-[#0F0F23] border border-gray-700 text-white text-center" />
               </div>
               <button type="button" onClick={() => setSelections(prev => prev.filter((_, j) => j !== i))}><X className="w-4 h-4 text-[#EF476F]" /></button>
             </div>
@@ -182,7 +182,7 @@ export default function ProductForm({ product }: Props) {
               {sel.options.map((opt, oi) => (
                 <div key={oi} className="flex gap-2 items-center">
                   <input placeholder="Opción" value={opt.name} onChange={e => { const val = e.target.value; setSelections(prev => prev.map((item, idx) => idx === i ? { ...item, options: item.options.map((o, oidx) => oidx === oi ? { ...o, name: val } : o) } : item)); }} className={`${inputClass} flex-1 text-xs`} />
-                  <input type="number" step="0.01" placeholder="$+" value={opt.additionalPrice} onChange={e => { const val = e.target.value; setSelections(prev => prev.map((item, idx) => idx === i ? { ...item, options: item.options.map((o, oidx) => oidx === oi ? { ...o, additionalPrice: val } : o) } : item)); }} className={`${inputClass} w-16 text-xs`} />
+                  <input placeholder="$+" value={opt.additionalPrice} onChange={e => { const val = e.target.value; setSelections(prev => prev.map((item, idx) => idx === i ? { ...item, options: item.options.map((o, oidx) => oidx === oi ? { ...o, additionalPrice: val } : o) } : item)); }} className={`${inputClass} w-16 text-xs`} />
                   <button type="button" onClick={() => setSelections(prev => prev.map((item, idx) => idx === i ? { ...item, options: item.options.filter((_, j) => j !== oi) } : item))}><X className="w-3 h-3 text-[#EF476F]" /></button>
                 </div>
               ))}
