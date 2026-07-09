@@ -35,7 +35,7 @@ export default function SuccessScreen({ orderId }: Props) {
         </motion.div>
 
         <h1 className="text-2xl font-bold text-[#2B2D42] mt-4">
-          ¡Pedido Enviado a Cocina!
+          Pedido Registrado
         </h1>
 
         {showId && (
@@ -55,9 +55,9 @@ export default function SuccessScreen({ orderId }: Props) {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.8 }}
-          className="text-sm text-[#2B2D42]/60 mt-4"
+          className="text-sm text-[#E85D04] font-semibold mt-4 px-4"
         >
-          Tiempo estimado: 15-20 minutos
+          Por favor, dirígete a caja para validar tu pago y activar tu orden.
         </motion.p>
 
         <motion.button

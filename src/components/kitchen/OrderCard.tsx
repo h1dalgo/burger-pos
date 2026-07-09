@@ -18,6 +18,7 @@ const paymentLabels = {
 };
 
 const statusColors: Record<string, string> = {
+  WAITING_PAYMENT: 'border-l-purple-500',
   PENDING: 'border-l-red-500',
   IN_PREPARATION: 'border-l-yellow-500',
   READY: 'border-l-green-500',
@@ -61,12 +62,14 @@ export default function OrderCard({ order, onAction }: Props) {
   );
 
   const actionLabels: Record<string, string> = {
+    WAITING_PAYMENT: '✓ Confirmar Pago',
     PENDING: '▶ Preparar',
     IN_PREPARATION: '✓ Listo',
     READY: '🚚 Entregado',
   };
 
   const actionValues: Record<string, string> = {
+    WAITING_PAYMENT: 'PENDING',
     PENDING: 'IN_PREPARATION',
     IN_PREPARATION: 'READY',
     READY: 'DELIVERED',
@@ -110,11 +113,13 @@ export default function OrderCard({ order, onAction }: Props) {
       <button
         onClick={() => onAction(order.id, actionValues[order.status])}
         className={`w-full py-2 rounded-lg font-semibold text-sm transition-all ${
-          order.status === 'PENDING'
-            ? 'bg-[#E85D04] hover:bg-[#d55404] text-white'
-            : order.status === 'IN_PREPARATION'
-              ? 'bg-[#06D6A0] hover:bg-[#05c490] text-white'
-              : 'bg-[#FFB703] hover:bg-[#f0ac02] text-[#2B2D42]'
+          order.status === 'WAITING_PAYMENT'
+            ? 'bg-purple-500 hover:bg-purple-600 text-white'
+            : order.status === 'PENDING'
+              ? 'bg-[#E85D04] hover:bg-[#d55404] text-white'
+              : order.status === 'IN_PREPARATION'
+                ? 'bg-[#06D6A0] hover:bg-[#05c490] text-white'
+                : 'bg-[#FFB703] hover:bg-[#f0ac02] text-[#2B2D42]'
         }`}
       >
         {actionLabels[order.status] || 'Entregado'}

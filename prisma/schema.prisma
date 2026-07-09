@@ -96,6 +96,7 @@ model ExtraIngredient {
 }
 
 enum OrderStatus {
+  WAITING_PAYMENT
   PENDING
   IN_PREPARATION
   READY

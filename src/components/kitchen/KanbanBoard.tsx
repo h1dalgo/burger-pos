@@ -108,6 +108,7 @@ export default function KanbanBoard() {
     } catch {}
   }, []);
 
+  const waitingPayment = orders.filter((o) => o.status === 'WAITING_PAYMENT');
   const pending = orders.filter((o) => o.status === 'PENDING');
   const inPrep = orders.filter((o) => o.status === 'IN_PREPARATION');
   const ready = orders.filter((o) => o.status === 'READY');
@@ -115,9 +116,16 @@ export default function KanbanBoard() {
   return (
     <div className="h-screen bg-[#0F0F23] flex flex-col">
       <header className="bg-[#1a1a2e] px-6 py-3 flex items-center justify-between border-b border-gray-800">
-        <h1 className="text-xl font-bold text-white" style={{ fontFamily: "'Bebas Neue', sans-serif" }}>
-          🍔 COCINA
-        </h1>
+        <div className="flex items-center gap-2">
+          <h1 className="text-xl font-bold text-white" style={{ fontFamily: "'Bebas Neue', sans-serif" }}>
+            🍔 COCINA
+          </h1>
+          {waitingPayment.length > 0 && (
+            <span className="bg-purple-500 text-white text-xs font-bold px-2 py-0.5 rounded-full animate-pulse">
+              {waitingPayment.length} pendientes de pago
+            </span>
+          )}
+        </div>
         <div className="flex items-center gap-4">
           <button
             onClick={() => setShowStock(!showStock)}
@@ -152,6 +160,13 @@ export default function KanbanBoard() {
       </AnimatePresence>
 
       <div className="flex-1 flex gap-4 p-4 overflow-x-auto">
+        <KanbanColumn
+          title="Esperando Confirmación"
+          status="WAITING_PAYMENT"
+          orders={waitingPayment}
+          color="bg-purple-500"
+          onAction={handleAction}
+        />
         <KanbanColumn
           title="Pendiente"
           status="PENDING"

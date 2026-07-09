@@ -83,6 +83,7 @@ export async function POST(request: NextRequest) {
         tableNumber,
         paymentMethod,
         totalAmount,
+        status: 'WAITING_PAYMENT',
         items: { create: orderItems },
       },
       include: {
@@ -99,6 +100,7 @@ export async function POST(request: NextRequest) {
 
     if (global.io) {
       global.io.to('kitchen').emit('order:new', order);
+      global.io.to('clients').emit('order:created', { displayId: order.displayId });
     }
 
     return NextResponse.json(order, { status: 201 });

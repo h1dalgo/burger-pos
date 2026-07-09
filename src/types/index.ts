@@ -68,7 +68,7 @@ export interface CartItem {
   selections: Record<string, string[]>;
 }
 
-export type OrderStatus = 'PENDING' | 'IN_PREPARATION' | 'READY' | 'DELIVERED';
+export type OrderStatus = 'WAITING_PAYMENT' | 'PENDING' | 'IN_PREPARATION' | 'READY' | 'DELIVERED';
 export type PaymentMethod = 'CASH' | 'MOBILE_PAYMENT' | 'CARD';
 
 export interface Order {
