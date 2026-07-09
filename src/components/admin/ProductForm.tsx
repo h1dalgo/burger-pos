@@ -8,7 +8,8 @@ interface Props {
   product?: any;
 }
 
-const inputClass = "w-full px-3 py-2 rounded-lg bg-[#0F0F23] border border-gray-700 text-white text-sm focus:border-[#E85D04] outline-none";
+const inputClass = "px-3 py-2 rounded-lg bg-[#0F0F23] border border-gray-700 text-white text-sm focus:border-[#E85D04] outline-none";
+const inputWide = "w-full px-3 py-2 rounded-lg bg-[#0F0F23] border border-gray-700 text-white text-sm focus:border-[#E85D04] outline-none";
 const btnClass = "px-4 py-2 rounded-lg text-sm font-semibold transition-colors";
 
 export default function ProductForm({ product }: Props) {
@@ -146,19 +147,19 @@ export default function ProductForm({ product }: Props) {
       <div className="grid grid-cols-2 gap-4">
         <div className="col-span-2">
           <label className="block text-sm text-gray-400 mb-1">Nombre del Producto *</label>
-          <input ref={nameRef} defaultValue={product?.name || ''} className={inputClass} required />
+          <input ref={nameRef} defaultValue={product?.name || ''} className={inputWide} required />
         </div>
         <div className="col-span-2">
           <label className="block text-sm text-gray-400 mb-1">Descripción</label>
-          <textarea ref={descRef} defaultValue={product?.description || ''} className={inputClass} rows={2} />
+          <textarea ref={descRef} defaultValue={product?.description || ''} className={inputWide} rows={2} />
         </div>
         <div>
           <label className="block text-sm text-gray-400 mb-1">Precio Base *</label>
-          <input ref={priceRef} defaultValue={product?.basePrice?.toString() || ''} className={inputClass} required />
+          <input ref={priceRef} defaultValue={product?.basePrice?.toString() || ''} className={inputWide} required />
         </div>
         <div>
           <label className="block text-sm text-gray-400 mb-1">Categoría *</label>
-          <select ref={catRef} defaultValue={product?.categoryId || product?.category?.id || ''} className={inputClass} required>
+          <select ref={catRef} defaultValue={product?.categoryId || product?.category?.id || ''} className={inputWide} required>
             <option value="">Seleccionar...</option>
             {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
           </select>
@@ -266,7 +267,7 @@ function SelectionBlock({ id, initialLabel, initialMax, initialOptions, onRemove
   return (
     <div id={id} className="bg-[#1a1a2e] rounded-lg p-3 space-y-2">
       <div className="flex gap-2 items-center">
-        <input data-sel-label defaultValue={initialLabel} placeholder="Ej: Salsas extras" className={`${inputClass} flex-1`} />
+        <input data-sel-label defaultValue={initialLabel} placeholder="Ej: Salsas extras" className={`${inputClass} flex-1 min-w-0`} />
         <div className="flex items-center gap-1 text-xs text-gray-400">
           <span>Máx:</span>
           <input data-sel-max defaultValue={initialMax} className="w-12 px-2 py-1 rounded bg-[#0F0F23] border border-gray-700 text-white text-center" />
@@ -276,7 +277,7 @@ function SelectionBlock({ id, initialLabel, initialMax, initialOptions, onRemove
       <div className="space-y-1 ml-2">
         {optKeys.map((ok, oi) => (
           <div key={ok} className="flex gap-2 items-center">
-            <input data-sel-opt-name defaultValue={initialOptions[oi]?.name || ''} placeholder="Opción" className={`${inputClass} flex-1 text-xs`} />
+            <input data-sel-opt-name defaultValue={initialOptions[oi]?.name || ''} placeholder="Opción" className={`${inputClass} flex-1 min-w-0 text-xs`} />
             <input data-sel-opt-price defaultValue={initialOptions[oi]?.price || '0'} placeholder="$+" className={`${inputClass} w-16 text-xs`} />
             <button type="button" onClick={() => setOptKeys(optKeys.filter((_, j) => j !== oi))}><X className="w-3 h-3 text-[#EF476F]" /></button>
           </div>
