@@ -54,10 +54,10 @@ export default function ProductForm({ product }: Props) {
     reader.readAsDataURL(file);
   };
 
-  const addVariation = () => setVariations([...variations, { name: '', additionalPrice: '0' }]);
-  const addIngredient = () => setDefaultIngredients([...defaultIngredients, '']);
-  const addExtra = () => setExtras([...extras, { name: '', basePrice: '1.0' }]);
-  const addSelection = () => setSelections([...selections, { label: '', maxSelections: 1, options: [] }]);
+  const addVariation = () => setVariations(prev => [...prev, { name: '', additionalPrice: '0' }]);
+  const addIngredient = () => setDefaultIngredients(prev => [...prev, '']);
+  const addExtra = () => setExtras(prev => [...prev, { name: '', basePrice: '1.0' }]);
+  const addSelection = () => setSelections(prev => [...prev, { label: '', maxSelections: 1, options: [] }]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -137,9 +137,9 @@ export default function ProductForm({ product }: Props) {
           <div className="flex items-center justify-between"><span className="text-sm font-semibold text-gray-300">Variaciones</span><button type="button" onClick={addVariation} className="text-[#06D6A0] text-xs hover:underline">+ Agregar</button></div>
           {variations.map((v, i) => (
             <div key={i} className="flex gap-2 items-center">
-              <input placeholder="Nombre" value={v.name} onChange={e => { const n = [...variations]; n[i].name = e.target.value; setVariations(n); }} className={`${inputClass} flex-1`} />
-              <input type="number" step="0.01" placeholder="$0.00" value={v.additionalPrice} onChange={e => { const n = [...variations]; n[i].additionalPrice = e.target.value; setVariations(n); }} className={`${inputClass} w-20`} />
-              <button type="button" onClick={() => setVariations(variations.filter((_, j) => j !== i))}><X className="w-4 h-4 text-[#EF476F]" /></button>
+              <input placeholder="Nombre" value={v.name} onChange={e => setVariations(prev => prev.map((item, idx) => idx === i ? { ...item, name: e.target.value } : item))} className={`${inputClass} flex-1`} />
+              <input type="number" step="0.01" placeholder="$0.00" value={v.additionalPrice} onChange={e => setVariations(prev => prev.map((item, idx) => idx === i ? { ...item, additionalPrice: e.target.value } : item))} className={`${inputClass} w-20`} />
+              <button type="button" onClick={() => setVariations(prev => prev.filter((_, j) => j !== i))}><X className="w-4 h-4 text-[#EF476F]" /></button>
             </div>
           ))}
         </div>
@@ -149,8 +149,8 @@ export default function ProductForm({ product }: Props) {
         <div className="flex items-center justify-between"><span className="text-sm font-semibold text-gray-300">Ingredientes por defecto</span><button type="button" onClick={addIngredient} className="text-[#06D6A0] text-xs hover:underline">+ Agregar</button></div>
         {defaultIngredients.map((ing, i) => (
           <div key={i} className="flex gap-2 items-center">
-            <input placeholder="Ej: Queso Cheddar" value={ing} onChange={e => { const n = [...defaultIngredients]; n[i] = e.target.value; setDefaultIngredients(n); }} className={`${inputClass} flex-1`} />
-            <button type="button" onClick={() => setDefaultIngredients(defaultIngredients.filter((_, j) => j !== i))}><X className="w-4 h-4 text-[#EF476F]" /></button>
+            <input placeholder="Ej: Queso Cheddar" value={ing} onChange={e => setDefaultIngredients(prev => prev.map((item, idx) => idx === i ? e.target.value : item))} className={`${inputClass} flex-1`} />
+            <button type="button" onClick={() => setDefaultIngredients(prev => prev.filter((_, j) => j !== i))}><X className="w-4 h-4 text-[#EF476F]" /></button>
           </div>
         ))}
       </div>
@@ -159,9 +159,9 @@ export default function ProductForm({ product }: Props) {
         <div className="flex items-center justify-between"><span className="text-sm font-semibold text-gray-300">Extras (con costo)</span><button type="button" onClick={addExtra} className="text-[#06D6A0] text-xs hover:underline">+ Agregar</button></div>
         {extras.map((e, i) => (
           <div key={i} className="flex gap-2 items-center">
-            <input placeholder="Nombre" value={e.name} onChange={ev => { const n = [...extras]; n[i].name = ev.target.value; setExtras(n); }} className={`${inputClass} flex-1`} />
-            <input type="number" step="0.01" placeholder="$1.00" value={e.basePrice} onChange={ev => { const n = [...extras]; n[i].basePrice = ev.target.value; setExtras(n); }} className={`${inputClass} w-20`} />
-            <button type="button" onClick={() => setExtras(extras.filter((_, j) => j !== i))}><X className="w-4 h-4 text-[#EF476F]" /></button>
+            <input placeholder="Nombre" value={e.name} onChange={ev => setExtras(prev => prev.map((item, idx) => idx === i ? { ...item, name: ev.target.value } : item))} className={`${inputClass} flex-1`} />
+            <input type="number" step="0.01" placeholder="$1.00" value={e.basePrice} onChange={ev => setExtras(prev => prev.map((item, idx) => idx === i ? { ...item, basePrice: ev.target.value } : item))} className={`${inputClass} w-20`} />
+            <button type="button" onClick={() => setExtras(prev => prev.filter((_, j) => j !== i))}><X className="w-4 h-4 text-[#EF476F]" /></button>
           </div>
         ))}
       </div>
@@ -171,22 +171,22 @@ export default function ProductForm({ product }: Props) {
         {selections.map((sel, i) => (
           <div key={i} className="bg-[#1a1a2e] rounded-lg p-3 space-y-2">
             <div className="flex gap-2 items-center">
-              <input placeholder="Ej: Salsas extras" value={sel.label} onChange={e => { const n = [...selections]; n[i].label = e.target.value; setSelections(n); }} className={`${inputClass} flex-1`} />
+              <input placeholder="Ej: Salsas extras" value={sel.label} onChange={e => setSelections(prev => prev.map((item, idx) => idx === i ? { ...item, label: e.target.value } : item))} className={`${inputClass} flex-1`} />
               <div className="flex items-center gap-1 text-xs text-gray-400">
                 <span>Máx:</span>
-                <input type="number" min="1" value={sel.maxSelections} onChange={e => { const n = [...selections]; n[i].maxSelections = parseInt(e.target.value) || 1; setSelections(n); }} className="w-12 px-2 py-1 rounded bg-[#0F0F23] border border-gray-700 text-white text-center" />
+                <input type="number" min="1" value={sel.maxSelections} onChange={e => setSelections(prev => prev.map((item, idx) => idx === i ? { ...item, maxSelections: parseInt(e.target.value) || 1 } : item))} className="w-12 px-2 py-1 rounded bg-[#0F0F23] border border-gray-700 text-white text-center" />
               </div>
-              <button type="button" onClick={() => setSelections(selections.filter((_, j) => j !== i))}><X className="w-4 h-4 text-[#EF476F]" /></button>
+              <button type="button" onClick={() => setSelections(prev => prev.filter((_, j) => j !== i))}><X className="w-4 h-4 text-[#EF476F]" /></button>
             </div>
             <div className="space-y-1 ml-2">
               {sel.options.map((opt, oi) => (
                 <div key={oi} className="flex gap-2 items-center">
-                  <input placeholder="Opción" value={opt.name} onChange={e => { const n = [...selections]; n[i].options[oi].name = e.target.value; setSelections(n); }} className={`${inputClass} flex-1 text-xs`} />
-                  <input type="number" step="0.01" placeholder="$+" value={opt.additionalPrice} onChange={e => { const n = [...selections]; n[i].options[oi].additionalPrice = e.target.value; setSelections(n); }} className={`${inputClass} w-16 text-xs`} />
-                  <button type="button" onClick={() => { const n = [...selections]; n[i].options = n[i].options.filter((_, j) => j !== oi); setSelections(n); }}><X className="w-3 h-3 text-[#EF476F]" /></button>
+                  <input placeholder="Opción" value={opt.name} onChange={e => setSelections(prev => prev.map((item, idx) => idx === i ? { ...item, options: item.options.map((o, oidx) => oidx === oi ? { ...o, name: e.target.value } : o) } : item))} className={`${inputClass} flex-1 text-xs`} />
+                  <input type="number" step="0.01" placeholder="$+" value={opt.additionalPrice} onChange={e => setSelections(prev => prev.map((item, idx) => idx === i ? { ...item, options: item.options.map((o, oidx) => oidx === oi ? { ...o, additionalPrice: e.target.value } : o) } : item))} className={`${inputClass} w-16 text-xs`} />
+                  <button type="button" onClick={() => setSelections(prev => prev.map((item, idx) => idx === i ? { ...item, options: item.options.filter((_, j) => j !== oi) } : item))}><X className="w-3 h-3 text-[#EF476F]" /></button>
                 </div>
               ))}
-              <button type="button" onClick={() => { const n = [...selections]; n[i].options.push({ name: '', additionalPrice: '0' }); setSelections(n); }} className="text-[#06D6A0] text-xs hover:underline">+ Opción</button>
+              <button type="button" onClick={() => setSelections(prev => prev.map((item, idx) => idx === i ? { ...item, options: [...item.options, { name: '', additionalPrice: '0' }] } : item))} className="text-[#06D6A0] text-xs hover:underline">+ Opción</button>
             </div>
           </div>
         ))}
