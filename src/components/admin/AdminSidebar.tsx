@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { LayoutDashboard, ShoppingBag, LogOut, ArrowLeft } from 'lucide-react';
+import { LayoutDashboard, ShoppingBag, Settings as SettingsIcon, LogOut, ArrowLeft } from 'lucide-react';
 import { useAdminStore } from '@/store/admin-store';
 
 export default function AdminSidebar() {
@@ -13,6 +13,7 @@ export default function AdminSidebar() {
   const links = [
     { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
     { href: '/admin/products', label: 'Productos', icon: ShoppingBag },
+    { href: '/admin/settings', label: 'Configuración', icon: SettingsIcon },
   ];
 
   return (

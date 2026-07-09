@@ -5,6 +5,12 @@ async function main() {
   const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL! });
   const prisma = new PrismaClient({ adapter });
 
+  const existingSettings = await prisma.businessSettings.findFirst();
+  if (!existingSettings) {
+    await prisma.businessSettings.create({ data: { name: 'Burger POS', logoUrl: null } });
+    console.log('Default settings created.');
+  }
+
   const existingCount = await prisma.category.count();
   if (existingCount > 0) {
     console.log(`Database already has ${existingCount} categories, skipping seed.`);

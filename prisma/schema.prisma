@@ -185,3 +185,11 @@ model OrderItemSelection {
 
   @@map("order_item_selections")
 }
+
+model BusinessSettings {
+  id      String  @id @default(uuid()) @db.Uuid
+  name    String  @default("Burger POS")
+  logoUrl String? @map("logo_url")
+
+  @@map("business_settings")
+}

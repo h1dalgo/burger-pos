@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { useSessionStore } from '@/store/session-store';
@@ -12,6 +12,18 @@ export default function WelcomeForm() {
   const [name, setName] = useState(customerName);
   const [table, setTable] = useState(tableNumber);
   const [error, setError] = useState('');
+  const [businessName, setBusinessName] = useState('BURGER POS');
+  const [businessLogo, setBusinessLogo] = useState('');
+
+  useEffect(() => {
+    fetch('/api/settings')
+      .then(r => r.json())
+      .then(data => {
+        if (data?.name) setBusinessName(data.name.toUpperCase());
+        if (data?.logoUrl) setBusinessLogo(data.logoUrl);
+      })
+      .catch(() => {});
+  }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,9 +50,17 @@ export default function WelcomeForm() {
           transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
           className="flex justify-center mb-6"
         >
-          <div className="w-24 h-24 bg-[#E85D04] rounded-full flex items-center justify-center shadow-lg">
-            <UtensilsCrossed className="w-12 h-12 text-white" />
-          </div>
+          {businessLogo ? (
+            <img
+              src={businessLogo}
+              alt={businessName}
+              className="w-28 h-28 object-contain"
+            />
+          ) : (
+            <div className="w-24 h-24 bg-[#E85D04] rounded-full flex items-center justify-center shadow-lg">
+              <UtensilsCrossed className="w-12 h-12 text-white" />
+            </div>
+          )}
         </motion.div>
 
         <motion.h1
@@ -50,7 +70,7 @@ export default function WelcomeForm() {
           className="text-4xl font-bold text-center text-[#2B2D42] mb-2"
           style={{ fontFamily: "'Bebas Neue', 'Anton', sans-serif" }}
         >
-          BURGER POS
+          {businessName}
         </motion.h1>
         <motion.p
           initial={{ opacity: 0 }}
