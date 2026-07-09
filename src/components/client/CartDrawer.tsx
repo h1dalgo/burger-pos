@@ -178,7 +178,7 @@ export default function CartDrawer({ isOpen, onClose }: Props) {
                   disabled={submitting}
                   className="w-full py-3 bg-[#E85D04] text-white font-bold rounded-xl shadow-lg hover:bg-[#d55404] disabled:opacity-50 transition-colors"
                 >
-                  {submitting ? 'Enviando...' : 'Enviar Pedido a Cocina'}
+                  {submitting ? 'Enviando...' : 'Realizar pedido'}
                 </button>
               </div>
             )}

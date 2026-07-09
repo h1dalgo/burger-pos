@@ -32,6 +32,7 @@ interface Props {
 export default function OrderCard({ order, onAction }: Props) {
   const PaymentIcon = paymentIcons[order.paymentMethod];
   const borderColor = statusColors[order.status] || 'border-l-gray-500';
+  const totalAmount = Number(order.totalAmount).toFixed(2);
 
   const renderItem = (item: Order['items'][0]) => (
     <div key={item.id} className="text-sm leading-relaxed">
@@ -108,6 +109,10 @@ export default function OrderCard({ order, onAction }: Props) {
 
       <div className="border-t border-gray-700 pt-2 space-y-1.5">
         {order.items.map(renderItem)}
+      </div>
+
+      <div className="text-right text-sm font-bold text-[#FFB703]">
+        Total: ${totalAmount}
       </div>
 
       <button

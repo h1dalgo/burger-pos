@@ -102,7 +102,8 @@ export default function WelcomeForm() {
           <div>
             <label className="block text-sm font-medium text-[#2B2D42] mb-1">Número de Mesa</label>
             <input
-              type="text"
+              type="number"
+              min="1"
               value={table}
               onChange={(e) => { setTable(e.target.value); setError(''); }}
               placeholder="Ej: 5"
