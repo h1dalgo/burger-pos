@@ -9,8 +9,9 @@ export function middleware(request: NextRequest) {
   }
 
   if (pathname.startsWith('/admin123') && pathname !== '/admin123/login') {
+    const adminPin = process.env.ADMIN_PIN || '1234';
     const adminAuth = request.cookies.get('admin_auth')?.value;
-    if (adminAuth !== process.env.ADMIN_PIN && adminAuth !== process.env.ADMIN_PIN! + ':true') {
+    if (adminAuth !== adminPin && adminAuth !== adminPin + ':true') {
       return NextResponse.redirect(new URL('/admin123/login', request.url));
     }
   }
