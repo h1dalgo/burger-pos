@@ -137,9 +137,9 @@ export default function ProductForm({ product }: Props) {
           <div className="flex items-center justify-between"><span className="text-sm font-semibold text-gray-300">Variaciones</span><button type="button" onClick={addVariation} className="text-[#06D6A0] text-xs hover:underline">+ Agregar</button></div>
           {variations.map((v, i) => (
             <div key={i} className="flex gap-2 items-center">
-              <input placeholder="Nombre" value={v.name} onChange={e => { const val = e.target.value; setVariations(prev => prev.map((item, idx) => idx === i ? { ...item, name: val } : item)); }} className={`${inputClass} flex-1`} />
-              <input placeholder="$0.00" value={v.additionalPrice} onChange={e => { const val = e.target.value; setVariations(prev => prev.map((item, idx) => idx === i ? { ...item, additionalPrice: val } : item)); }} className={`${inputClass} w-20`} />
-              <button type="button" onClick={() => setVariations(prev => prev.filter((_, j) => j !== i))}><X className="w-4 h-4 text-[#EF476F]" /></button>
+              <input placeholder="Nombre" value={v.name} onChange={e => { const updated = [...variations]; updated[i] = { ...updated[i], name: e.target.value }; setVariations(updated); }} className={`${inputClass} flex-1`} />
+              <input placeholder="$0.00" value={v.additionalPrice} onChange={e => { const updated = [...variations]; updated[i] = { ...updated[i], additionalPrice: e.target.value }; setVariations(updated); }} className={`${inputClass} w-20`} />
+              <button type="button" onClick={() => setVariations(variations.filter((_, j) => j !== i))}><X className="w-4 h-4 text-[#EF476F]" /></button>
             </div>
           ))}
         </div>
@@ -149,8 +149,8 @@ export default function ProductForm({ product }: Props) {
         <div className="flex items-center justify-between"><span className="text-sm font-semibold text-gray-300">Ingredientes por defecto</span><button type="button" onClick={addIngredient} className="text-[#06D6A0] text-xs hover:underline">+ Agregar</button></div>
         {defaultIngredients.map((ing, i) => (
           <div key={i} className="flex gap-2 items-center">
-            <input placeholder="Ej: Queso Cheddar" value={ing} onChange={e => { const val = e.target.value; setDefaultIngredients(prev => prev.map((item, idx) => idx === i ? val : item)); }} className={`${inputClass} flex-1`} />
-            <button type="button" onClick={() => setDefaultIngredients(prev => prev.filter((_, j) => j !== i))}><X className="w-4 h-4 text-[#EF476F]" /></button>
+            <input placeholder="Ej: Queso Cheddar" value={ing} onChange={e => { const updated = [...defaultIngredients]; updated[i] = e.target.value; setDefaultIngredients(updated); }} className={`${inputClass} flex-1`} />
+            <button type="button" onClick={() => setDefaultIngredients(defaultIngredients.filter((_, j) => j !== i))}><X className="w-4 h-4 text-[#EF476F]" /></button>
           </div>
         ))}
       </div>
@@ -159,9 +159,9 @@ export default function ProductForm({ product }: Props) {
         <div className="flex items-center justify-between"><span className="text-sm font-semibold text-gray-300">Extras (con costo)</span><button type="button" onClick={addExtra} className="text-[#06D6A0] text-xs hover:underline">+ Agregar</button></div>
         {extras.map((e, i) => (
           <div key={i} className="flex gap-2 items-center">
-            <input placeholder="Nombre" value={e.name} onChange={ev => { const val = ev.target.value; setExtras(prev => prev.map((item, idx) => idx === i ? { ...item, name: val } : item)); }} className={`${inputClass} flex-1`} />
-            <input placeholder="$1.00" value={e.basePrice} onChange={ev => { const val = ev.target.value; setExtras(prev => prev.map((item, idx) => idx === i ? { ...item, basePrice: val } : item)); }} className={`${inputClass} w-20`} />
-            <button type="button" onClick={() => setExtras(prev => prev.filter((_, j) => j !== i))}><X className="w-4 h-4 text-[#EF476F]" /></button>
+            <input placeholder="Nombre" value={e.name} onChange={ev => { const updated = [...extras]; updated[i] = { ...updated[i], name: ev.target.value }; setExtras(updated); }} className={`${inputClass} flex-1`} />
+            <input placeholder="$1.00" value={e.basePrice} onChange={ev => { const updated = [...extras]; updated[i] = { ...updated[i], basePrice: ev.target.value }; setExtras(updated); }} className={`${inputClass} w-20`} />
+            <button type="button" onClick={() => setExtras(extras.filter((_, j) => j !== i))}><X className="w-4 h-4 text-[#EF476F]" /></button>
           </div>
         ))}
       </div>
@@ -171,22 +171,22 @@ export default function ProductForm({ product }: Props) {
         {selections.map((sel, i) => (
           <div key={i} className="bg-[#1a1a2e] rounded-lg p-3 space-y-2">
             <div className="flex gap-2 items-center">
-              <input placeholder="Ej: Salsas extras" value={sel.label} onChange={e => { const val = e.target.value; setSelections(prev => prev.map((item, idx) => idx === i ? { ...item, label: val } : item)); }} className={`${inputClass} flex-1`} />
+              <input placeholder="Ej: Salsas extras" value={sel.label} onChange={e => { const updated = [...selections]; updated[i] = { ...updated[i], label: e.target.value }; setSelections(updated); }} className={`${inputClass} flex-1`} />
               <div className="flex items-center gap-1 text-xs text-gray-400">
                 <span>Máx:</span>
-                <input value={sel.maxSelections} onChange={e => { const val = e.target.value; setSelections(prev => prev.map((item, idx) => idx === i ? { ...item, maxSelections: val } : item)); }} className="w-12 px-2 py-1 rounded bg-[#0F0F23] border border-gray-700 text-white text-center" />
+                <input value={sel.maxSelections} onChange={e => { const updated = [...selections]; updated[i] = { ...updated[i], maxSelections: e.target.value }; setSelections(updated); }} className="w-12 px-2 py-1 rounded bg-[#0F0F23] border border-gray-700 text-white text-center" />
               </div>
               <button type="button" onClick={() => setSelections(prev => prev.filter((_, j) => j !== i))}><X className="w-4 h-4 text-[#EF476F]" /></button>
             </div>
             <div className="space-y-1 ml-2">
               {sel.options.map((opt, oi) => (
                 <div key={oi} className="flex gap-2 items-center">
-                  <input placeholder="Opción" value={opt.name} onChange={e => { const val = e.target.value; setSelections(prev => prev.map((item, idx) => idx === i ? { ...item, options: item.options.map((o, oidx) => oidx === oi ? { ...o, name: val } : o) } : item)); }} className={`${inputClass} flex-1 text-xs`} />
-                  <input placeholder="$+" value={opt.additionalPrice} onChange={e => { const val = e.target.value; setSelections(prev => prev.map((item, idx) => idx === i ? { ...item, options: item.options.map((o, oidx) => oidx === oi ? { ...o, additionalPrice: val } : o) } : item)); }} className={`${inputClass} w-16 text-xs`} />
-                  <button type="button" onClick={() => setSelections(prev => prev.map((item, idx) => idx === i ? { ...item, options: item.options.filter((_, j) => j !== oi) } : item))}><X className="w-3 h-3 text-[#EF476F]" /></button>
+                  <input placeholder="Opción" value={opt.name} onChange={e => { const updated = [...selections]; updated[i] = { ...updated[i], options: [...updated[i].options] }; updated[i].options[oi] = { ...updated[i].options[oi], name: e.target.value }; setSelections(updated); }} className={`${inputClass} flex-1 text-xs`} />
+                  <input placeholder="$+" value={opt.additionalPrice} onChange={e => { const updated = [...selections]; updated[i] = { ...updated[i], options: [...updated[i].options] }; updated[i].options[oi] = { ...updated[i].options[oi], additionalPrice: e.target.value }; setSelections(updated); }} className={`${inputClass} w-16 text-xs`} />
+                  <button type="button" onClick={() => { const updated = [...selections]; updated[i] = { ...updated[i], options: updated[i].options.filter((_, j) => j !== oi) }; setSelections(updated); }}><X className="w-3 h-3 text-[#EF476F]" /></button>
                 </div>
               ))}
-              <button type="button" onClick={() => setSelections(prev => prev.map((item, idx) => idx === i ? { ...item, options: [...item.options, { name: '', additionalPrice: '0' }] } : item))} className="text-[#06D6A0] text-xs hover:underline">+ Opción</button>
+              <button type="button" onClick={() => { const updated = [...selections]; updated[i] = { ...updated[i], options: [...updated[i].options, { name: '', additionalPrice: '0' }] }; setSelections(updated); }} className="text-[#06D6A0] text-xs hover:underline">+ Opción</button>
             </div>
           </div>
         ))}
