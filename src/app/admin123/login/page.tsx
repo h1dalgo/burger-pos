@@ -16,7 +16,7 @@ export default function AdminLoginPage() {
     e.preventDefault();
     setError('');
     const ok = await login(pin);
-    if (ok) router.push('/admin');
+    if (ok) router.push('/admin123');
     else setError('PIN incorrecto');
   };
 

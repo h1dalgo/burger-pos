@@ -15,7 +15,7 @@ export default function EditProductPage() {
     fetch(`/api/admin/products/${id}`)
       .then(r => r.json())
       .then(data => { setProduct(data); setLoading(false); })
-      .catch(() => { router.push('/admin/products'); });
+      .catch(() => { router.push('/admin123/products'); });
   }, [id, router]);
 
   if (loading) return <p className="text-gray-500">Cargando...</p>;

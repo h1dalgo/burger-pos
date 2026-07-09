@@ -11,8 +11,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const isAuth = useAdminStore((s) => s.isAuth);
 
   useEffect(() => {
-    if (!isAuth && pathname !== '/admin/login') {
-      router.push('/admin/login');
+    if (!isAuth && pathname !== '/admin123/login') {
+      router.push('/admin123/login');
     }
   }, [isAuth, pathname, router]);
 

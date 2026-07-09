@@ -5,7 +5,7 @@ import { ShoppingBag, UtensilsCrossed, Package } from 'lucide-react';
 
 export default function AdminDashboard() {
   const cards = [
-    { href: '/admin/products', icon: ShoppingBag, label: 'Productos', desc: 'Gestionar el menú' },
+    { href: '/admin123/products', icon: ShoppingBag, label: 'Productos', desc: 'Gestionar el menú' },
     { href: '/kitchen', icon: UtensilsCrossed, label: 'Cocina', desc: 'Ver pedidos en vivo' },
     { href: '/menu', icon: Package, label: 'Vista Cliente', desc: 'Ver el menú como cliente' },
   ];

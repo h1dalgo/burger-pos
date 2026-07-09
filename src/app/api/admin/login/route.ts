@@ -7,7 +7,15 @@ export async function POST(request: NextRequest) {
   const adminPin = process.env.ADMIN_PIN || '1234';
 
   if (pin === adminPin) {
-    return NextResponse.json({ success: true });
+    const response = NextResponse.json({ success: true });
+    response.cookies.set('admin_auth', pin + ':true', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/',
+      maxAge: 60 * 60 * 8,
+    });
+    return response;
   }
 
   return NextResponse.json({ error: 'PIN incorrecto' }, { status: 401 });

@@ -11,9 +11,9 @@ export default function AdminSidebar() {
   const logout = useAdminStore((s) => s.logout);
 
   const links = [
-    { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
-    { href: '/admin/products', label: 'Productos', icon: ShoppingBag },
-    { href: '/admin/settings', label: 'Configuración', icon: SettingsIcon },
+    { href: '/admin123', label: 'Dashboard', icon: LayoutDashboard },
+    { href: '/admin123/products', label: 'Productos', icon: ShoppingBag },
+    { href: '/admin123/settings', label: 'Configuración', icon: SettingsIcon },
   ];
 
   return (
@@ -50,7 +50,7 @@ export default function AdminSidebar() {
           Ir a Cocina
         </button>
         <button
-          onClick={() => { logout(); router.push('/admin/login'); }}
+          onClick={() => { logout(); router.push('/admin123/login'); }}
           className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-gray-400 hover:text-[#EF476F] hover:bg-gray-800 w-full"
         >
           <LogOut className="w-4 h-4" />

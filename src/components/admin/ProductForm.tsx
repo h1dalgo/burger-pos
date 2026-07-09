@@ -133,7 +133,7 @@ export default function ProductForm({ product }: Props) {
 
     try {
       const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-      if (res.ok) router.push('/admin/products');
+      if (res.ok) router.push('/admin123/products');
       else alert('Error al guardar');
     } catch {
       alert('Error de conexión');
@@ -246,7 +246,7 @@ export default function ProductForm({ product }: Props) {
         <button type="submit" disabled={submitting} className={`${btnClass} bg-[#E85D04] text-white hover:bg-[#d55404] disabled:opacity-50`}>
           {submitting ? 'Guardando...' : isEdit ? 'Actualizar Producto' : 'Crear Producto'}
         </button>
-        <button type="button" onClick={() => router.push('/admin/products')} className={`${btnClass} bg-gray-800 text-gray-300 hover:bg-gray-700`}>
+        <button type="button" onClick={() => router.push('/admin123/products')} className={`${btnClass} bg-gray-800 text-gray-300 hover:bg-gray-700`}>
           Cancelar
         </button>
       </div>

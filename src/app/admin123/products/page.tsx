@@ -28,7 +28,7 @@ export default function AdminProductsPage() {
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold text-white" style={{ fontFamily: "'Bebas Neue', sans-serif" }}>PRODUCTOS</h1>
         <Link
-          href="/admin/products/new"
+          href="/admin123/products/new"
           className="flex items-center gap-2 px-4 py-2 bg-[#E85D04] text-white rounded-lg text-sm font-semibold hover:bg-[#d55404] transition-colors"
         >
           <Plus className="w-4 h-4" /> Nuevo
@@ -53,7 +53,7 @@ export default function AdminProductsPage() {
               <p className="text-gray-500 text-xs truncate">{p.category?.name} · {formatPrice(Number(p.basePrice))}{!p.isAvailable && <span className="text-[#EF476F] ml-2">Agotado</span>}</p>
             </div>
             <div className="flex gap-2">
-              <Link href={`/admin/products/${p.id}`} className="p-2 rounded-lg bg-gray-800 text-gray-400 hover:text-white hover:bg-gray-700 transition-colors">
+              <Link href={`/admin123/products/${p.id}`} className="p-2 rounded-lg bg-gray-800 text-gray-400 hover:text-white hover:bg-gray-700 transition-colors">
                 <Edit2 className="w-4 h-4" />
               </Link>
               <button onClick={() => handleDelete(p.id, p.name)} className="p-2 rounded-lg bg-gray-800 text-gray-400 hover:text-[#EF476F] hover:bg-gray-700 transition-colors">
