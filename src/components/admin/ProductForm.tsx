@@ -2,16 +2,74 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Plus, X } from 'lucide-react';
+import { X } from 'lucide-react';
 
 interface Props {
   product?: any;
 }
 
-interface Variation { name: string; additionalPrice: string }
-interface Extra { name: string; basePrice: string }
-interface SelectionOption { name: string; additionalPrice: string }
-interface RequiredSelection { label: string; maxSelections: any; options: SelectionOption[] }
+const inputClass = "w-full px-3 py-2 rounded-lg bg-[#0F0F23] border border-gray-700 text-white text-sm focus:border-[#E85D04] outline-none";
+const btnClass = "px-4 py-2 rounded-lg text-sm font-semibold transition-colors";
+
+function VariationRow({ value, onChange, onRemove }: { value: { name: string; additionalPrice: string }; onChange: (v: { name: string; additionalPrice: string }) => void; onRemove: () => void }) {
+  return (
+    <div className="flex gap-2 items-center">
+      <input placeholder="Nombre" value={value.name} onChange={e => onChange({ ...value, name: e.target.value })} className={`${inputClass} flex-1`} />
+      <input placeholder="$0.00" value={value.additionalPrice} onChange={e => onChange({ ...value, additionalPrice: e.target.value })} className={`${inputClass} w-20`} />
+      <button type="button" onClick={onRemove}><X className="w-4 h-4 text-[#EF476F]" /></button>
+    </div>
+  );
+}
+
+function ExtraRow({ value, onChange, onRemove }: { value: { name: string; basePrice: string }; onChange: (v: { name: string; basePrice: string }) => void; onRemove: () => void }) {
+  return (
+    <div className="flex gap-2 items-center">
+      <input placeholder="Nombre" value={value.name} onChange={e => onChange({ ...value, name: e.target.value })} className={`${inputClass} flex-1`} />
+      <input placeholder="$1.00" value={value.basePrice} onChange={e => onChange({ ...value, basePrice: e.target.value })} className={`${inputClass} w-20`} />
+      <button type="button" onClick={onRemove}><X className="w-4 h-4 text-[#EF476F]" /></button>
+    </div>
+  );
+}
+
+function SelectionBlock({ value, onChange, onRemove }: {
+  value: { label: string; maxSelections: any; options: { name: string; additionalPrice: string }[] };
+  onChange: (v: typeof value) => void;
+  onRemove: () => void;
+}) {
+  return (
+    <div className="bg-[#1a1a2e] rounded-lg p-3 space-y-2">
+      <div className="flex gap-2 items-center">
+        <input placeholder="Ej: Salsas extras" value={value.label} onChange={e => onChange({ ...value, label: e.target.value })} className={`${inputClass} flex-1`} />
+        <div className="flex items-center gap-1 text-xs text-gray-400">
+          <span>Máx:</span>
+          <input value={value.maxSelections} onChange={e => onChange({ ...value, maxSelections: e.target.value })} className="w-12 px-2 py-1 rounded bg-[#0F0F23] border border-gray-700 text-white text-center" />
+        </div>
+        <button type="button" onClick={onRemove}><X className="w-4 h-4 text-[#EF476F]" /></button>
+      </div>
+      <div className="space-y-1 ml-2">
+        {value.options.map((opt, oi) => (
+          <div key={oi} className="flex gap-2 items-center">
+            <input placeholder="Opción" value={opt.name} onChange={e => {
+              const opts = [...value.options];
+              opts[oi] = { ...opts[oi], name: e.target.value };
+              onChange({ ...value, options: opts });
+            }} className={`${inputClass} flex-1 text-xs`} />
+            <input placeholder="$+" value={opt.additionalPrice} onChange={e => {
+              const opts = [...value.options];
+              opts[oi] = { ...opts[oi], additionalPrice: e.target.value };
+              onChange({ ...value, options: opts });
+            }} className={`${inputClass} w-16 text-xs`} />
+            <button type="button" onClick={() => {
+              const opts = value.options.filter((_, j) => j !== oi);
+              onChange({ ...value, options: opts });
+            }}><X className="w-3 h-3 text-[#EF476F]" /></button>
+          </div>
+        ))}
+        <button type="button" onClick={() => onChange({ ...value, options: [...value.options, { name: '', additionalPrice: '0' }] })} className="text-[#06D6A0] text-xs hover:underline">+ Opción</button>
+      </div>
+    </div>
+  );
+}
 
 export default function ProductForm({ product }: Props) {
   const router = useRouter();
@@ -24,10 +82,10 @@ export default function ProductForm({ product }: Props) {
   const [categoryId, setCategoryId] = useState(product?.categoryId || product?.category?.id || '');
   const [imageUrl, setImageUrl] = useState(product?.imageUrl || '');
   const [hasVariation, setHasVariation] = useState(product?.hasVariation || false);
-  const [variations, setVariations] = useState<Variation[]>(product?.variations?.map((v: any) => ({ name: v.name, additionalPrice: v.additionalPrice?.toString() || '0' })) || []);
+  const [variations, setVariations] = useState<{ name: string; additionalPrice: string }[]>(product?.variations?.map((v: any) => ({ name: v.name, additionalPrice: v.additionalPrice?.toString() || '0' })) || []);
   const [defaultIngredients, setDefaultIngredients] = useState<string[]>(product?.defaultIngredients?.map((d: any) => d.name) || []);
-  const [extras, setExtras] = useState<Extra[]>(product?.extraIngredients?.map((e: any) => ({ name: e.name, basePrice: e.basePrice?.toString() || '1.0' })) || []);
-  const [selections, setSelections] = useState<RequiredSelection[]>(product?.requiredSelections?.map((rs: any) => ({
+  const [extras, setExtras] = useState<{ name: string; basePrice: string }[]>(product?.extraIngredients?.map((e: any) => ({ name: e.name, basePrice: e.basePrice?.toString() || '1.0' })) || []);
+  const [selections, setSelections] = useState<any[]>(product?.requiredSelections?.map((rs: any) => ({
     label: rs.label,
     maxSelections: rs.maxSelections,
     options: rs.options?.map((o: any) => ({ name: o.name, additionalPrice: o.additionalPrice?.toString() || '0' })) || [],
@@ -54,11 +112,6 @@ export default function ProductForm({ product }: Props) {
     reader.readAsDataURL(file);
   };
 
-  const addVariation = () => setVariations(prev => [...prev, { name: '', additionalPrice: '0' }]);
-  const addIngredient = () => setDefaultIngredients(prev => [...prev, '']);
-  const addExtra = () => setExtras(prev => [...prev, { name: '', basePrice: '1.0' }]);
-  const addSelection = () => setSelections(prev => [...prev, { label: '', maxSelections: 1, options: [] }]);
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
@@ -71,7 +124,7 @@ export default function ProductForm({ product }: Props) {
       extraIngredients: extras.filter(e => e.name.trim()),
       requiredSelections: selections.filter(s => s.label.trim()).map(s => ({
         ...s,
-        options: s.options.filter(o => o.name.trim()),
+        options: s.options.filter((o: any) => o.name.trim()),
       })),
     };
 
@@ -88,9 +141,6 @@ export default function ProductForm({ product }: Props) {
       setSubmitting(false);
     }
   };
-
-  const inputClass = "w-full px-3 py-2 rounded-lg bg-[#0F0F23] border border-gray-700 text-white text-sm focus:border-[#E85D04] outline-none";
-  const btnClass = "px-4 py-2 rounded-lg text-sm font-semibold transition-colors";
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6 max-w-2xl">
@@ -134,61 +184,77 @@ export default function ProductForm({ product }: Props) {
 
       {hasVariation && (
         <div className="bg-[#0F0F23] rounded-xl p-4 space-y-2">
-          <div className="flex items-center justify-between"><span className="text-sm font-semibold text-gray-300">Variaciones</span><button type="button" onClick={addVariation} className="text-[#06D6A0] text-xs hover:underline">+ Agregar</button></div>
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-semibold text-gray-300">Variaciones</span>
+            <button type="button" onClick={() => setVariations([...variations, { name: '', additionalPrice: '0' }])} className="text-[#06D6A0] text-xs hover:underline">+ Agregar</button>
+          </div>
           {variations.map((v, i) => (
-            <div key={i} className="flex gap-2 items-center">
-              <input placeholder="Nombre" value={v.name} onChange={e => { const updated = [...variations]; updated[i] = { ...updated[i], name: e.target.value }; setVariations(updated); }} className={`${inputClass} flex-1`} />
-              <input placeholder="$0.00" value={v.additionalPrice} onChange={e => { const updated = [...variations]; updated[i] = { ...updated[i], additionalPrice: e.target.value }; setVariations(updated); }} className={`${inputClass} w-20`} />
-              <button type="button" onClick={() => setVariations(variations.filter((_, j) => j !== i))}><X className="w-4 h-4 text-[#EF476F]" /></button>
-            </div>
+            <VariationRow
+              key={i}
+              value={v}
+              onChange={val => {
+                const next = [...variations];
+                next[i] = val;
+                setVariations(next);
+              }}
+              onRemove={() => setVariations(variations.filter((_, j) => j !== i))}
+            />
           ))}
         </div>
       )}
 
       <div className="bg-[#0F0F23] rounded-xl p-4 space-y-2">
-        <div className="flex items-center justify-between"><span className="text-sm font-semibold text-gray-300">Ingredientes por defecto</span><button type="button" onClick={addIngredient} className="text-[#06D6A0] text-xs hover:underline">+ Agregar</button></div>
+        <div className="flex items-center justify-between">
+          <span className="text-sm font-semibold text-gray-300">Ingredientes por defecto</span>
+          <button type="button" onClick={() => setDefaultIngredients([...defaultIngredients, ''])} className="text-[#06D6A0] text-xs hover:underline">+ Agregar</button>
+        </div>
         {defaultIngredients.map((ing, i) => (
           <div key={i} className="flex gap-2 items-center">
-            <input placeholder="Ej: Queso Cheddar" value={ing} onChange={e => { const updated = [...defaultIngredients]; updated[i] = e.target.value; setDefaultIngredients(updated); }} className={`${inputClass} flex-1`} />
+            <input placeholder="Ej: Queso Cheddar" value={ing} onChange={e => {
+              const next = [...defaultIngredients];
+              next[i] = e.target.value;
+              setDefaultIngredients(next);
+            }} className={`${inputClass} flex-1`} />
             <button type="button" onClick={() => setDefaultIngredients(defaultIngredients.filter((_, j) => j !== i))}><X className="w-4 h-4 text-[#EF476F]" /></button>
           </div>
         ))}
       </div>
 
       <div className="bg-[#0F0F23] rounded-xl p-4 space-y-2">
-        <div className="flex items-center justify-between"><span className="text-sm font-semibold text-gray-300">Extras (con costo)</span><button type="button" onClick={addExtra} className="text-[#06D6A0] text-xs hover:underline">+ Agregar</button></div>
+        <div className="flex items-center justify-between">
+          <span className="text-sm font-semibold text-gray-300">Extras (con costo)</span>
+          <button type="button" onClick={() => setExtras([...extras, { name: '', basePrice: '1.0' }])} className="text-[#06D6A0] text-xs hover:underline">+ Agregar</button>
+        </div>
         {extras.map((e, i) => (
-          <div key={i} className="flex gap-2 items-center">
-            <input placeholder="Nombre" value={e.name} onChange={ev => { const updated = [...extras]; updated[i] = { ...updated[i], name: ev.target.value }; setExtras(updated); }} className={`${inputClass} flex-1`} />
-            <input placeholder="$1.00" value={e.basePrice} onChange={ev => { const updated = [...extras]; updated[i] = { ...updated[i], basePrice: ev.target.value }; setExtras(updated); }} className={`${inputClass} w-20`} />
-            <button type="button" onClick={() => setExtras(extras.filter((_, j) => j !== i))}><X className="w-4 h-4 text-[#EF476F]" /></button>
-          </div>
+          <ExtraRow
+            key={i}
+            value={e}
+            onChange={val => {
+              const next = [...extras];
+              next[i] = val;
+              setExtras(next);
+            }}
+            onRemove={() => setExtras(extras.filter((_, j) => j !== i))}
+          />
         ))}
       </div>
 
       <div className="bg-[#0F0F23] rounded-xl p-4 space-y-3">
-        <div className="flex items-center justify-between"><span className="text-sm font-semibold text-gray-300">Selecciones requeridas</span><button type="button" onClick={addSelection} className="text-[#06D6A0] text-xs hover:underline">+ Agregar</button></div>
+        <div className="flex items-center justify-between">
+          <span className="text-sm font-semibold text-gray-300">Selecciones requeridas</span>
+          <button type="button" onClick={() => setSelections([...selections, { label: '', maxSelections: 1, options: [] }])} className="text-[#06D6A0] text-xs hover:underline">+ Agregar</button>
+        </div>
         {selections.map((sel, i) => (
-          <div key={i} className="bg-[#1a1a2e] rounded-lg p-3 space-y-2">
-            <div className="flex gap-2 items-center">
-              <input placeholder="Ej: Salsas extras" value={sel.label} onChange={e => { const updated = [...selections]; updated[i] = { ...updated[i], label: e.target.value }; setSelections(updated); }} className={`${inputClass} flex-1`} />
-              <div className="flex items-center gap-1 text-xs text-gray-400">
-                <span>Máx:</span>
-                <input value={sel.maxSelections} onChange={e => { const updated = [...selections]; updated[i] = { ...updated[i], maxSelections: e.target.value }; setSelections(updated); }} className="w-12 px-2 py-1 rounded bg-[#0F0F23] border border-gray-700 text-white text-center" />
-              </div>
-              <button type="button" onClick={() => setSelections(prev => prev.filter((_, j) => j !== i))}><X className="w-4 h-4 text-[#EF476F]" /></button>
-            </div>
-            <div className="space-y-1 ml-2">
-              {sel.options.map((opt, oi) => (
-                <div key={oi} className="flex gap-2 items-center">
-                  <input placeholder="Opción" value={opt.name} onChange={e => { const updated = [...selections]; updated[i] = { ...updated[i], options: [...updated[i].options] }; updated[i].options[oi] = { ...updated[i].options[oi], name: e.target.value }; setSelections(updated); }} className={`${inputClass} flex-1 text-xs`} />
-                  <input placeholder="$+" value={opt.additionalPrice} onChange={e => { const updated = [...selections]; updated[i] = { ...updated[i], options: [...updated[i].options] }; updated[i].options[oi] = { ...updated[i].options[oi], additionalPrice: e.target.value }; setSelections(updated); }} className={`${inputClass} w-16 text-xs`} />
-                  <button type="button" onClick={() => { const updated = [...selections]; updated[i] = { ...updated[i], options: updated[i].options.filter((_, j) => j !== oi) }; setSelections(updated); }}><X className="w-3 h-3 text-[#EF476F]" /></button>
-                </div>
-              ))}
-              <button type="button" onClick={() => { const updated = [...selections]; updated[i] = { ...updated[i], options: [...updated[i].options, { name: '', additionalPrice: '0' }] }; setSelections(updated); }} className="text-[#06D6A0] text-xs hover:underline">+ Opción</button>
-            </div>
-          </div>
+          <SelectionBlock
+            key={i}
+            value={sel}
+            onChange={val => {
+              const next = [...selections];
+              next[i] = val;
+              setSelections(next);
+            }}
+            onRemove={() => setSelections(selections.filter((_, j) => j !== i))}
+          />
         ))}
       </div>
 
