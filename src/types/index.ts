@@ -90,6 +90,7 @@ export interface OrderItem {
   quantity: number;
   unitPrice: number;
   subtotal: number;
+  note: string | null;
   variation: { variationName: string; additionalPrice: number } | null;
   removedIngredients: { ingredientName: string }[];
   addedExtras: { extraName: string; price: number }[];

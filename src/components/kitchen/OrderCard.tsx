@@ -58,6 +58,11 @@ export default function OrderCard({ order, onAction }: Props) {
             {s.selectionLabel}: {s.selectedOptionName}
           </span>
         ))}
+        {item.note && (
+          <span className="block text-orange-300 text-xs italic mt-1">
+            📝 {item.note}
+          </span>
+        )}
       </div>
     </div>
   );
