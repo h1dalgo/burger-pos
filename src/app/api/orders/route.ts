@@ -55,6 +55,7 @@ export async function POST(request: NextRequest) {
         quantity: item.quantity,
         unitPrice,
         subtotal,
+        note: item.note || null,
         variation: item.variation
           ? { create: { variationName: item.variation.name, additionalPrice: item.variation.additionalPrice } }
           : undefined,

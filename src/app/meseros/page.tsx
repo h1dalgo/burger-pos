@@ -23,6 +23,7 @@ interface CartItem {
   id: string; product: Product; variation: ProductVariation | null;
   quantity: number; removedIngredients: string[];
   addedExtras: ExtraIngredient[]; selections: Record<string, string[]>;
+  note: string;
 }
 
 const inputClass = "px-3 py-2 rounded-lg bg-[#0F0F23] border border-gray-700 text-white text-sm focus:border-[#E85D04] outline-none";
@@ -44,6 +45,7 @@ export default function WaiterPage() {
   const [modalExtras, setModalExtras] = useState<ExtraIngredient[]>([]);
   const [modalSelections, setModalSelections] = useState<Record<string, string[]>>({});
   const [modalQuantity, setModalQuantity] = useState(1);
+  const [modalNote, setModalNote] = useState('');
   const [modalError, setModalError] = useState('');
 
   useEffect(() => {
@@ -62,6 +64,7 @@ export default function WaiterPage() {
     setModalExtras([]);
     setModalSelections({});
     setModalQuantity(1);
+    setModalNote('');
     setModalError('');
   };
 
@@ -90,6 +93,7 @@ export default function WaiterPage() {
       removedIngredients: modalRemoved,
       addedExtras: modalExtras,
       selections: modalSelections,
+      note: modalNote,
     };
     setCart(prev => [...prev, item]);
     setSelectedProduct(null);
@@ -132,6 +136,7 @@ export default function WaiterPage() {
           removedIngredients: item.removedIngredients,
           addedExtras: item.addedExtras,
           selections: item.selections,
+          note: item.note,
         })),
       };
 
@@ -314,8 +319,16 @@ export default function WaiterPage() {
                   </div>
                 )}
 
+                {/* Note */}
+                <div className="mt-4">
+                  <p className="text-sm font-semibold text-gray-300 mb-2">Nota para el cliente:</p>
+                  <textarea value={modalNote} onChange={e => setModalNote(e.target.value)}
+                    placeholder="Ej: Sin cebolla extra, bien tostado..."
+                    className="w-full px-3 py-2 rounded-lg bg-[#0F0F23] border border-gray-700 text-white text-sm focus:border-[#E85D04] outline-none resize-none" rows={2} />
+                </div>
+
                 {/* Quantity + Add */}
-                <div className="mt-6 flex items-center justify-between">
+                <div className="mt-4 flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <button onClick={() => setModalQuantity(Math.max(1, modalQuantity - 1))} className="w-8 h-8 rounded-full bg-gray-800 flex items-center justify-center"><Minus className="w-4 h-4 text-white" /></button>
                     <span className="font-bold text-lg text-white w-6 text-center">{modalQuantity}</span>
@@ -354,6 +367,7 @@ export default function WaiterPage() {
                         {item.variation && <p className="text-xs text-[#E85D04]">{item.variation.name}</p>}
                         {item.removedIngredients.length > 0 && <p className="text-xs text-[#EF476F]">Sin: {item.removedIngredients.join(', ')}</p>}
                         {item.addedExtras.length > 0 && <p className="text-xs text-[#06D6A0]">+{item.addedExtras.map(e => e.name).join(', +')}</p>}
+                        {item.note && <p className="text-xs text-gray-400 italic mt-1">📝 {item.note}</p>}
                       </div>
                       <button onClick={() => removeItem(item.id)}><Trash2 className="w-4 h-4 text-[#EF476F]" /></button>
                     </div>

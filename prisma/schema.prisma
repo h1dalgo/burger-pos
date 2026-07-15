@@ -126,13 +126,14 @@ model Order {
 }
 
 model OrderItem {
-  id          String  @id @default(uuid()) @db.Uuid
-  orderId     String  @map("order_id") @db.Uuid
-  productId   String  @map("product_id") @db.Uuid
-  productName String  @map("product_name")
+  id          String   @id @default(uuid()) @db.Uuid
+  orderId     String   @map("order_id") @db.Uuid
+  productId   String   @map("product_id") @db.Uuid
+  productName String   @map("product_name")
   quantity    Int
-  unitPrice   Decimal @map("unit_price") @db.Decimal(10, 2)
-  subtotal    Decimal @db.Decimal(10, 2)
+  unitPrice   Decimal  @map("unit_price") @db.Decimal(10, 2)
+  subtotal    Decimal  @db.Decimal(10, 2)
+  note        String?  @map("note")
 
   order              Order                        @relation(fields: [orderId], references: [id])
   product            Product                      @relation(fields: [productId], references: [id])
