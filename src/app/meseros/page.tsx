@@ -35,6 +35,7 @@ export default function WaiterPage() {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [cartOpen, setCartOpen] = useState(false);
+  const [customerName, setCustomerName] = useState('');
   const [tableNumber, setTableNumber] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -118,12 +119,12 @@ export default function WaiterPage() {
   };
 
   const sendOrder = async () => {
-    if (!tableNumber.trim()) { alert('Ingresa el número de mesa'); return; }
+    if (!customerName.trim() || !tableNumber.trim()) { alert('Ingresa el nombre del cliente y la mesa'); return; }
     if (cart.length === 0) return;
     setSubmitting(true);
     try {
       const payload = {
-        customerName: `Mesero - Mesa ${tableNumber}`,
+        customerName: `${customerName} (Mesa ${tableNumber})`,
         tableNumber: tableNumber,
         paymentMethod: 'CASH',
         status: 'PENDING',
@@ -167,7 +168,13 @@ export default function WaiterPage() {
             <span className="bg-[#E85D04] text-white text-xs font-bold px-2 py-0.5 rounded-full">{cart.length}</span>
           )}
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
+          <input
+            placeholder="Cliente"
+            value={customerName}
+            onChange={e => setCustomerName(e.target.value)}
+            className="w-28 px-3 py-1.5 rounded-lg bg-[#0F0F23] border border-gray-700 text-white text-sm"
+          />
           <input
             placeholder="Mesa #"
             value={tableNumber}
@@ -355,7 +362,7 @@ export default function WaiterPage() {
               onClick={e => e.stopPropagation()}
               className="absolute bottom-0 left-0 right-0 max-h-[85vh] bg-[#1a1a2e] rounded-t-3xl overflow-y-auto">
               <div className="sticky top-0 bg-[#1a1a2e] z-10 px-6 pt-4 pb-2 border-b border-gray-700 flex items-center justify-between">
-                <h2 className="text-lg font-bold text-white">Pedido - Mesa {tableNumber || '?'}</h2>
+                <h2 className="text-lg font-bold text-white">{customerName || 'Cliente'} — Mesa {tableNumber || '?'}</h2>
                 <button onClick={() => setCartOpen(false)} className="w-8 h-8 rounded-full bg-gray-800 flex items-center justify-center"><X className="w-4 h-4 text-white" /></button>
               </div>
               <div className="px-6 py-4 space-y-3">
