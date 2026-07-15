@@ -13,7 +13,6 @@ export default function AdminSidebar() {
   const links = [
     { href: '/admin123', label: 'Dashboard', icon: LayoutDashboard },
     { href: '/admin123/products', label: 'Productos', icon: ShoppingBag },
-    { href: '/admin123/waiter', label: 'Mesero', icon: UserRound },
     { href: '/admin123/settings', label: 'Configuración', icon: SettingsIcon },
   ];
 
@@ -49,6 +48,13 @@ export default function AdminSidebar() {
         >
           <ArrowLeft className="w-4 h-4" />
           Ir a Cocina
+        </button>
+        <button
+          onClick={() => router.push('/meseros')}
+          className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-gray-400 hover:text-white hover:bg-gray-800 w-full"
+        >
+          <UserRound className="w-4 h-4" />
+          Ir a Meseros
         </button>
         <button
           onClick={() => { logout(); router.push('/admin123/login'); }}
