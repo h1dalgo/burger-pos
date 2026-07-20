@@ -71,12 +71,30 @@ function playBillSound() {
   } catch {}
 }
 
+function playReadySound() {
+  try {
+    const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(523, ctx.currentTime);
+    osc.frequency.setValueAtTime(659, ctx.currentTime + 0.15);
+    osc.frequency.setValueAtTime(784, ctx.currentTime + 0.3);
+    gain.gain.setValueAtTime(0.3, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + 0.5);
+  } catch {}
+}
+
 const statusConfig: Record<string, { label: string; color: string; bg: string; border: string }> = {
-  empty: { label: 'Libre', color: 'text-green-400', bg: 'bg-green-500/10', border: 'border-green-500/30' },
+  empty: { label: 'Libre', color: 'text-gray-400', bg: 'bg-gray-500/10', border: 'border-gray-500/30' },
   ordered: { label: 'Esperando Confirmación', color: 'text-purple-400', bg: 'bg-purple-500/10', border: 'border-purple-500/30' },
   pending: { label: 'Pendiente', color: 'text-red-400', bg: 'bg-red-500/10', border: 'border-red-500/30' },
   preparing: { label: 'Preparando', color: 'text-yellow-400', bg: 'bg-yellow-500/10', border: 'border-yellow-500/30' },
-  ready: { label: 'Listo', color: 'text-green-400', bg: 'bg-green-500/10', border: 'border-green-500/30' },
+  ready: { label: 'Listo', color: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/30' },
 };
 
 export default function WaiterPage() {
@@ -178,7 +196,10 @@ export default function WaiterPage() {
     });
 
     socket.on('order:new', () => loadTables());
-    socket.on('order:updated', () => loadTables());
+    socket.on('order:updated', (order: any) => {
+      if (order?.status === 'READY') playReadySound();
+      loadTables();
+    });
 
     return () => {
       socket.off('tableCall:new');
