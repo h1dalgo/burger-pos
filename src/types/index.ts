@@ -110,3 +110,22 @@ export interface StockUpdate {
   isAvailable: boolean;
   productId?: string;
 }
+
+export type TableCallType = 'CALL_WAITER' | 'REQUEST_BILL';
+export type TableCallStatus = 'ACTIVE' | 'RESOLVED';
+
+export interface TableCall {
+  id: string;
+  tableNumber: string;
+  type: TableCallType;
+  status: TableCallStatus;
+  createdAt: string;
+  resolvedAt: string | null;
+}
+
+export interface BusinessSettings {
+  id: string;
+  name: string;
+  logoUrl: string | null;
+  tableCount: number;
+}

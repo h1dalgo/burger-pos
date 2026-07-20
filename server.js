@@ -27,6 +27,9 @@ app.prepare().then(() => {
     socket.on('join:clients', () => {
       socket.join('clients');
     });
+    socket.on('join:waiter', () => {
+      socket.join('waiter');
+    });
   });
 
   global.io = io;

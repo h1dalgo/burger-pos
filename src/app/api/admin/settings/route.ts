@@ -6,7 +6,7 @@ export const runtime = 'nodejs';
 export async function PATCH(request: NextRequest) {
   try {
     const body = await request.json();
-    const { name, logoUrl } = body;
+    const { name, logoUrl, tableCount } = body;
 
     const existing = await prisma.businessSettings.findFirst();
 
@@ -17,11 +17,12 @@ export async function PATCH(request: NextRequest) {
         data: {
           ...(name !== undefined && { name }),
           ...(logoUrl !== undefined && { logoUrl: logoUrl || null }),
+          ...(tableCount !== undefined && { tableCount }),
         },
       });
     } else {
       settings = await prisma.businessSettings.create({
-        data: { name: name || 'Burger POS', logoUrl: logoUrl || null },
+        data: { name: name || 'Burger POS', logoUrl: logoUrl || null, tableCount: tableCount || 10 },
       });
     }
 

@@ -7,6 +7,7 @@ export default function AdminSettingsPage() {
   const [name, setName] = useState('');
   const [logoUrl, setLogoUrl] = useState('');
   const [logoPreview, setLogoPreview] = useState('');
+  const [tableCount, setTableCount] = useState(10);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
@@ -15,6 +16,7 @@ export default function AdminSettingsPage() {
       .then(r => r.json())
       .then(data => {
         setName(data.name || '');
+        setTableCount(data.tableCount ?? 10);
         if (data.logoUrl) {
           setLogoUrl(data.logoUrl);
           setLogoPreview(data.logoUrl);
@@ -40,7 +42,7 @@ export default function AdminSettingsPage() {
       const res = await fetch('/api/admin/settings', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, logoUrl: logoUrl || null }),
+        body: JSON.stringify({ name, logoUrl: logoUrl || null, tableCount }),
       });
       if (res.ok) {
         setSaved(true);
@@ -60,6 +62,11 @@ export default function AdminSettingsPage() {
         <div>
           <label className="block text-sm text-gray-400 mb-1">Nombre del Negocio</label>
           <input value={name} onChange={e => setName(e.target.value)} className={inputClass} placeholder="Ej: Burger House" />
+        </div>
+
+        <div>
+          <label className="block text-sm text-gray-400 mb-1">Número de Mesas</label>
+          <input type="number" min={1} max={100} value={tableCount} onChange={e => setTableCount(Number(e.target.value))} className={inputClass} />
         </div>
 
         <div>

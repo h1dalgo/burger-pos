@@ -188,10 +188,32 @@ model OrderItemSelection {
   @@map("order_item_selections")
 }
 
+enum TableCallType {
+  CALL_WAITER
+  REQUEST_BILL
+}
+
+enum TableCallStatus {
+  ACTIVE
+  RESOLVED
+}
+
+model TableCall {
+  id          String          @id @default(uuid()) @db.Uuid
+  tableNumber String          @map("table_number")
+  type        TableCallType
+  status      TableCallStatus @default(ACTIVE)
+  createdAt   DateTime        @default(now()) @map("created_at")
+  resolvedAt  DateTime?       @map("resolved_at")
+
+  @@map("table_calls")
+}
+
 model BusinessSettings {
-  id      String  @id @default(uuid()) @db.Uuid
-  name    String  @default("Burger POS")
-  logoUrl String? @map("logo_url")
+  id         String  @id @default(uuid()) @db.Uuid
+  name       String  @default("Burger POS")
+  logoUrl    String? @map("logo_url")
+  tableCount Int     @default(10) @map("table_count")
 
   @@map("business_settings")
 }
