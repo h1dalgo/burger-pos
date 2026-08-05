@@ -35,58 +35,60 @@ interface TableCall {
   id: string; tableNumber: string; type: 'CALL_WAITER' | 'REQUEST_BILL'; status: string; createdAt: string;
 }
 
-function playCallSound() {
+function playLoudAlert(notes: Array<{ f: number; t: number; d: number }>, totalDuration: number, volume = 0.6) {
   try {
     const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.type = 'sine';
-    osc.frequency.setValueAtTime(660, ctx.currentTime);
-    osc.frequency.setValueAtTime(880, ctx.currentTime + 0.12);
-    osc.frequency.setValueAtTime(1100, ctx.currentTime + 0.24);
-    gain.gain.setValueAtTime(0.3, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
-    osc.start(ctx.currentTime);
-    osc.stop(ctx.currentTime + 0.5);
+    if (ctx.state === 'suspended') ctx.resume();
+    const master = ctx.createGain();
+    master.connect(ctx.destination);
+    master.gain.setValueAtTime(volume, ctx.currentTime);
+    master.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + totalDuration);
+
+    for (const n of notes) {
+      const osc = ctx.createOscillator();
+      const noteGain = ctx.createGain();
+      osc.type = 'square';
+      osc.frequency.value = n.f;
+      osc.connect(noteGain);
+      noteGain.connect(master);
+      const start = ctx.currentTime + n.t;
+      noteGain.gain.setValueAtTime(0.0001, start);
+      noteGain.gain.exponentialRampToValueAtTime(volume, start + 0.02);
+      noteGain.gain.setValueAtTime(volume, start + n.d - 0.03);
+      noteGain.gain.exponentialRampToValueAtTime(0.0001, start + n.d);
+      osc.start(start);
+      osc.stop(start + n.d + 0.05);
+    }
   } catch {}
+}
+
+function playCallSound() {
+  const now = 0;
+  const notes = [
+    { f: 700, t: now, d: 0.25 }, { f: 900, t: now + 0.3, d: 0.25 }, { f: 1200, t: now + 0.6, d: 0.3 },
+    { f: 700, t: now + 1.1, d: 0.25 }, { f: 900, t: now + 1.4, d: 0.25 }, { f: 1200, t: now + 1.7, d: 0.3 },
+  ];
+  playLoudAlert(notes, 2.2, 0.65);
 }
 
 function playBillSound() {
-  try {
-    const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.type = 'sine';
-    osc.frequency.setValueAtTime(400, ctx.currentTime);
-    osc.frequency.setValueAtTime(500, ctx.currentTime + 0.15);
-    osc.frequency.setValueAtTime(600, ctx.currentTime + 0.3);
-    gain.gain.setValueAtTime(0.3, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.6);
-    osc.start(ctx.currentTime);
-    osc.stop(ctx.currentTime + 0.6);
-  } catch {}
+  const now = 0;
+  const notes = [
+    { f: 800, t: now, d: 0.25 }, { f: 600, t: now + 0.3, d: 0.25 }, { f: 450, t: now + 0.6, d: 0.35 },
+    { f: 800, t: now + 1.1, d: 0.25 }, { f: 600, t: now + 1.4, d: 0.25 }, { f: 450, t: now + 1.7, d: 0.35 },
+  ];
+  playLoudAlert(notes, 2.3, 0.65);
 }
 
 function playReadySound() {
-  try {
-    const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.type = 'triangle';
-    osc.frequency.setValueAtTime(523, ctx.currentTime);
-    osc.frequency.setValueAtTime(659, ctx.currentTime + 0.15);
-    osc.frequency.setValueAtTime(784, ctx.currentTime + 0.3);
-    gain.gain.setValueAtTime(0.3, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
-    osc.start(ctx.currentTime);
-    osc.stop(ctx.currentTime + 0.5);
-  } catch {}
+  const now = 0;
+  const notes: Array<{ f: number; t: number; d: number }> = [];
+  for (let i = 0; i < 6; i++) {
+    const t = now + i * 0.55;
+    notes.push({ f: 880, t, d: 0.18 });
+    notes.push({ f: 1100, t: t + 0.2, d: 0.18 });
+  }
+  playLoudAlert(notes, 3.6, 0.7);
 }
 
 const statusConfig: Record<string, { label: string; color: string; bg: string; border: string }> = {

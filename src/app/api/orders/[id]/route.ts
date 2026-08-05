@@ -39,8 +39,10 @@ export async function PATCH(
     if (global.io) {
       if (status === 'DELIVERED') {
         global.io.to('kitchen').emit('order:archived', id);
+        global.io.to('waiter').emit('order:updated', order);
       } else {
         global.io.to('kitchen').emit('order:updated', order);
+        global.io.to('waiter').emit('order:updated', order);
       }
     }
 
