@@ -115,12 +115,30 @@ export default function ProductForm({ product }: Props) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
+
+    let finalImageUrl = imageUrl || null;
+    try {
+      if (finalImageUrl && finalImageUrl.startsWith('data:image/')) {
+        const uploadRes = await fetch('/api/admin/upload', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ image: finalImageUrl }),
+        });
+        const uploadData = await uploadRes.json();
+        if (uploadRes.ok && uploadData.url) {
+          finalImageUrl = uploadData.url;
+        }
+      }
+    } catch {
+      finalImageUrl = imageUrl || null;
+    }
+
     const payload = {
       name: nameRef.current?.value || '',
       description: descRef.current?.value || '',
       basePrice: priceRef.current?.value || '0',
       categoryId: catRef.current?.value || '',
-      imageUrl: imageUrl || null,
+      imageUrl: finalImageUrl,
       hasVariation,
       variations: collectVariations(),
       defaultIngredients: collectIngredients(),
