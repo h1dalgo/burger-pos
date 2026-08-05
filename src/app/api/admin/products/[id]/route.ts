@@ -98,19 +98,7 @@ export async function DELETE(
 ) {
   const { id } = await params;
   try {
-    await prisma.productVariation.deleteMany({ where: { productId: id } });
-    await prisma.defaultIngredient.deleteMany({ where: { productId: id } });
-    await prisma.extraIngredient.deleteMany({ where: { productId: id } });
-
-    const selections = await prisma.requiredSelection.findMany({ where: { productId: id } });
-    for (const rs of selections) {
-      await prisma.requiredSelectionOption.deleteMany({ where: { requiredSelectionId: rs.id } });
-    }
-    await prisma.requiredSelection.deleteMany({ where: { productId: id } });
-
-    await prisma.orderItem.deleteMany({ where: { productId: id } });
     await prisma.product.delete({ where: { id } });
-
     return NextResponse.json({ success: true });
   } catch {
     return NextResponse.json({ error: 'Failed to delete product' }, { status: 500 });

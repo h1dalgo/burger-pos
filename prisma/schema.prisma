@@ -44,7 +44,7 @@ model ProductVariation {
   additionalPrice Decimal @default(0) @map("additional_price") @db.Decimal(10, 2)
   isAvailable     Boolean @default(true) @map("is_available")
 
-  product Product @relation(fields: [productId], references: [id])
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@map("product_variations")
 }
@@ -55,7 +55,7 @@ model RequiredSelection {
   label         String
   maxSelections Int     @default(1) @map("max_selections")
 
-  product Product                   @relation(fields: [productId], references: [id])
+  product Product                   @relation(fields: [productId], references: [id], onDelete: Cascade)
   options RequiredSelectionOption[]
 
   @@map("required_selections")
@@ -68,7 +68,7 @@ model RequiredSelectionOption {
   additionalPrice     Decimal @default(0) @map("additional_price") @db.Decimal(10, 2)
   isAvailable         Boolean @default(true) @map("is_available")
 
-  requiredSelection RequiredSelection @relation(fields: [requiredSelectionId], references: [id])
+  requiredSelection RequiredSelection @relation(fields: [requiredSelectionId], references: [id], onDelete: Cascade)
 
   @@map("required_selection_options")
 }
@@ -78,7 +78,7 @@ model DefaultIngredient {
   productId String  @map("product_id") @db.Uuid
   name      String
 
-  product Product @relation(fields: [productId], references: [id])
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@map("default_ingredients")
 }
@@ -90,7 +90,7 @@ model ExtraIngredient {
   basePrice   Decimal @default(1.00) @map("base_price") @db.Decimal(10, 2)
   isAvailable Boolean @default(true) @map("is_available")
 
-  product Product @relation(fields: [productId], references: [id])
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@map("extra_ingredients")
 }
@@ -136,7 +136,7 @@ model OrderItem {
   note        String?  @map("note")
 
   order              Order                        @relation(fields: [orderId], references: [id])
-  product            Product                      @relation(fields: [productId], references: [id])
+  product            Product                      @relation(fields: [productId], references: [id], onDelete: Cascade)
   variation          OrderItemVariation?
   removedIngredients OrderItemRemovedIngredient[]
   addedExtras        OrderItemAddedExtra[]
@@ -151,7 +151,7 @@ model OrderItemVariation {
   variationName   String  @map("variation_name")
   additionalPrice Decimal @map("additional_price") @db.Decimal(10, 2)
 
-  orderItem OrderItem @relation(fields: [orderItemId], references: [id])
+  orderItem OrderItem @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
 
   @@map("order_item_variations")
 }
@@ -161,7 +161,7 @@ model OrderItemRemovedIngredient {
   orderItemId     String  @map("order_item_id") @db.Uuid
   ingredientName  String @map("ingredient_name")
 
-  orderItem OrderItem @relation(fields: [orderItemId], references: [id])
+  orderItem OrderItem @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
 
   @@map("order_item_removed_ingredients")
 }
@@ -172,7 +172,7 @@ model OrderItemAddedExtra {
   extraName       String  @map("extra_name")
   price           Decimal @db.Decimal(10, 2)
 
-  orderItem OrderItem @relation(fields: [orderItemId], references: [id])
+  orderItem OrderItem @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
 
   @@map("order_item_added_extras")
 }
@@ -183,7 +183,7 @@ model OrderItemSelection {
   selectionLabel     String @map("selection_label")
   selectedOptionName String @map("selected_option_name")
 
-  orderItem OrderItem @relation(fields: [orderItemId], references: [id])
+  orderItem OrderItem @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
 
   @@map("order_item_selections")
 }
