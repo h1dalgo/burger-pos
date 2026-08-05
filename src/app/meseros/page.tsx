@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Bell, BellRing, ChefHat, ShoppingBag, User, Table2, Phone, DollarSign, X, Minus, Plus, Trash2, Send, CheckCircle2 } from 'lucide-react';
 import { formatPrice } from '@/lib/utils';
@@ -35,14 +35,57 @@ interface TableCall {
   id: string; tableNumber: string; type: 'CALL_WAITER' | 'REQUEST_BILL'; status: string; createdAt: string;
 }
 
-function playLoudAlert(notes: Array<{ f: number; t: number; d: number }>, totalDuration: number, volume = 0.6) {
+const ALERT_PATTERNS: Record<string, { notes: Array<{ f: number; t: number; d: number }>; duration: number; volume: number }> = {
+  CALL_WAITER: {
+    notes: [
+      { f: 700, t: 0, d: 0.25 }, { f: 900, t: 0.3, d: 0.25 }, { f: 1200, t: 0.6, d: 0.3 },
+      { f: 700, t: 1.1, d: 0.25 }, { f: 900, t: 1.4, d: 0.25 }, { f: 1200, t: 1.7, d: 0.3 },
+    ],
+    duration: 2.2,
+    volume: 0.65,
+  },
+  REQUEST_BILL: {
+    notes: [
+      { f: 800, t: 0, d: 0.25 }, { f: 600, t: 0.3, d: 0.25 }, { f: 450, t: 0.6, d: 0.35 },
+      { f: 800, t: 1.1, d: 0.25 }, { f: 600, t: 1.4, d: 0.25 }, { f: 450, t: 1.7, d: 0.35 },
+    ],
+    duration: 2.3,
+    volume: 0.65,
+  },
+  READY: {
+    notes: (() => {
+      const notes: Array<{ f: number; t: number; d: number }> = [];
+      for (let i = 0; i < 6; i++) {
+        const t = i * 0.55;
+        notes.push({ f: 880, t, d: 0.18 });
+        notes.push({ f: 1100, t: t + 0.2, d: 0.18 });
+      }
+      return notes;
+    })(),
+    duration: 3.6,
+    volume: 0.7,
+  },
+};
+
+let audioCtx: AudioContext | null = null;
+let alertLoopTimer: ReturnType<typeof setInterval> | null = null;
+
+function getAudioCtx() {
+  if (typeof window === 'undefined') return null;
+  if (!audioCtx) audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+  return audioCtx;
+}
+
+function playLoudAlert(pattern: typeof ALERT_PATTERNS[string]) {
   try {
-    const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
-    if (ctx.state === 'suspended') ctx.resume();
+    const ctx = getAudioCtx();
+    if (!ctx) return;
+    const { notes, duration, volume } = pattern;
     const master = ctx.createGain();
     master.connect(ctx.destination);
     master.gain.setValueAtTime(volume, ctx.currentTime);
-    master.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + totalDuration);
+    master.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
 
     for (const n of notes) {
       const osc = ctx.createOscillator();
@@ -62,33 +105,21 @@ function playLoudAlert(notes: Array<{ f: number; t: number; d: number }>, totalD
   } catch {}
 }
 
-function playCallSound() {
-  const now = 0;
-  const notes = [
-    { f: 700, t: now, d: 0.25 }, { f: 900, t: now + 0.3, d: 0.25 }, { f: 1200, t: now + 0.6, d: 0.3 },
-    { f: 700, t: now + 1.1, d: 0.25 }, { f: 900, t: now + 1.4, d: 0.25 }, { f: 1200, t: now + 1.7, d: 0.3 },
-  ];
-  playLoudAlert(notes, 2.2, 0.65);
+function startAlertLoop(type: string) {
+  stopAlertLoop();
+  const pattern = ALERT_PATTERNS[type];
+  if (!pattern) return;
+  playLoudAlert(pattern);
+  alertLoopTimer = setInterval(() => {
+    playLoudAlert(pattern);
+  }, (pattern.duration + 0.8) * 1000);
 }
 
-function playBillSound() {
-  const now = 0;
-  const notes = [
-    { f: 800, t: now, d: 0.25 }, { f: 600, t: now + 0.3, d: 0.25 }, { f: 450, t: now + 0.6, d: 0.35 },
-    { f: 800, t: now + 1.1, d: 0.25 }, { f: 600, t: now + 1.4, d: 0.25 }, { f: 450, t: now + 1.7, d: 0.35 },
-  ];
-  playLoudAlert(notes, 2.3, 0.65);
-}
-
-function playReadySound() {
-  const now = 0;
-  const notes: Array<{ f: number; t: number; d: number }> = [];
-  for (let i = 0; i < 6; i++) {
-    const t = now + i * 0.55;
-    notes.push({ f: 880, t, d: 0.18 });
-    notes.push({ f: 1100, t: t + 0.2, d: 0.18 });
+function stopAlertLoop() {
+  if (alertLoopTimer) {
+    clearInterval(alertLoopTimer);
+    alertLoopTimer = null;
   }
-  playLoudAlert(notes, 3.6, 0.7);
 }
 
 const statusConfig: Record<string, { label: string; color: string; bg: string; border: string }> = {
@@ -105,8 +136,7 @@ export default function WaiterPage() {
   const [activeCalls, setActiveCalls] = useState<TableCall[]>([]);
   const [selectedTable, setSelectedTable] = useState<string | null>(null);
   const [showOrderPanel, setShowOrderPanel] = useState(false);
-  const [recentCall, setRecentCall] = useState<TableCall | null>(null);
-  const [notifications, setNotifications] = useState<TableCall[]>([]);
+  const [pendingAlerts, setPendingAlerts] = useState<Array<{ type: 'CALL_WAITER' | 'REQUEST_BILL' | 'READY'; tableNumber: string }>>([]);
 
   // Order state
   const [categories, setCategories] = useState<Category[]>([]);
@@ -125,8 +155,6 @@ export default function WaiterPage() {
   const [modalQuantity, setModalQuantity] = useState(1);
   const [modalNote, setModalNote] = useState('');
   const [modalError, setModalError] = useState('');
-
-  const notificationTimer = useRef<NodeJS.Timeout | null>(null);
 
   // Load settings for table count
   useEffect(() => {
@@ -184,11 +212,8 @@ export default function WaiterPage() {
 
     socket.on('tableCall:new', (call: TableCall) => {
       setActiveCalls(prev => [call, ...prev]);
-      setRecentCall(call);
-      if (call.type === 'CALL_WAITER') playCallSound();
-      else playBillSound();
-      if (notificationTimer.current) clearTimeout(notificationTimer.current);
-      notificationTimer.current = setTimeout(() => setRecentCall(null), 4000);
+      setPendingAlerts(prev => [...prev, { type: call.type, tableNumber: call.tableNumber }]);
+      startAlertLoop(call.type);
       loadTables();
     });
 
@@ -199,7 +224,10 @@ export default function WaiterPage() {
 
     socket.on('order:new', () => loadTables());
     socket.on('order:updated', (order: any) => {
-      if (order?.status === 'READY') playReadySound();
+      if (order?.status === 'READY') {
+        setPendingAlerts(prev => [...prev, { type: 'READY', tableNumber: order.tableNumber }]);
+        startAlertLoop('READY');
+      }
       loadTables();
     });
 
@@ -208,6 +236,7 @@ export default function WaiterPage() {
       socket.off('tableCall:resolved');
       socket.off('order:new');
       socket.off('order:updated');
+      stopAlertLoop();
     };
   }, [loadTables]);
 
@@ -219,11 +248,23 @@ export default function WaiterPage() {
     });
   };
 
+  const acknowledgeAlerts = (tableNum?: string) => {
+    if (tableNum) {
+      const remaining = pendingAlerts.filter(a => a.tableNumber !== tableNum);
+      setPendingAlerts(remaining);
+      if (remaining.length === 0) stopAlertLoop();
+    } else {
+      setPendingAlerts([]);
+      stopAlertLoop();
+    }
+  };
+
   const handleTableClick = (tableNum: string) => {
     const calls = activeCalls.filter(c => c.tableNumber === tableNum);
     if (calls.length > 0) {
       for (const call of calls) resolveCall(call.id);
     }
+    acknowledgeAlerts(tableNum);
     setSelectedTable(tableNum);
     setCart([]);
     setCustomerName('');
@@ -325,14 +366,27 @@ export default function WaiterPage() {
     <div className="min-h-screen bg-[#0F0F23]">
       {/* Top notification */}
       <AnimatePresence>
-        {recentCall && (
-          <motion.div initial={{ y: -80, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
-            exit={{ y: -80, opacity: 0 }} transition={{ type: 'spring', damping: 20, stiffness: 300 }}
-            className="fixed top-4 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-6 py-3 rounded-2xl shadow-2xl text-sm font-bold bg-gradient-to-r from-[#E85D04] to-[#FFB703] text-white">
-            {recentCall.type === 'CALL_WAITER' ? <BellRing className="w-5 h-5" /> : <DollarSign className="w-5 h-5" />}
-            Mesa {recentCall.tableNumber} — {recentCall.type === 'CALL_WAITER' ? 'Llama al mesero' : 'Pide la cuenta'}
-          </motion.div>
-        )}
+        {pendingAlerts.length > 0 && (() => {
+          const alert = pendingAlerts[pendingAlerts.length - 1];
+          const isReady = alert.type === 'READY';
+          const label = isReady
+            ? `Pedido listo para servir`
+            : alert.type === 'CALL_WAITER'
+              ? 'Llama al mesero'
+              : 'Pide la cuenta';
+          return (
+            <motion.button key={alert.tableNumber + alert.type + pendingAlerts.length} onClick={() => acknowledgeAlerts(alert.tableNumber)}
+              initial={{ y: -80, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
+              exit={{ y: -80, opacity: 0 }} transition={{ type: 'spring', damping: 20, stiffness: 300 }}
+              className={`fixed top-4 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-6 py-3 rounded-2xl shadow-2xl text-sm font-bold text-white animate-pulse cursor-pointer ${
+                isReady ? 'bg-gradient-to-r from-[#06D6A0] to-emerald-600' : 'bg-gradient-to-r from-[#E85D04] to-[#FFB703]'
+              }`}>
+              {isReady ? <CheckCircle2 className="w-5 h-5" /> : alert.type === 'CALL_WAITER' ? <BellRing className="w-5 h-5" /> : <DollarSign className="w-5 h-5" />}
+              Mesa {alert.tableNumber} — {label}
+              <span className="ml-2 text-white/80 text-xs">Toca para abrir</span>
+            </motion.button>
+          );
+        })()}
       </AnimatePresence>
 
       {/* Header */}
