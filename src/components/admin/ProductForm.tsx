@@ -3,14 +3,34 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { X } from 'lucide-react';
+import { toast } from 'react-hot-toast';
+import { Button } from '@/components/ui/Button';
 
-interface Props {
-  product?: any;
+export interface ProductLike {
+  id?: string;
+  name?: string;
+  description?: string;
+  basePrice?: number | string;
+  imageUrl?: string | null;
+  categoryId?: string;
+  category?: { id?: string; name?: string };
+  hasVariation?: boolean;
+  variations?: { name: string; additionalPrice: number | string }[];
+  defaultIngredients?: { name: string }[];
+  extraIngredients?: { name: string; basePrice: number | string }[];
+  requiredSelections?: {
+    label: string;
+    maxSelections: number;
+    options: { name: string; additionalPrice: number | string }[];
+  }[];
 }
 
-const inputClass = "px-3 py-2 rounded-lg bg-[#0F0F23] border border-gray-700 text-white text-sm focus:border-[#E85D04] outline-none";
-const inputWide = "w-full px-3 py-2 rounded-lg bg-[#0F0F23] border border-gray-700 text-white text-sm focus:border-[#E85D04] outline-none";
-const btnClass = "px-4 py-2 rounded-lg text-sm font-semibold transition-colors";
+interface Props {
+  product?: ProductLike;
+}
+
+const inputClass = 'field field-dark';
+const inputWide = 'field field-dark';
 
 export default function ProductForm({ product }: Props) {
   const router = useRouter();
@@ -26,27 +46,31 @@ export default function ProductForm({ product }: Props) {
   const [imagePreview, setImagePreview] = useState(product?.imageUrl || '');
   const [hasVariation, setHasVariation] = useState(product?.hasVariation || false);
 
-  const [variationKeys, setVariationKeys] = useState<number[]>(product?.variations?.map((_: any, i: number) => i) || [0]);
+  const [variationKeys, setVariationKeys] = useState<number[]>(product?.variations?.map((_: unknown, i: number) => i) || [0]);
   const varNameRefs = useRef<(HTMLInputElement | null)[]>([]);
   const varPriceRefs = useRef<(HTMLInputElement | null)[]>([]);
-  let varCounter = useRef(product?.variations?.length || 0);
+  const varCounter = useRef(product?.variations?.length || 0);
 
-  const [ingredientKeys, setIngredientKeys] = useState<number[]>(product?.defaultIngredients?.map((_: any, i: number) => i) || []);
+  const [ingredientKeys, setIngredientKeys] = useState<number[]>(product?.defaultIngredients?.map((_: unknown, i: number) => i) || []);
   const ingRefs = useRef<(HTMLInputElement | null)[]>([]);
-  let ingCounter = useRef(product?.defaultIngredients?.length || 0);
+  const ingCounter = useRef(product?.defaultIngredients?.length || 0);
 
-  const [extraKeys, setExtraKeys] = useState<number[]>(product?.extraIngredients?.map((_: any, i: number) => i) || []);
+  const [extraKeys, setExtraKeys] = useState<number[]>(product?.extraIngredients?.map((_: unknown, i: number) => i) || []);
   const extraNameRefs = useRef<(HTMLInputElement | null)[]>([]);
   const extraPriceRefs = useRef<(HTMLInputElement | null)[]>([]);
-  let extraCounter = useRef(product?.extraIngredients?.length || 0);
+  const extraCounter = useRef(product?.extraIngredients?.length || 0);
 
-  const [selKeys, setSelKeys] = useState<number[]>(product?.requiredSelections?.map((_: any, i: number) => i) || []);
-  let selCounter = useRef(product?.requiredSelections?.length || 0);
+  const [selKeys, setSelKeys] = useState<number[]>(product?.requiredSelections?.map((_: unknown, i: number) => i) || []);
+  const selCounter = useRef(product?.requiredSelections?.length || 0);
 
   useEffect(() => {
-    fetch('/api/products').then(r => r.json()).then((data: any[]) => {
-      if (Array.isArray(data)) setCategories(data.map((c: any) => ({ id: c.id, name: c.name })));
-      else if (data?.length === undefined && data?.id) setCategories([{ id: data.id, name: data.name }]);
+    fetch('/api/products').then(r => r.json()).then((data: unknown) => {
+      if (Array.isArray(data)) {
+        setCategories(data.map((c: { id: string; name: string }) => ({ id: c.id, name: c.name })));
+      } else if (data && typeof data === 'object' && 'id' in data) {
+        const single = data as { id: string; name: string };
+        setCategories([{ id: single.id, name: single.name }]);
+      }
     });
   }, []);
 
@@ -92,7 +116,7 @@ export default function ProductForm({ product }: Props) {
   };
 
   const collectSelections = () => {
-    const result: any[] = [];
+    const result: { label: string; maxSelections: string; options: { name: string; additionalPrice: string }[] }[] = [];
     for (let i = 0; i < selKeys.length; i++) {
       const container = document.getElementById(`selection-${selKeys[i]}`);
       if (!container) continue;
@@ -151,10 +175,12 @@ export default function ProductForm({ product }: Props) {
 
     try {
       const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-      if (res.ok) router.push('/admin123/products');
-      else alert('Error al guardar');
+      if (res.ok) {
+        toast.success(isEdit ? 'Producto actualizado' : 'Producto creado');
+        router.push('/admin123/products');
+      } else toast.error('Error al guardar');
     } catch {
-      alert('Error de conexión');
+      toast.error('Error de conexión');
     } finally {
       setSubmitting(false);
     }
@@ -164,19 +190,19 @@ export default function ProductForm({ product }: Props) {
     <form onSubmit={handleSubmit} className="space-y-6 max-w-2xl">
       <div className="grid grid-cols-2 gap-4">
         <div className="col-span-2">
-          <label className="block text-sm text-gray-400 mb-1">Nombre del Producto *</label>
+          <label className="block text-sm text-white/50 mb-1">Nombre del Producto *</label>
           <input ref={nameRef} defaultValue={product?.name || ''} className={inputWide} required />
         </div>
         <div className="col-span-2">
-          <label className="block text-sm text-gray-400 mb-1">Descripción</label>
+          <label className="block text-sm text-white/50 mb-1">Descripción</label>
           <textarea ref={descRef} defaultValue={product?.description || ''} className={inputWide} rows={2} />
         </div>
         <div>
-          <label className="block text-sm text-gray-400 mb-1">Precio Base *</label>
+          <label className="block text-sm text-white/50 mb-1">Precio Base *</label>
           <input ref={priceRef} defaultValue={product?.basePrice?.toString() || ''} className={inputWide} required />
         </div>
         <div>
-          <label className="block text-sm text-gray-400 mb-1">Categoría *</label>
+          <label className="block text-sm text-white/50 mb-1">Categoría *</label>
           <select ref={catRef} defaultValue={product?.categoryId || product?.category?.id || ''} className={inputWide} required>
             <option value="">Seleccionar...</option>
             {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
@@ -185,7 +211,7 @@ export default function ProductForm({ product }: Props) {
       </div>
 
       <div>
-        <label className="block text-sm text-gray-400 mb-1">Imagen del Producto</label>
+        <label className="block text-sm text-white/50 mb-1">Imagen del Producto</label>
         <input type="file" accept="image/*" onChange={handleImage} className="text-sm text-gray-400 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-[#E85D04] file:text-white file:text-sm file:font-semibold" />
         {imagePreview && (
           <div className="mt-2 relative inline-block">
@@ -196,57 +222,57 @@ export default function ProductForm({ product }: Props) {
       </div>
 
       <div className="flex items-center gap-2">
-        <input type="checkbox" id="hasVar" checked={hasVariation} onChange={e => setHasVariation(e.target.checked)} className="accent-[#E85D04]" />
-        <label htmlFor="hasVar" className="text-sm text-gray-300">Tiene variaciones (ej: Carne/Pollo)</label>
+        <input type="checkbox" id="hasVar" checked={hasVariation} onChange={e => setHasVariation(e.target.checked)} className="accent-burger" />
+        <label htmlFor="hasVar" className="text-sm text-white/70">Tiene variaciones (ej: Carne/Pollo)</label>
       </div>
 
       {hasVariation && (
-        <div className="bg-[#0F0F23] rounded-xl p-4 space-y-2">
+        <div className="bg-night rounded-xl p-4 space-y-2">
           <div className="flex items-center justify-between">
-            <span className="text-sm font-semibold text-gray-300">Variaciones</span>
-            <button type="button" onClick={() => { varCounter.current++; setVariationKeys([...variationKeys, varCounter.current]); }} className="text-[#06D6A0] text-xs hover:underline">+ Agregar</button>
+            <span className="text-sm font-semibold text-white/70">Variaciones</span>
+            <button type="button" onClick={() => { varCounter.current++; setVariationKeys([...variationKeys, varCounter.current]); }} className="text-mint text-xs hover:underline">+ Agregar</button>
           </div>
           {variationKeys.map((k, i) => (
             <div key={k} className="flex gap-2 items-center">
-              <input ref={el => varNameRefs.current[i] = el} defaultValue={product?.variations?.[i]?.name || ''} placeholder="Nombre" className={`${inputClass} flex-1`} />
-              <input ref={el => varPriceRefs.current[i] = el} defaultValue={product?.variations?.[i]?.additionalPrice?.toString() || '0'} placeholder="$0.00" className={`${inputClass} w-20`} />
-              <button type="button" onClick={() => { setVariationKeys(variationKeys.filter((_, j) => j !== i)); }}><X className="w-4 h-4 text-[#EF476F]" /></button>
+              <input ref={(el) => { varNameRefs.current[i] = el; }} defaultValue={product?.variations?.[i]?.name || ''} placeholder="Nombre" className={`${inputClass} flex-1`} />
+              <input ref={(el) => { varPriceRefs.current[i] = el; }} defaultValue={product?.variations?.[i]?.additionalPrice?.toString() || '0'} placeholder="$0.00" className={`${inputClass} w-20`} />
+              <button type="button" onClick={() => { setVariationKeys(variationKeys.filter((_, j) => j !== i)); }}><X className="w-4 h-4 text-rose" /></button>
             </div>
           ))}
         </div>
       )}
 
-      <div className="bg-[#0F0F23] rounded-xl p-4 space-y-2">
+      <div className="bg-night rounded-xl p-4 space-y-2">
         <div className="flex items-center justify-between">
-          <span className="text-sm font-semibold text-gray-300">Ingredientes por defecto</span>
-          <button type="button" onClick={() => { ingCounter.current++; setIngredientKeys([...ingredientKeys, ingCounter.current]); }} className="text-[#06D6A0] text-xs hover:underline">+ Agregar</button>
+          <span className="text-sm font-semibold text-white/70">Ingredientes por defecto</span>
+          <button type="button" onClick={() => { ingCounter.current++; setIngredientKeys([...ingredientKeys, ingCounter.current]); }} className="text-mint text-xs hover:underline">+ Agregar</button>
         </div>
         {ingredientKeys.map((k, i) => (
           <div key={k} className="flex gap-2 items-center">
-            <input ref={el => ingRefs.current[i] = el} defaultValue={product?.defaultIngredients?.[i]?.name || ''} placeholder="Ej: Queso Cheddar" className={`${inputClass} flex-1`} />
-            <button type="button" onClick={() => { setIngredientKeys(ingredientKeys.filter((_, j) => j !== i)); }}><X className="w-4 h-4 text-[#EF476F]" /></button>
+            <input ref={(el) => { ingRefs.current[i] = el; }} defaultValue={product?.defaultIngredients?.[i]?.name || ''} placeholder="Ej: Queso Cheddar" className={`${inputClass} flex-1`} />
+            <button type="button" onClick={() => { setIngredientKeys(ingredientKeys.filter((_, j) => j !== i)); }}><X className="w-4 h-4 text-rose" /></button>
           </div>
         ))}
       </div>
 
-      <div className="bg-[#0F0F23] rounded-xl p-4 space-y-2">
+      <div className="bg-night rounded-xl p-4 space-y-2">
         <div className="flex items-center justify-between">
-          <span className="text-sm font-semibold text-gray-300">Extras (con costo)</span>
-          <button type="button" onClick={() => { extraCounter.current++; setExtraKeys([...extraKeys, extraCounter.current]); }} className="text-[#06D6A0] text-xs hover:underline">+ Agregar</button>
+          <span className="text-sm font-semibold text-white/70">Extras (con costo)</span>
+          <button type="button" onClick={() => { extraCounter.current++; setExtraKeys([...extraKeys, extraCounter.current]); }} className="text-mint text-xs hover:underline">+ Agregar</button>
         </div>
         {extraKeys.map((k, i) => (
           <div key={k} className="flex gap-2 items-center">
-            <input ref={el => extraNameRefs.current[i] = el} defaultValue={product?.extraIngredients?.[i]?.name || ''} placeholder="Nombre" className={`${inputClass} flex-1`} />
-            <input ref={el => extraPriceRefs.current[i] = el} defaultValue={product?.extraIngredients?.[i]?.basePrice?.toString() || '1.0'} placeholder="$1.00" className={`${inputClass} w-20`} />
-            <button type="button" onClick={() => { setExtraKeys(extraKeys.filter((_, j) => j !== i)); }}><X className="w-4 h-4 text-[#EF476F]" /></button>
+            <input ref={(el) => { extraNameRefs.current[i] = el; }} defaultValue={product?.extraIngredients?.[i]?.name || ''} placeholder="Nombre" className={`${inputClass} flex-1`} />
+            <input ref={(el) => { extraPriceRefs.current[i] = el; }} defaultValue={product?.extraIngredients?.[i]?.basePrice?.toString() || '1.0'} placeholder="$1.00" className={`${inputClass} w-20`} />
+            <button type="button" onClick={() => { setExtraKeys(extraKeys.filter((_, j) => j !== i)); }}><X className="w-4 h-4 text-rose" /></button>
           </div>
         ))}
       </div>
 
-      <div className="bg-[#0F0F23] rounded-xl p-4 space-y-3">
+      <div className="bg-night rounded-xl p-4 space-y-3">
         <div className="flex items-center justify-between">
-          <span className="text-sm font-semibold text-gray-300">Selecciones requeridas</span>
-          <button type="button" onClick={() => { selCounter.current++; setSelKeys([...selKeys, selCounter.current]); }} className="text-[#06D6A0] text-xs hover:underline">+ Agregar</button>
+          <span className="text-sm font-semibold text-white/70">Selecciones requeridas</span>
+          <button type="button" onClick={() => { selCounter.current++; setSelKeys([...selKeys, selCounter.current]); }} className="text-mint text-xs hover:underline">+ Agregar</button>
         </div>
         {selKeys.map((k, i) => (
           <SelectionBlock
@@ -254,19 +280,19 @@ export default function ProductForm({ product }: Props) {
             id={`selection-${k}`}
             initialLabel={product?.requiredSelections?.[i]?.label || ''}
             initialMax={product?.requiredSelections?.[i]?.maxSelections?.toString() || '1'}
-            initialOptions={product?.requiredSelections?.[i]?.options?.map((o: any) => ({ name: o.name || '', price: o.additionalPrice?.toString() || '0' })) || []}
+            initialOptions={product?.requiredSelections?.[i]?.options?.map((o) => ({ name: o.name || '', price: o.additionalPrice?.toString() || '0' })) || []}
             onRemove={() => { setSelKeys(selKeys.filter((_, j) => j !== i)); }}
           />
         ))}
       </div>
 
       <div className="flex gap-3 pt-4">
-        <button type="submit" disabled={submitting} className={`${btnClass} bg-[#E85D04] text-white hover:bg-[#d55404] disabled:opacity-50`}>
-          {submitting ? 'Guardando...' : isEdit ? 'Actualizar Producto' : 'Crear Producto'}
-        </button>
-        <button type="button" onClick={() => router.push('/admin123/products')} className={`${btnClass} bg-gray-800 text-gray-300 hover:bg-gray-700`}>
+        <Button type="submit" variant="primary" loading={submitting}>
+          {isEdit ? 'Actualizar Producto' : 'Crear Producto'}
+        </Button>
+        <Button type="button" variant="outline" className="text-white/70" onClick={() => router.push('/admin123/products')}>
           Cancelar
-        </button>
+        </Button>
       </div>
     </form>
   );
@@ -280,27 +306,27 @@ function SelectionBlock({ id, initialLabel, initialMax, initialOptions, onRemove
   onRemove: () => void;
 }) {
   const [optKeys, setOptKeys] = useState<number[]>(initialOptions.map((_, i) => i));
-  let optCounter = useRef(initialOptions.length);
+  const optCounter = useRef(initialOptions.length);
 
   return (
-    <div id={id} className="bg-[#1a1a2e] rounded-lg p-3 space-y-2">
+    <div id={id} className="bg-card rounded-lg p-3 space-y-2">
       <div className="flex gap-2 items-center">
         <input data-sel-label defaultValue={initialLabel} placeholder="Ej: Salsas extras" className={`${inputClass} flex-1 min-w-0`} />
         <div className="flex items-center gap-1 text-xs text-gray-400">
           <span>Máx:</span>
-          <input data-sel-max defaultValue={initialMax} className="w-12 px-2 py-1 rounded bg-[#0F0F23] border border-gray-700 text-white text-center" />
+          <input data-sel-max defaultValue={initialMax} className="w-12 px-2 py-1 rounded bg-night border border-gray-700 text-white text-center" />
         </div>
-        <button type="button" onClick={onRemove}><X className="w-4 h-4 text-[#EF476F]" /></button>
+        <button type="button" onClick={onRemove}><X className="w-4 h-4 text-rose" /></button>
       </div>
       <div className="space-y-1 ml-2">
         {optKeys.map((ok, oi) => (
           <div key={ok} className="flex gap-2 items-center">
             <input data-sel-opt-name defaultValue={initialOptions[oi]?.name || ''} placeholder="Opción" className={`${inputClass} flex-1 min-w-0 text-xs`} />
             <input data-sel-opt-price defaultValue={initialOptions[oi]?.price || '0'} placeholder="$+" className={`${inputClass} w-16 text-xs`} />
-            <button type="button" onClick={() => setOptKeys(optKeys.filter((_, j) => j !== oi))}><X className="w-3 h-3 text-[#EF476F]" /></button>
+            <button type="button" onClick={() => setOptKeys(optKeys.filter((_, j) => j !== oi))}><X className="w-3 h-3 text-rose" /></button>
           </div>
         ))}
-        <button type="button" onClick={() => { optCounter.current++; setOptKeys([...optKeys, optCounter.current]); }} className="text-[#06D6A0] text-xs hover:underline">+ Opción</button>
+        <button type="button" onClick={() => { optCounter.current++; setOptKeys([...optKeys, optCounter.current]); }} className="text-mint text-xs hover:underline">+ Opción</button>
       </div>
     </div>
   );

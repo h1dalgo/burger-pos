@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { Lock } from 'lucide-react';
+import { Lock, Loader2 } from 'lucide-react';
 import { useAdminStore } from '@/store/admin-store';
 
 export default function AdminLoginPage() {
@@ -11,43 +11,75 @@ export default function AdminLoginPage() {
   const login = useAdminStore((s) => s.login);
   const [pin, setPin] = useState('');
   const [error, setError] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (submitting) return;
     setError('');
-    const ok = await login(pin);
-    if (ok) router.push('/admin123');
-    else setError('PIN incorrecto');
+    setSubmitting(true);
+    try {
+      const ok = await login(pin);
+      if (ok) router.push('/admin123');
+      else setError('PIN incorrecto');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
-    <div className="min-h-screen bg-[#0F0F23] flex items-center justify-center p-4">
+    <div
+      className="min-h-screen bg-night flex items-center justify-center p-4"
+      style={{
+        backgroundImage: 'radial-gradient(ellipse at 50% 0%, rgba(232,93,4,0.08) 0%, transparent 60%)',
+      }}
+    >
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         className="w-full max-w-sm"
       >
         <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-[#E85D04] rounded-full flex items-center justify-center mx-auto mb-4">
+          <div className="w-16 h-16 bg-gradient-to-br from-burger to-mustard rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-pop">
             <Lock className="w-8 h-8 text-white" />
           </div>
-          <h1 className="text-2xl font-bold text-white" style={{ fontFamily: "'Bebas Neue', sans-serif" }}>ADMIN</h1>
-          <p className="text-gray-500 text-sm mt-1">Ingresa el PIN de administrador</p>
+          <h1 className="display text-3xl text-white">ADMIN</h1>
+          <p className="text-white/45 text-sm mt-1">Ingresa el PIN de administrador</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="card p-6 space-y-4">
           <input
             type="password"
             value={pin}
-            onChange={(e) => { setPin(e.target.value); setError(''); }}
+            onChange={(e) => {
+              setPin(e.target.value);
+              setError('');
+            }}
             placeholder="PIN"
-            className="w-full px-4 py-3 rounded-xl bg-[#1a1a2e] border border-gray-700 text-white text-center text-2xl tracking-widest focus:border-[#E85D04] outline-none"
+            aria-label="PIN de administrador"
+            aria-invalid={error ? true : undefined}
+            className="field field-dark w-full text-center text-2xl tracking-widest"
             maxLength={10}
             autoFocus
           />
-          {error && <p className="text-[#EF476F] text-sm text-center">{error}</p>}
-          <button type="submit" className="w-full py-3 bg-[#E85D04] text-white font-bold rounded-xl hover:bg-[#d55404] transition-colors">
-            Ingresar
+          {error && (
+            <p className="text-rose text-sm text-center font-semibold" role="alert">
+              {error}
+            </p>
+          )}
+          <button
+            type="submit"
+            disabled={submitting}
+            className="btn btn-primary w-full h-12"
+          >
+            {submitting ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Ingresando...
+              </>
+            ) : (
+              'Ingresar'
+            )}
           </button>
         </form>
       </motion.div>
