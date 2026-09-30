@@ -1,10 +1,25 @@
 import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
+import { Inter, Bebas_Neue, JetBrains_Mono } from 'next/font/google';
 import './globals.css';
+import { Toaster } from '@/components/ui/Toaster';
 
 const inter = Inter({
   subsets: ['latin'],
   display: 'swap',
+  variable: '--font-inter',
+});
+
+const bebas = Bebas_Neue({
+  weight: '400',
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-bebas',
+});
+
+const jetbrains = JetBrains_Mono({
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-jetbrains',
 });
 
 export const metadata: Metadata = {
@@ -18,8 +33,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="es">
-      <body className={inter.className}>{children}</body>
+    <html
+      lang="es"
+      className={`${inter.variable} ${bebas.variable} ${jetbrains.variable}`}
+    >
+      <body>
+        {children}
+        <Toaster />
+      </body>
     </html>
   );
 }
