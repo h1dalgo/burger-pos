@@ -11,10 +11,10 @@ export default function OrderTimer({ createdAt }: Props) {
 
   return (
     <span
-      className={`font-mono text-sm font-bold transition-colors duration-700 ${colorClass} ${
+      className={`font-mono text-base font-bold tabular-nums transition-colors duration-700 ${colorClass} ${
         isUrgent ? 'animate-pulse' : ''
       }`}
-      style={{ fontFamily: "'JetBrains Mono', 'Fira Code', monospace" }}
+      aria-label={`Tiempo transcurrido: ${formatted}`}
     >
       {formatted}
     </span>
