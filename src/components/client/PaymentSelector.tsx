@@ -17,27 +17,31 @@ const methods: { value: PaymentMethod; label: string; icon: typeof Banknote }[] 
 
 export default function PaymentSelector({ value, onChange }: Props) {
   return (
-    <div className="grid grid-cols-3 gap-2">
-      {methods.map(({ value: val, label, icon: Icon }) => (
-        <button
-          key={val}
-          onClick={() => onChange(val)}
-          className={`flex flex-col items-center gap-2 p-3 rounded-xl border-2 transition-all ${
-            value === val
-              ? 'border-[#06D6A0] bg-[#06D6A0]/10 text-[#06D6A0]'
-              : 'border-gray-200 bg-white text-[#2B2D42] hover:border-[#06D6A0]'
-          }`}
-        >
-          <Icon className="w-6 h-6" />
-          <span className="text-xs font-medium">{label}</span>
-          {value === val && (
-            <motion.div
-              layoutId="paymentCheck"
-              className="w-3 h-3 rounded-full bg-[#06D6A0]"
+    <div className="grid grid-cols-3 gap-2" role="radiogroup" aria-label="Método de pago">
+      {methods.map(({ value: val, label, icon: Icon }) => {
+        const selected = value === val;
+        return (
+          <button
+            key={val}
+            role="radio"
+            aria-checked={selected}
+            onClick={() => onChange(val)}
+            className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 transition-all ${
+              selected
+                ? 'border-mint bg-mint/10 text-mint-ink'
+                : 'border-carbon/10 bg-white text-carbon hover:border-mint'
+            }`}
+          >
+            <Icon className="w-6 h-6" />
+            <span className="text-xs font-semibold">{label}</span>
+            <motion.span
+              layoutId={selected ? 'paymentCheck' : undefined}
+              transition={{ type: 'spring', stiffness: 500, damping: 35 }}
+              className={`w-3 h-3 rounded-full ${selected ? 'bg-mint' : 'bg-transparent'}`}
             />
-          )}
-        </button>
-      ))}
+          </button>
+        );
+      })}
     </div>
   );
 }

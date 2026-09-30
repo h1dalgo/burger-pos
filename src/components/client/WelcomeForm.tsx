@@ -5,6 +5,9 @@ import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { useSessionStore } from '@/store/session-store';
 import { UtensilsCrossed } from 'lucide-react';
+import { TextField } from '@/components/ui/TextField';
+import { Button } from '@/components/ui/Button';
+import { Skeleton } from '@/components/ui/Skeleton';
 
 export default function WelcomeForm() {
   const router = useRouter();
@@ -12,17 +15,23 @@ export default function WelcomeForm() {
   const [name, setName] = useState(customerName);
   const [table, setTable] = useState(tableNumber);
   const [error, setError] = useState('');
+  const [tableError, setTableError] = useState('');
+  const [loadingSettings, setLoadingSettings] = useState(true);
   const [businessName, setBusinessName] = useState('BURGER POS');
   const [businessLogo, setBusinessLogo] = useState('');
+  const [logoFailed, setLogoFailed] = useState(false);
+  const [tableCount, setTableCount] = useState(0);
 
   useEffect(() => {
     fetch('/api/settings')
-      .then(r => r.json())
-      .then(data => {
+      .then((r) => r.json())
+      .then((data) => {
         if (data?.name) setBusinessName(data.name.toUpperCase());
         if (data?.logoUrl) setBusinessLogo(data.logoUrl);
+        if (typeof data?.tableCount === 'number') setTableCount(data.tableCount);
       })
-      .catch(() => {});
+      .catch(() => {})
+      .finally(() => setLoadingSettings(false));
   }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -31,18 +40,24 @@ export default function WelcomeForm() {
       setError('Completa todos los campos');
       return;
     }
+    const tableNum = Number(table);
+    if (tableCount > 0 && (!Number.isInteger(tableNum) || tableNum < 1 || tableNum > tableCount)) {
+      setTableError(`Las mesas disponibles son de la 1 a la ${tableCount}`);
+      return;
+    }
+    setTableError('');
     setCustomerName(name.trim());
     setTableNumber(table.trim());
     router.push('/menu');
   };
 
   return (
-    <div className="min-h-screen bg-[#FFF8F0] flex items-center justify-center p-4">
+    <div className="min-h-screen bg-cream flex items-center justify-center p-4">
       <motion.div
         initial={{ opacity: 0, y: 40 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, ease: 'easeOut' }}
-        className="w-full max-w-md"
+        className="w-full max-w-md card p-8"
       >
         <motion.div
           initial={{ scale: 0 }}
@@ -50,14 +65,17 @@ export default function WelcomeForm() {
           transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
           className="flex justify-center mb-6"
         >
-          {businessLogo ? (
+          {loadingSettings ? (
+            <Skeleton className="w-24 h-24 rounded-full" />
+          ) : businessLogo && !logoFailed ? (
             <img
               src={businessLogo}
               alt={businessName}
+              onError={() => setLogoFailed(true)}
               className="w-28 h-28 object-contain"
             />
           ) : (
-            <div className="w-24 h-24 bg-[#E85D04] rounded-full flex items-center justify-center shadow-lg">
+            <div className="w-24 h-24 bg-gradient-to-br from-burger to-mustard rounded-full flex items-center justify-center shadow-lg">
               <UtensilsCrossed className="w-12 h-12 text-white" />
             </div>
           )}
@@ -67,16 +85,15 @@ export default function WelcomeForm() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.3 }}
-          className="text-4xl font-bold text-center text-[#2B2D42] mb-2"
-          style={{ fontFamily: "'Bebas Neue', 'Anton', sans-serif" }}
+          className="display text-4xl text-center text-carbon mb-2"
         >
-          {businessName}
+          {loadingSettings ? <span className="inline-block w-40 h-9 skeleton mx-auto" /> : businessName}
         </motion.h1>
         <motion.p
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.4 }}
-          className="text-center text-[#E85D04] font-semibold mb-8"
+          className="text-center text-burger font-semibold mb-8"
         >
           Hace tu pedido directo desde tu mesa
         </motion.p>
@@ -87,47 +104,40 @@ export default function WelcomeForm() {
           transition={{ delay: 0.5 }}
           onSubmit={handleSubmit}
           className="space-y-4"
+          noValidate
         >
-          <div>
-            <label className="block text-sm font-medium text-[#2B2D42] mb-1">Tu Nombre</label>
-            <input
-              type="text"
-              value={name}
-              onChange={(e) => { setName(e.target.value); setError(''); }}
-              placeholder="Ej: Juan"
-              className="w-full px-4 py-3 rounded-xl border-2 border-[#E85D04]/20 focus:border-[#E85D04] outline-none bg-white text-[#2B2D42] placeholder:text-gray-400 transition-colors"
-            />
-          </div>
+          <TextField
+            label="Tu Nombre"
+            type="text"
+            autoComplete="name"
+            value={name}
+            onChange={(e) => {
+              setName(e.target.value);
+              setError('');
+            }}
+            placeholder="Ej: Juan"
+            error={error && !name.trim() ? error : undefined}
+          />
 
-          <div>
-            <label className="block text-sm font-medium text-[#2B2D42] mb-1">Número de Mesa</label>
-            <input
-              type="number"
-              min="1"
-              value={table}
-              onChange={(e) => { setTable(e.target.value); setError(''); }}
-              placeholder="Ej: 5"
-              className="w-full px-4 py-3 rounded-xl border-2 border-[#E85D04]/20 focus:border-[#E85D04] outline-none bg-white text-[#2B2D42] placeholder:text-gray-400 transition-colors"
-            />
-          </div>
+          <TextField
+            label="Número de Mesa"
+            type="number"
+            inputMode="numeric"
+            min={1}
+            value={table}
+            onChange={(e) => {
+              setTable(e.target.value);
+              setError('');
+              setTableError('');
+            }}
+            placeholder="Ej: 5"
+            error={tableError || (error && !table.trim() ? error : undefined)}
+            className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+          />
 
-          {error && (
-            <motion.p
-              initial={{ opacity: 0, x: -10 }}
-              animate={{ opacity: 1, x: 0 }}
-              className="text-[#EF476F] text-sm font-medium"
-            >
-              {error}
-            </motion.p>
-          )}
-
-          <motion.button
-            whileTap={{ scale: 0.97 }}
-            type="submit"
-            className="w-full py-3 bg-[#E85D04] text-white font-bold text-lg rounded-xl shadow-lg hover:bg-[#d55404] transition-colors"
-          >
+          <Button type="submit" fullWidth size="lg">
             Ver Menú
-          </motion.button>
+          </Button>
         </motion.form>
       </motion.div>
     </div>

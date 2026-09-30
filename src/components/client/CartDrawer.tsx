@@ -1,13 +1,14 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Trash2, Minus, Plus } from 'lucide-react';
+import { X, Trash2, Minus, Plus, ShoppingBag } from 'lucide-react';
 import { useCartStore } from '@/store/cart-store';
 import { formatPrice } from '@/lib/utils';
+import { Button } from '@/components/ui/Button';
+import { EmptyState } from '@/components/ui/EmptyState';
 import PaymentSelector from './PaymentSelector';
-import type { PaymentMethod } from '@/types';
 
 interface Props {
   isOpen: boolean;
@@ -17,8 +18,18 @@ interface Props {
 export default function CartDrawer({ isOpen, onClose }: Props) {
   const router = useRouter();
   const { items, removeItem, updateQuantity, paymentMethod, setPaymentMethod, getTotalAmount, clearCart } = useCartStore();
+  const getItemPrice = useCartStore((s) => s.getItemPrice);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [isOpen, onClose]);
 
   const handleSubmit = async () => {
     if (!paymentMethod) {
@@ -85,101 +96,140 @@ export default function CartDrawer({ isOpen, onClose }: Props) {
             exit={{ y: '100%' }}
             transition={{ type: 'spring', damping: 25, stiffness: 300 }}
             onClick={(e) => e.stopPropagation()}
-            className="absolute bottom-0 left-0 right-0 max-h-[85vh] bg-[#FFF8F0] rounded-t-3xl overflow-y-auto"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Tu pedido"
+            className="absolute bottom-0 left-0 right-0 sm:max-w-lg sm:mx-auto max-h-[85vh] bg-cream rounded-t-3xl overflow-y-auto overscroll-contain flex flex-col"
           >
-            <div className="sticky top-0 bg-[#FFF8F0] z-10 px-6 pt-4 pb-2 border-b border-gray-200 flex items-center justify-between">
-              <h2 className="text-lg font-bold text-[#2B2D42]">Tu Pedido</h2>
-              <button onClick={onClose} className="w-8 h-8 rounded-full bg-white shadow flex items-center justify-center">
-                <X className="w-4 h-4" />
+            <div className="sticky top-0 z-10 bg-cream px-6 pt-5 pb-3 border-b border-carbon/8 flex items-center justify-between">
+              <div>
+                <h2 className="text-lg font-bold text-carbon">Tu Pedido</h2>
+                <p className="text-xs text-carbon/50">
+                  {items.length} {items.length === 1 ? 'producto' : 'productos'}
+                </p>
+              </div>
+              <button
+                onClick={onClose}
+                aria-label="Cerrar"
+                className="w-9 h-9 rounded-full bg-white shadow flex items-center justify-center hover:bg-carbon/5 transition-colors"
+              >
+                <X className="w-4.5 h-4.5 text-carbon" />
               </button>
             </div>
 
             <div className="px-6 py-4 space-y-3">
               {items.length === 0 ? (
-                <p className="text-center text-[#2B2D42]/40 py-8">Tu pedido está vacío</p>
+                <EmptyState
+                  icon={<ShoppingBag className="w-7 h-7" />}
+                  title="Tu pedido está vacío"
+                  description="Agrega productos desde el menú"
+                  compact
+                />
               ) : (
-                items.map((item) => (
-                  <motion.div
-                    key={item.id}
-                    layout
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    className="bg-white rounded-xl p-3 border border-gray-100"
-                  >
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1 min-w-0">
-                        <p className="font-semibold text-[#2B2D42] text-sm">{item.product.name}</p>
-                        {item.variation && (
-                          <p className="text-xs text-[#E85D04]">{item.variation.name}</p>
-                        )}
-                        {item.removedIngredients.length > 0 && (
-                          <p className="text-xs text-[#EF476F]">
-                            Sin: {item.removedIngredients.join(', ')}
-                          </p>
-                        )}
-                        {item.addedExtras.length > 0 && (
-                          <p className="text-xs text-[#06D6A0]">
-                            +{item.addedExtras.map((e) => e.name).join(', +')}
-                          </p>
-                        )}
-                        {Object.entries(item.selections).flatMap(([, options]) =>
-                          options.map((opt) => (
-                            <p key={opt} className="text-xs text-[#2B2D42]/60">
-                              {opt}
+                <AnimatePresence initial={false}>
+                  {items.map((item) => (
+                    <motion.div
+                      key={item.id}
+                      layout
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: 40 }}
+                      className="bg-white rounded-xl p-3.5 border border-carbon/6"
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex-1 min-w-0">
+                          <p className="font-semibold text-carbon text-sm">{item.product.name}</p>
+                          {item.variation && (
+                            <p className="text-xs text-burger font-medium">{item.variation.name}</p>
+                          )}
+                          {item.removedIngredients.length > 0 && (
+                            <p className="text-xs text-rose">Sin: {item.removedIngredients.join(', ')}</p>
+                          )}
+                          {item.addedExtras.length > 0 && (
+                            <p className="text-xs text-mint-ink">
+                              +{item.addedExtras.map((e) => e.name).join(', +')}
                             </p>
-                          ))
-                        )}
-                      </div>
-                      <button onClick={() => removeItem(item.id)} className="ml-2">
-                        <Trash2 className="w-4 h-4 text-[#EF476F]" />
-                      </button>
-                    </div>
-                    <div className="flex items-center justify-between mt-2">
-                      <div className="flex items-center gap-2">
+                          )}
+                          {Object.entries(item.selections).flatMap(([key, options]) =>
+                            options.map((opt, idx) => (
+                              <p key={`${key}-${opt}-${idx}`} className="text-xs text-carbon/55">
+                                {opt}
+                              </p>
+                            ))
+                          )}
+                        </div>
                         <button
-                          onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                          className="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center"
+                          onClick={() => removeItem(item.id)}
+                          aria-label={`Eliminar ${item.product.name}`}
+                          className="w-9 h-9 -mr-1 shrink-0 rounded-full flex items-center justify-center text-rose hover:bg-rose/10 transition-colors"
                         >
-                          <Minus className="w-3 h-3" />
-                        </button>
-                        <span className="text-sm font-medium">{item.quantity}</span>
-                        <button
-                          onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                          className="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center"
-                        >
-                          <Plus className="w-3 h-3" />
+                          <Trash2 className="w-4 h-4" />
                         </button>
                       </div>
-                      <p className="font-bold text-[#E85D04]">
-                        {formatPrice(useCartStore.getState().getItemPrice(item) * item.quantity)}
-                      </p>
-                    </div>
-                  </motion.div>
-                ))
+
+                      <div className="flex items-center justify-between mt-2.5">
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                            disabled={item.quantity <= 1}
+                            aria-label="Quitar uno"
+                            className="w-10 h-10 rounded-full bg-carbon/6 flex items-center justify-center disabled:opacity-35 hover:bg-carbon/12 transition-colors"
+                          >
+                            <Minus className="w-4 h-4 text-carbon" />
+                          </button>
+                          <span className="text-sm font-bold w-5 text-center tabular-nums">
+                            {item.quantity}
+                          </span>
+                          <button
+                            onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                            aria-label="Agregar uno"
+                            className="w-10 h-10 rounded-full bg-carbon/6 flex items-center justify-center hover:bg-carbon/12 transition-colors"
+                          >
+                            <Plus className="w-4 h-4 text-carbon" />
+                          </button>
+                        </div>
+                        <p className="font-bold text-burger tabular-nums">
+                          {formatPrice(getItemPrice(item) * item.quantity)}
+                        </p>
+                      </div>
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
               )}
             </div>
 
             {items.length > 0 && (
-              <div className="px-6 pb-6 space-y-4">
-                <div>
-                  <p className="text-sm font-semibold text-[#2B2D42] mb-2">Método de Pago</p>
-                  <PaymentSelector value={paymentMethod} onChange={(m) => { setPaymentMethod(m); setError(''); }} />
+              <div
+                className="px-6 pt-2 space-y-4 border-t border-carbon/8"
+                style={{ paddingBottom: 'calc(1.5rem + env(safe-area-inset-bottom))' }}
+              >
+                <div className="pt-4">
+                  <p className="text-sm font-semibold text-carbon mb-2">Método de Pago</p>
+                  <PaymentSelector
+                    value={paymentMethod}
+                    onChange={(m) => {
+                      setPaymentMethod(m);
+                      setError('');
+                    }}
+                  />
                 </div>
 
-                <div className="flex items-center justify-between border-t border-gray-200 pt-3">
-                  <span className="font-bold text-[#2B2D42]">Total</span>
-                  <span className="font-bold text-xl text-[#E85D04]">{formatPrice(getTotalAmount())}</span>
+                <div className="flex items-center justify-between border-t border-carbon/8 pt-3">
+                  <span className="font-bold text-carbon">Total</span>
+                  <span className="font-bold text-2xl text-burger tabular-nums">
+                    {formatPrice(getTotalAmount())}
+                  </span>
                 </div>
 
-                {error && <p className="text-[#EF476F] text-sm font-medium">{error}</p>}
+                {error && (
+                  <p className="text-rose text-sm font-medium" role="alert">
+                    {error}
+                  </p>
+                )}
 
-                <button
-                  onClick={handleSubmit}
-                  disabled={submitting}
-                  className="w-full py-3 bg-[#E85D04] text-white font-bold rounded-xl shadow-lg hover:bg-[#d55404] disabled:opacity-50 transition-colors"
-                >
+                <Button onClick={handleSubmit} loading={submitting} fullWidth size="lg">
                   {submitting ? 'Enviando...' : 'Realizar pedido'}
-                </button>
+                </Button>
               </div>
             )}
           </motion.div>

@@ -19,46 +19,50 @@ export default function SuccessScreen({ orderId }: Props) {
   }, []);
 
   return (
-    <div className="min-h-screen bg-[#FFF8F0] flex items-center justify-center p-4">
+    <div className="min-h-screen bg-cream flex items-center justify-center p-4">
       <motion.div
         initial={{ opacity: 0, scale: 0.8 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.5 }}
-        className="text-center max-w-sm"
+        className="text-center max-w-sm w-full card p-8"
       >
         <motion.div
           initial={{ scale: 0 }}
           animate={{ scale: 1 }}
           transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
         >
-          <CheckCircle className="w-20 h-20 text-[#06D6A0] mx-auto" />
+          <CheckCircle className="w-20 h-20 text-mint mx-auto" strokeWidth={1.5} />
         </motion.div>
 
-        <h1 className="text-2xl font-bold text-[#2B2D42] mt-4">
-          Pedido Registrado
-        </h1>
+        <h1 className="text-2xl font-bold text-carbon mt-4">Pedido Registrado</h1>
 
         {showId && (
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="mt-6"
+            className="mt-5"
           >
-            <p className="text-sm text-[#2B2D42]/60">Tu número de pedido es:</p>
-            <p className="text-5xl font-bold text-[#E85D04] mt-2" style={{ fontFamily: "'Bebas Neue', sans-serif" }}>
+            <p className="text-sm text-carbon/55">Tu número de pedido es:</p>
+            <p className="display text-6xl text-burger mt-2 tabular-nums">
               #{String(orderId).padStart(4, '0')}
             </p>
           </motion.div>
         )}
 
-        <motion.p
+        <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.8 }}
-          className="text-sm text-[#E85D04] font-semibold mt-4 px-4"
+          className="mt-5"
         >
-          Por favor, dirígete a caja para validar tu pago y activar tu orden.
-        </motion.p>
+          <div className="inline-flex items-center gap-2 bg-burger/8 text-burger text-sm font-semibold px-4 py-2 rounded-full">
+            <span className="w-2 h-2 rounded-full bg-burger animate-pulse" />
+            Esperando confirmación de pago
+          </div>
+          <p className="text-sm text-carbon/60 mt-3 px-2">
+            Dirígete a caja para validar tu pago y activar tu orden.
+          </p>
+        </motion.div>
 
         <motion.button
           initial={{ opacity: 0, y: 20 }}
@@ -66,7 +70,7 @@ export default function SuccessScreen({ orderId }: Props) {
           transition={{ delay: 1 }}
           whileTap={{ scale: 0.97 }}
           onClick={() => router.push('/menu')}
-          className="mt-8 flex items-center gap-2 mx-auto px-6 py-3 bg-[#E85D04] text-white font-semibold rounded-xl shadow-lg hover:bg-[#d55404] transition-colors"
+          className="btn btn-outline mt-7"
         >
           <ArrowLeft className="w-4 h-4" />
           Volver al Menú

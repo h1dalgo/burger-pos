@@ -10,22 +10,21 @@ interface Props {
 }
 
 export default function CartFloatingButton({ onClick }: Props) {
-  const items = useCartStore((s) => s.items);
   const getTotalItems = useCartStore((s) => s.getTotalItems);
   const getTotalAmount = useCartStore((s) => s.getTotalAmount);
   const totalItems = getTotalItems();
   const totalAmount = getTotalAmount();
-
-  if (items.length === 0) return null;
 
   return (
     <motion.button
       initial={{ y: 100, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       exit={{ y: 100, opacity: 0 }}
+      transition={{ type: 'spring', damping: 22, stiffness: 300 }}
       whileTap={{ scale: 0.95 }}
       onClick={onClick}
-      className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 flex items-center gap-3 bg-[#E85D04] text-white px-6 py-3 rounded-full shadow-2xl"
+      aria-label={`Ver pedido: ${totalItems} productos, ${formatPrice(totalAmount)}`}
+      className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 flex items-center gap-3 bg-gradient-to-r from-burger to-mustard text-white pl-5 pr-6 py-3.5 rounded-full shadow-pop font-semibold"
     >
       <div className="relative">
         <ShoppingBag className="w-5 h-5" />
@@ -35,14 +34,14 @@ export default function CartFloatingButton({ onClick }: Props) {
             initial={{ scale: 1.5, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 1.5, opacity: 0 }}
-            className="absolute -top-2 -right-3 w-5 h-5 bg-[#EF476F] text-white text-xs font-bold rounded-full flex items-center justify-center"
+            className="absolute -top-2 -right-3 min-w-5 h-5 px-1 bg-carbon text-white text-xs font-bold rounded-full flex items-center justify-center"
           >
             {totalItems}
           </motion.span>
         </AnimatePresence>
       </div>
-      <span className="font-semibold">Ver Pedido</span>
-      <span className="font-bold">{formatPrice(totalAmount)}</span>
+      <span className="hidden sm:inline">Ver Pedido</span>
+      <span className="font-bold tabular-nums">{formatPrice(totalAmount)}</span>
     </motion.button>
   );
 }

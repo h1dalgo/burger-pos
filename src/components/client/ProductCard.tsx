@@ -1,9 +1,11 @@
 'use client';
 
+import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Plus } from 'lucide-react';
+import { Plus, ImageIcon } from 'lucide-react';
 import type { Product } from '@/types';
 import { formatPrice } from '@/lib/utils';
+import { Badge } from '@/components/ui/Badge';
 
 interface Props {
   product: Product;
@@ -13,57 +15,67 @@ interface Props {
 }
 
 export default function ProductCard({ product, isAvailable, onSelect, index }: Props) {
+  const [imageFailed, setImageFailed] = useState(false);
+  const imageUrl = product.imageUrl ?? '';
+  const hasImage = imageUrl !== '' && !imageFailed;
+
   return (
     <motion.button
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.05, duration: 0.3 }}
+      transition={{ delay: Math.min(index * 0.05, 0.3), duration: 0.3 }}
       onClick={() => isAvailable && onSelect(product)}
       disabled={!isAvailable}
-      className={`relative w-full text-left rounded-2xl p-4 border-2 transition-all ${
+      aria-label={`${product.name}, ${formatPrice(Number(product.basePrice))}${isAvailable ? '' : ', agotado'}`}
+      className={`group relative text-left rounded-2xl p-4 transition-all ${
         isAvailable
-          ? 'bg-white border-gray-100 hover:border-[#E85D04] hover:shadow-lg active:scale-[0.98]'
-          : 'bg-gray-100 border-gray-200 opacity-60 cursor-not-allowed'
+          ? 'card hover:border-burger/40 hover:shadow-pop active:scale-[0.98]'
+          : 'bg-carbon/4 border border-carbon/8 opacity-60 cursor-not-allowed'
       }`}
     >
       {!isAvailable && (
-        <div className="absolute top-3 right-3 bg-[#EF476F] text-white text-xs font-bold px-2 py-1 rounded-full">
-          Agotado
+        <div className="absolute top-3 right-3 z-10">
+          <Badge tone="danger">Agotado</Badge>
         </div>
       )}
 
-      <div className="flex items-start gap-3">
-        {product.imageUrl && (
-          <div className="w-20 h-20 rounded-xl overflow-hidden flex-shrink-0 bg-gray-100">
-            <img src={product.imageUrl} alt={product.name} className="w-full h-full object-cover" />
-          </div>
-        )}
+      <div className="flex items-start gap-3.5">
+        <div className="w-20 h-20 rounded-xl overflow-hidden flex-shrink-0 bg-carbon/5 flex items-center justify-center">
+          {hasImage ? (
+            <img
+              src={imageUrl}
+              alt={product.name}
+              onError={() => setImageFailed(true)}
+              loading="lazy"
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <ImageIcon className="w-7 h-7 text-carbon/25" />
+          )}
+        </div>
+
         <div className="flex-1 min-w-0">
-          <h3 className="font-bold text-[#2B2D42] text-base truncate">
-            {product.name}
-          </h3>
-          <p className="text-sm text-[#2B2D42]/60 mt-1 line-clamp-2">
-            {product.description}
-          </p>
-          <p className="font-bold text-[#E85D04] text-lg mt-2">
+          <h3 className="font-bold text-carbon text-base leading-snug">{product.name}</h3>
+          <p className="text-sm text-carbon/55 mt-0.5 line-clamp-2">{product.description}</p>
+          <p className="font-bold text-burger text-lg mt-2 tabular-nums">
             {formatPrice(Number(product.basePrice))}
           </p>
         </div>
 
         {isAvailable && (
-          <div className="w-10 h-10 rounded-full bg-[#FFB703] flex items-center justify-center flex-shrink-0 shadow-md">
+          <div
+            aria-hidden="true"
+            className="w-11 h-11 rounded-full bg-gradient-to-br from-burger to-mustard flex items-center justify-center flex-shrink-0 shadow-md transition-transform group-hover:scale-105"
+          >
             <Plus className="w-5 h-5 text-white" />
           </div>
         )}
       </div>
 
-      {product.hasVariation && (
-        <div className="mt-2 flex gap-1.5 flex-wrap">
+      {product.hasVariation && product.variations.length > 0 && (
+        <div className="mt-3 flex gap-1.5 flex-wrap">
           {product.variations.map((v) => (
-            <span
-              key={v.id}
-              className="text-xs bg-[#FFF8F0] text-[#2B2D42]/70 px-2 py-0.5 rounded-full"
-            >
+            <span key={v.id} className="badge badge-neutral">
               {v.name}
             </span>
           ))}

@@ -24,7 +24,7 @@ interface CartState {
 
 export const useCartStore = create<CartState>()((set, get) => ({
   items: [],
-  paymentMethod: null,
+  paymentMethod: 'CASH',
 
   addItem: ({ product, variation, quantity, removedIngredients, addedExtras, selections }) => {
     const itemPrice = get().getItemPrice({
@@ -67,7 +67,7 @@ export const useCartStore = create<CartState>()((set, get) => ({
 
   setPaymentMethod: (method) => set({ paymentMethod: method }),
 
-  clearCart: () => set({ items: [], paymentMethod: null }),
+  clearCart: () => set({ items: [], paymentMethod: 'CASH' }),
 
   getTotalAmount: () => {
     return get().items.reduce((total, item) => {
