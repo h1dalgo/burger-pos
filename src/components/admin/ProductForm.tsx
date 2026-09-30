@@ -212,11 +212,11 @@ export default function ProductForm({ product }: Props) {
 
       <div>
         <label className="block text-sm text-white/50 mb-1">Imagen del Producto</label>
-        <input type="file" accept="image/*" onChange={handleImage} className="text-sm text-gray-400 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-[#E85D04] file:text-white file:text-sm file:font-semibold" />
+        <input type="file" accept="image/*" onChange={handleImage} className="text-sm text-white/50 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-burger file:text-white file:text-sm file:font-semibold" />
         {imagePreview && (
           <div className="mt-2 relative inline-block">
-            <img src={imagePreview} alt="Preview" className="w-24 h-24 object-cover rounded-lg border border-gray-700" />
-            <button type="button" onClick={() => { setImagePreview(''); setImageUrl(''); }} className="absolute -top-2 -right-2 w-5 h-5 rounded-full bg-[#EF476F] text-white flex items-center justify-center"><X className="w-3 h-3" /></button>
+            <img src={imagePreview} alt="Preview" className="w-24 h-24 object-cover rounded-lg border border-white/12" />
+            <button type="button" onClick={() => { setImagePreview(''); setImageUrl(''); }} className="absolute -top-2 -right-2 w-5 h-5 rounded-full bg-rose text-white flex items-center justify-center"><X className="w-3 h-3" /></button>
           </div>
         )}
       </div>
@@ -312,9 +312,9 @@ function SelectionBlock({ id, initialLabel, initialMax, initialOptions, onRemove
     <div id={id} className="bg-card rounded-lg p-3 space-y-2">
       <div className="flex gap-2 items-center">
         <input data-sel-label defaultValue={initialLabel} placeholder="Ej: Salsas extras" className={`${inputClass} flex-1 min-w-0`} />
-        <div className="flex items-center gap-1 text-xs text-gray-400">
+        <div className="flex items-center gap-1 text-xs text-white/50">
           <span>Máx:</span>
-          <input data-sel-max defaultValue={initialMax} className="w-12 px-2 py-1 rounded bg-night border border-gray-700 text-white text-center" />
+          <input data-sel-max defaultValue={initialMax} className="w-12 px-2 py-1 rounded bg-night border border-white/12 text-white text-center" />
         </div>
         <button type="button" onClick={onRemove}><X className="w-4 h-4 text-rose" /></button>
       </div>
