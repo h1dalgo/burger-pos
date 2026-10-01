@@ -29,6 +29,7 @@ export default function ProductModal({ product, onClose }: Props) {
   const [selections, setSelections] = useState<Record<string, string[]>>({});
   const [quantity, setQuantity] = useState(1);
   const [error, setError] = useState('');
+  const [imageFailed, setImageFailed] = useState(false);
   const closeRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
@@ -93,6 +94,8 @@ export default function ProductModal({ product, onClose }: Props) {
     selections,
   };
   const previewPrice = getItemPrice(previewItem);
+  const imageUrl = product.imageUrl ?? '';
+  const hasImage = imageUrl !== '' && !imageFailed;
 
   return (
     <motion.div
@@ -113,7 +116,22 @@ export default function ProductModal({ product, onClose }: Props) {
         onClick={(e) => e.stopPropagation()}
         className="relative w-full sm:max-w-lg max-h-[90vh] bg-cream rounded-t-3xl sm:rounded-3xl overflow-y-auto overscroll-contain"
       >
-        <div className="sticky top-0 z-10 flex items-start justify-between gap-4 px-6 pt-5 pb-3 bg-cream rounded-t-3xl">
+        {hasImage && (
+          <div className="h-44 sm:h-52 overflow-hidden bg-carbon/5">
+            <img
+              src={imageUrl}
+              alt={product.name}
+              onError={() => setImageFailed(true)}
+              className="w-full h-full object-cover"
+            />
+          </div>
+        )}
+
+        <div
+          className={`sticky top-0 z-10 flex items-start justify-between gap-4 px-6 pt-5 pb-3 bg-cream ${
+            hasImage ? '' : 'rounded-t-3xl'
+          }`}
+        >
           <div className="min-w-0">
             <h2 className="text-xl font-bold text-carbon leading-tight">{product.name}</h2>
             <p className="text-sm text-carbon/55 mt-0.5">{product.description}</p>
