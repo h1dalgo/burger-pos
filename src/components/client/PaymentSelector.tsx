@@ -26,7 +26,7 @@ export default function PaymentSelector({ value, onChange }: Props) {
             role="radio"
             aria-checked={selected}
             onClick={() => onChange(val)}
-            className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 transition-all ${
+            className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 transition-[border-color,background-color,color] ${
               selected
                 ? 'border-mint bg-mint/10 text-mint-ink'
                 : 'border-carbon/10 bg-white text-carbon hover:border-mint'

@@ -174,8 +174,8 @@ export default function KanbanBoard() {
           </div>
           {waitingCount > 0 && (
             <motion.span
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
               className="hidden sm:flex bg-status-waiting/15 text-purple-300 text-xs font-bold px-3 py-1 rounded-full border border-status-waiting/30 items-center gap-1.5 shrink-0"
             >
               <span className="w-1.5 h-1.5 rounded-full bg-status-waiting animate-pulse" />
@@ -214,7 +214,7 @@ export default function KanbanBoard() {
             initial={{ y: -60, opacity: 0, scale: 0.9 }}
             animate={{ y: 0, opacity: 1, scale: 1 }}
             exit={{ y: -60, opacity: 0, scale: 0.9 }}
-            transition={{ type: 'spring', damping: 20, stiffness: 300 }}
+            transition={{ type: 'spring', damping: 30, stiffness: 300 }}
             className={`absolute top-16 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 px-6 py-3 rounded-2xl shadow-pop text-sm font-bold text-white ${
               alert.type === 'new' ? 'bg-card border border-status-waiting/40' : 'bg-gradient-to-r from-mint to-mint-dark'
             }`}

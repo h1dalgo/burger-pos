@@ -14,7 +14,7 @@ export default function SuccessScreen({ orderId }: Props) {
   const [showId, setShowId] = useState(false);
 
   useEffect(() => {
-    const timer = setTimeout(() => setShowId(true), 500);
+    const timer = setTimeout(() => setShowId(true), 250);
     return () => clearTimeout(timer);
   }, []);
 
@@ -27,8 +27,8 @@ export default function SuccessScreen({ orderId }: Props) {
         className="text-center max-w-sm w-full card p-8"
       >
         <motion.div
-          initial={{ scale: 0 }}
-          animate={{ scale: 1 }}
+          initial={{ scale: 0.95, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
           transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
         >
           <CheckCircle className="w-20 h-20 text-mint mx-auto" strokeWidth={1.5} />
@@ -52,7 +52,7 @@ export default function SuccessScreen({ orderId }: Props) {
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 0.8 }}
+          transition={{ delay: 0.4 }}
           className="mt-5"
         >
           <div className="inline-flex items-center gap-2 bg-burger/8 text-burger text-sm font-semibold px-4 py-2 rounded-full">
@@ -67,7 +67,7 @@ export default function SuccessScreen({ orderId }: Props) {
         <motion.button
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 1 }}
+          transition={{ delay: 0.3 }}
           whileTap={{ scale: 0.97 }}
           onClick={() => router.push('/menu')}
           className="btn btn-outline mt-7"

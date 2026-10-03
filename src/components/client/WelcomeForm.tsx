@@ -60,8 +60,8 @@ export default function WelcomeForm() {
         className="w-full max-w-md card p-8"
       >
         <motion.div
-          initial={{ scale: 0 }}
-          animate={{ scale: 1 }}
+          initial={{ scale: 0.95, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
           transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
           className="flex justify-center mb-6"
         >

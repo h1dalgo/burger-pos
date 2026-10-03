@@ -202,7 +202,7 @@ export default function StockTogglePanel({ onClose }: Props) {
                               aria-label={`Disponibilidad de ${product.name}`}
                               onClick={() => toggleAvailability('product', product.id, product.isAvailable)}
                               disabled={saving === product.id}
-                              className={`relative w-10 h-5 rounded-full transition-all shrink-0 disabled:opacity-50 ${
+                              className={`relative w-10 h-5 rounded-full transition-[background-color,opacity] shrink-0 disabled:opacity-50 ${
                                 product.isAvailable ? 'bg-mint' : 'bg-white/20'
                               }`}
                             >
@@ -233,7 +233,7 @@ export default function StockTogglePanel({ onClose }: Props) {
                                 aria-label={`Disponibilidad de ${v.name}`}
                                 onClick={() => toggleAvailability('variation', v.id, v.isAvailable)}
                                 disabled={saving === v.id}
-                                className={`relative w-8 h-4 rounded-full transition-all shrink-0 disabled:opacity-50 ${
+                                className={`relative w-8 h-4 rounded-full transition-[background-color,opacity] shrink-0 disabled:opacity-50 ${
                                   v.isAvailable ? 'bg-mint' : 'bg-white/20'
                                 }`}
                               >

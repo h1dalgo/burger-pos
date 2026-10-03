@@ -122,7 +122,7 @@ export default function AdminDashboard() {
           <Link
             key={c.href}
             href={c.href}
-            className="card p-5 flex items-start gap-4 hover:border-burger transition-all group"
+            className="card p-5 flex items-start gap-4 hover:border-burger transition-[border-color] group"
           >
             <div className="w-10 h-10 rounded-xl bg-burger/15 flex items-center justify-center shrink-0">
               <c.icon className="w-5 h-5 text-burger" />

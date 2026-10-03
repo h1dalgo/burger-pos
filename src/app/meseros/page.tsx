@@ -144,6 +144,7 @@ export default function WaiterPage() {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [customerName, setCustomerName] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [catalogEntrance, setCatalogEntrance] = useState(true);
 
   useEffect(() => {
     fetch('/api/settings')
@@ -280,6 +281,7 @@ export default function WaiterPage() {
     setSelectedTable(tableNum);
     setCart([]);
     setCustomerName('');
+    setCatalogEntrance(true);
     setShowOrderPanel(true);
   };
 
@@ -352,19 +354,19 @@ export default function WaiterPage() {
                 initial={{ y: -80, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 exit={{ y: -80, opacity: 0 }}
-                transition={{ type: 'spring', damping: 20, stiffness: 300 }}
-                className={`fixed top-4 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-6 py-3 rounded-2xl shadow-pop text-sm font-bold text-white animate-pulse cursor-pointer ${
+                transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+                className={`fixed top-4 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-6 py-3 rounded-2xl shadow-pop text-sm font-bold text-white cursor-pointer ${
                   isReady
                     ? 'bg-gradient-to-r from-mint to-mint-dark'
                     : 'bg-gradient-to-r from-burger to-mustard'
                 }`}
               >
                 {isReady ? (
-                  <CheckCircle2 className="w-5 h-5" />
+                  <CheckCircle2 className="w-5 h-5 animate-pulse" />
                 ) : alert.type === 'CALL_WAITER' ? (
-                  <BellRing className="w-5 h-5" />
+                  <BellRing className="w-5 h-5 animate-pulse" />
                 ) : (
-                  <DollarSign className="w-5 h-5" />
+                  <DollarSign className="w-5 h-5 animate-pulse" />
                 )}
                 Mesa {alert.tableNumber} — {ALERT_LABELS[alert.type]}
                 <span className="ml-2 text-white/80 text-xs">Toca para abrir</span>
@@ -419,16 +421,16 @@ export default function WaiterPage() {
                   onClick={() => handleTableClick(table.number)}
                   whileTap={{ scale: 0.95 }}
                   aria-label={`Mesa ${table.number}, ${cfg.label}${hasCall ? ', llamada activa' : ''}`}
-                  className={`relative rounded-2xl p-4 border-2 transition-all duration-200 ${cfg.bg} ${cfg.border} ${
-                    hasCall ? 'ring-2 ring-burger animate-pulse shadow-pop' : 'hover:shadow-card'
+                  className={`relative rounded-2xl p-4 border-2 transition-[border-color,box-shadow,background-color] duration-200 ${cfg.bg} ${cfg.border} ${
+                    hasCall ? 'ring-2 ring-burger shadow-pop' : 'hover:shadow-card'
                   }`}
                 >
                   {hasCall && (
-                    <div className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-gradient-to-br from-burger to-mustard flex items-center justify-center shadow-lg animate-bounce z-10">
+                    <div className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-gradient-to-br from-burger to-mustard flex items-center justify-center shadow-lg z-10">
                       {calls[0].type === 'CALL_WAITER' ? (
-                        <Bell className="w-3 h-3 text-white" />
+                        <Bell className="w-3 h-3 text-white animate-pulse" />
                       ) : (
-                        <DollarSign className="w-3 h-3 text-white" />
+                        <DollarSign className="w-3 h-3 text-white animate-pulse" />
                       )}
                     </div>
                   )}
@@ -532,7 +534,10 @@ export default function WaiterPage() {
                         key={cat.id}
                         type="button"
                         aria-pressed={activeCategory === cat.id}
-                        onClick={() => setActiveCategory(cat.id)}
+                        onClick={() => {
+                          setActiveCategory(cat.id);
+                          setCatalogEntrance(false);
+                        }}
                         className={`relative px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
                           activeCategory === cat.id ? 'text-white' : 'text-white/50 hover:text-white'
                         }`}
@@ -573,12 +578,12 @@ export default function WaiterPage() {
                     activeProducts.map((p, i) => (
                       <motion.button
                         key={p.id}
-                        initial={{ opacity: 0, y: 20 }}
+                        initial={catalogEntrance ? { opacity: 0, y: 20 } : false}
                         animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: i * 0.02 }}
+                        transition={catalogEntrance ? { delay: i * 0.02 } : { duration: 0 }}
                         onClick={() => p.isAvailable && setSelectedProduct(p)}
                         disabled={!p.isAvailable}
-                        className={`relative text-left rounded-xl p-3 border transition-all ${
+                        className={`relative text-left rounded-xl p-3 border transition-[border-color,background-color,opacity] ${
                           p.isAvailable
                             ? 'bg-card/60 border-white/8 hover:border-burger'
                             : 'bg-card/30 border-white/6 opacity-50'

@@ -12,22 +12,23 @@ interface Props {
   isAvailable: boolean;
   onSelect: (product: Product) => void;
   index: number;
+  entrance?: boolean;
 }
 
-export default function ProductCard({ product, isAvailable, onSelect, index }: Props) {
+export default function ProductCard({ product, isAvailable, onSelect, index, entrance = true }: Props) {
   const [imageFailed, setImageFailed] = useState(false);
   const imageUrl = product.imageUrl ?? '';
   const hasImage = imageUrl !== '' && !imageFailed;
 
   return (
     <motion.button
-      initial={{ opacity: 0, y: 16 }}
+      initial={entrance ? { opacity: 0, y: 16 } : false}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: Math.min(index * 0.05, 0.3), duration: 0.3 }}
+      transition={entrance ? { delay: Math.min(index * 0.05, 0.3), duration: 0.3 } : { duration: 0 }}
       onClick={() => isAvailable && onSelect(product)}
       disabled={!isAvailable}
       aria-label={`${product.name}, ${formatPrice(Number(product.basePrice))}${isAvailable ? '' : ', agotado'}`}
-      className={`group relative text-left rounded-2xl p-4 transition-all ${
+      className={`group relative text-left rounded-2xl p-4 transition-[background-color,border-color,box-shadow,transform] ${
         isAvailable
           ? 'card hover:border-burger/40 hover:shadow-pop active:scale-[0.98]'
           : 'bg-carbon/4 border border-carbon/8 opacity-60 cursor-not-allowed'

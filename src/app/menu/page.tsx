@@ -29,6 +29,7 @@ export default function MenuPage() {
   const [cartOpen, setCartOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [firstLoad, setFirstLoad] = useState(true);
 
   useEffect(() => {
     if (!customerName || !tableNumber) {
@@ -112,7 +113,10 @@ export default function MenuPage() {
             <CategoryNav
               categories={categories}
               activeId={activeCategory}
-              onSelect={setActiveCategory}
+              onSelect={(id) => {
+                setActiveCategory(id);
+                setFirstLoad(false);
+              }}
             />
           )}
         </div>
@@ -158,6 +162,7 @@ export default function MenuPage() {
                   isAvailable={isProductAvailable(product.id)}
                   onSelect={setSelectedProduct}
                   index={i}
+                  entrance={firstLoad}
                 />
               ))}
             </div>
@@ -175,6 +180,7 @@ export default function MenuPage() {
                       isAvailable={false}
                       onSelect={setSelectedProduct}
                       index={i}
+                      entrance={firstLoad}
                     />
                   ))}
                 </div>
