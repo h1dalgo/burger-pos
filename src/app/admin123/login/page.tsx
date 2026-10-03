@@ -43,11 +43,11 @@ export default function AdminLoginPage() {
           <div className="w-16 h-16 bg-gradient-to-br from-burger to-mustard rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-pop">
             <Lock className="w-8 h-8 text-white" />
           </div>
-          <h1 className="display text-3xl text-white">ADMIN</h1>
+          <h1 className="display text-4xl text-gradient-brand">ADMIN</h1>
           <p className="text-white/45 text-sm mt-1">Ingresa el PIN de administrador</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="card p-6 space-y-4">
+        <form onSubmit={handleSubmit} className="card card-dark p-6 space-y-4">
           <input
             type="password"
             value={pin}

@@ -30,7 +30,7 @@ export default function ProductCard({ product, isAvailable, onSelect, index, ent
       aria-label={`${product.name}, ${formatPrice(Number(product.basePrice))}${isAvailable ? '' : ', agotado'}`}
       className={`group relative text-left rounded-2xl p-4 transition-[background-color,border-color,box-shadow,transform] ${
         isAvailable
-          ? 'card hover:border-burger/40 hover:shadow-pop active:scale-[0.98]'
+          ? 'card hover:border-burger/40 hover:shadow-pop lift active:scale-[0.98]'
           : 'bg-carbon/4 border border-carbon/8 opacity-60 cursor-not-allowed'
       }`}
     >
@@ -48,7 +48,7 @@ export default function ProductCard({ product, isAvailable, onSelect, index, ent
               alt={product.name}
               onError={() => setImageFailed(true)}
               loading="lazy"
-              className="w-full h-full object-cover"
+              className="w-full h-full object-cover transition-transform duration-300 ease-out group-hover:scale-110"
             />
           ) : (
             <ImageIcon className="w-7 h-7 text-carbon/25" />

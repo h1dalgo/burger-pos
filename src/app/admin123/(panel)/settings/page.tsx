@@ -63,23 +63,20 @@ export default function AdminSettingsPage() {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="space-y-6 max-w-lg">
-        <Skeleton className="h-9 w-64 rounded-lg" />
-        <Skeleton className="h-20 rounded-xl" />
-        <Skeleton className="h-20 rounded-xl" />
-        <Skeleton className="h-20 rounded-xl" />
-      </div>
-    );
-  }
-
   return (
     <div>
-      <h1 className="display text-3xl text-white leading-none">CONFIGURACIÓN DEL NEGOCIO</h1>
+      <span className="eyebrow text-burger">Ajustes</span>
+      <h1 className="display text-4xl text-white leading-none mt-1.5">CONFIGURACIÓN DEL NEGOCIO</h1>
       <p className="text-sm text-white/40 mt-1 mb-6">Datos generales del restaurante</p>
 
-      <div className="max-w-lg space-y-6">
+      {loading ? (
+        <div className="max-w-lg space-y-6">
+          <Skeleton className="h-20 rounded-xl" />
+          <Skeleton className="h-20 rounded-xl" />
+          <Skeleton className="h-20 rounded-xl" />
+        </div>
+      ) : (
+      <div className="max-w-lg card card-dark p-6 space-y-6">
         <div>
           <label className="block text-sm text-white/60 mb-1.5">Nombre del Negocio</label>
           <TextField
@@ -150,6 +147,7 @@ export default function AdminSettingsPage() {
           </Button>
         </div>
       </div>
+      )}
     </div>
   );
 }

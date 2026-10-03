@@ -66,7 +66,8 @@ export default function AdminProductsPage() {
     <div>
       <div className="flex items-center justify-between mb-6 gap-3">
         <div>
-          <h1 className="display text-3xl text-white leading-none">PRODUCTOS</h1>
+          <span className="eyebrow text-burger">Menú</span>
+          <h1 className="display text-4xl text-white leading-none mt-1.5">PRODUCTOS</h1>
           <p className="text-sm text-white/40 mt-1">Gestiona el menú del restaurante</p>
         </div>
         <Link href="/admin123/products/new">
@@ -101,7 +102,7 @@ export default function AdminProductsPage() {
           />
         ) : (
           products?.map((p) => (
-            <div key={p.id} className="card p-4 flex items-center gap-4">
+            <div key={p.id} className="card card-dark p-4 flex items-center gap-4 transition-colors hover:bg-white/[0.035]">
               <div className="w-12 h-12 rounded-lg bg-night flex items-center justify-center overflow-hidden shrink-0">
                 {p.imageUrl ? (
                   <img

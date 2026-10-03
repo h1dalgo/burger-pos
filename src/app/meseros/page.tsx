@@ -341,7 +341,7 @@ export default function WaiterPage() {
   const cartTotal = cart.reduce((sum, item) => sum + calcItemPrice(item) * item.quantity, 0);
 
   return (
-    <div className="min-h-screen bg-night">
+    <div className="min-h-screen page-dark">
       <AnimatePresence>
         {pendingAlerts.length > 0 &&
           (() => {

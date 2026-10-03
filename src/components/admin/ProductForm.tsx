@@ -227,7 +227,7 @@ export default function ProductForm({ product }: Props) {
       </div>
 
       {hasVariation && (
-        <div className="bg-night rounded-xl p-4 space-y-2">
+        <div className="bg-card rounded-xl p-4 space-y-2">
           <div className="flex items-center justify-between">
             <span className="text-sm font-semibold text-white/70">Variaciones</span>
             <button type="button" onClick={() => { varCounter.current++; setVariationKeys([...variationKeys, varCounter.current]); }} className="text-mint text-xs hover:underline">+ Agregar</button>
@@ -242,7 +242,7 @@ export default function ProductForm({ product }: Props) {
         </div>
       )}
 
-      <div className="bg-night rounded-xl p-4 space-y-2">
+      <div className="bg-card rounded-xl p-4 space-y-2">
         <div className="flex items-center justify-between">
           <span className="text-sm font-semibold text-white/70">Ingredientes por defecto</span>
           <button type="button" onClick={() => { ingCounter.current++; setIngredientKeys([...ingredientKeys, ingCounter.current]); }} className="text-mint text-xs hover:underline">+ Agregar</button>
@@ -255,7 +255,7 @@ export default function ProductForm({ product }: Props) {
         ))}
       </div>
 
-      <div className="bg-night rounded-xl p-4 space-y-2">
+      <div className="bg-card rounded-xl p-4 space-y-2">
         <div className="flex items-center justify-between">
           <span className="text-sm font-semibold text-white/70">Extras (con costo)</span>
           <button type="button" onClick={() => { extraCounter.current++; setExtraKeys([...extraKeys, extraCounter.current]); }} className="text-mint text-xs hover:underline">+ Agregar</button>
@@ -269,7 +269,7 @@ export default function ProductForm({ product }: Props) {
         ))}
       </div>
 
-      <div className="bg-night rounded-xl p-4 space-y-3">
+      <div className="bg-card rounded-xl p-4 space-y-3">
         <div className="flex items-center justify-between">
           <span className="text-sm font-semibold text-white/70">Selecciones requeridas</span>
           <button type="button" onClick={() => { selCounter.current++; setSelKeys([...selKeys, selCounter.current]); }} className="text-mint text-xs hover:underline">+ Agregar</button>

@@ -119,6 +119,7 @@ export default function MenuPage() {
               }}
             />
           )}
+          <div className="h-0.5 bg-gradient-to-r from-burger via-mustard to-burger/70" />
         </div>
       </div>
 
@@ -169,7 +170,7 @@ export default function MenuPage() {
 
             {unavailableInCategory.length > 0 && (
               <div className="pt-2">
-                <p className="text-xs font-semibold uppercase tracking-wide text-carbon/40 mb-3">
+                <p className="eyebrow text-carbon/40 mb-3">
                   No disponibles
                 </p>
                 <div className="grid gap-3 sm:grid-cols-2">

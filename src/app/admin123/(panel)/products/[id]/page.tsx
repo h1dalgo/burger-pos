@@ -57,7 +57,8 @@ export default function EditProductPage() {
 
   return (
     <div>
-      <h1 className="display text-3xl text-white leading-none mb-1">EDITAR PRODUCTO</h1>
+      <span className="eyebrow text-burger">Menú</span>
+      <h1 className="display text-4xl text-white leading-none mt-1.5 mb-1">EDITAR PRODUCTO</h1>
       <p className="text-sm text-white/40 mb-6">Actualiza los datos del producto</p>
       <ProductForm product={product} />
     </div>

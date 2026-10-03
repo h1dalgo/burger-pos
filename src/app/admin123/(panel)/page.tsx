@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
+import { motion } from 'framer-motion';
 import {
   ShoppingBag,
   UtensilsCrossed,
@@ -69,22 +70,42 @@ export default function AdminDashboard() {
   ];
 
   const kpis = [
-    { label: 'Ingresos de hoy', value: formatPrice(revenue), icon: TrendingUp, tone: 'text-mint' },
+    {
+      label: 'Ingresos de hoy',
+      value: formatPrice(revenue),
+      icon: TrendingUp,
+      tone: 'text-mint',
+      chip: 'bg-mint/12 border-mint/25 text-mint',
+    },
     {
       label: 'Pedidos de hoy',
       value: String(todayOrders.length),
       sub: `${formatPrice(avgTicket)} promedio`,
       icon: Receipt,
       tone: 'text-mustard',
+      chip: 'bg-mustard/15 border-mustard/30 text-mustard',
     },
-    { label: 'En cocina', value: String(inKitchen), icon: ChefHat, tone: 'text-status-preparing' },
-    { label: 'Productos agotados', value: String(unavailable), icon: AlertTriangle, tone: unavailable > 0 ? 'text-rose' : 'text-white/50' },
+    {
+      label: 'En cocina',
+      value: String(inKitchen),
+      icon: ChefHat,
+      tone: 'text-status-preparing',
+      chip: 'bg-status-preparing/15 border-status-preparing/30 text-status-preparing',
+    },
+    {
+      label: 'Productos agotados',
+      value: String(unavailable),
+      icon: AlertTriangle,
+      tone: unavailable > 0 ? 'text-rose' : 'text-white/50',
+      chip: unavailable > 0 ? 'bg-rose/12 border-rose/25 text-rose' : 'bg-white/5 border-white/10 text-white/50',
+    },
   ];
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="display text-3xl text-white leading-none">DASHBOARD</h1>
+        <span className="eyebrow text-burger">Panel de control</span>
+        <h1 className="display text-4xl text-white leading-none mt-1.5">DASHBOARD</h1>
         <p className="text-sm text-white/40 mt-1">Resumen del negocio en tiempo real</p>
       </div>
 
@@ -103,17 +124,26 @@ export default function AdminDashboard() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {loading
           ? Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-28 rounded-2xl" />)
-          : kpis.map((kpi) => (
-              <div key={kpi.label} className="card p-5 space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold uppercase tracking-wider text-white/40">{kpi.label}</span>
-                  <kpi.icon className={`w-4 h-4 ${kpi.tone}`} />
+          : kpis.map((kpi, i) => (
+              <motion.div
+                key={kpi.label}
+                initial={{ opacity: 0, y: 14 }}
+                animate={{ opacity: 1, y: 0 }}
+                whileHover={{ y: -2 }}
+                transition={{ delay: 0.05 + i * 0.06, duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+                className="card card-dark hover:shadow-lift transition-shadow p-5 space-y-3"
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <span className={`flex h-9 w-9 items-center justify-center rounded-xl border ${kpi.chip}`}>
+                    <kpi.icon className="w-4 h-4" />
+                  </span>
+                  <span className="eyebrow text-white/35 text-right">{kpi.label}</span>
                 </div>
-                <p className={`text-2xl font-bold tabular-nums ${kpi.tone}`}>{kpi.value}</p>
-                {'sub' in kpi && kpi.sub && (
-                  <p className="text-xs text-white/40">{kpi.sub}</p>
-                )}
-              </div>
+                <div>
+                  <p className={`display text-4xl leading-none tabular-nums ${kpi.tone}`}>{kpi.value}</p>
+                  {'sub' in kpi && kpi.sub && <p className="text-xs text-white/40 mt-1.5">{kpi.sub}</p>}
+                </div>
+              </motion.div>
             ))}
       </div>
 
@@ -122,23 +152,26 @@ export default function AdminDashboard() {
           <Link
             key={c.href}
             href={c.href}
-            className="card p-5 flex items-start gap-4 hover:border-burger transition-[border-color] group"
+            className="card card-dark lift lift-brand p-5 flex items-start gap-4 group"
           >
-            <div className="w-10 h-10 rounded-xl bg-burger/15 flex items-center justify-center shrink-0">
-              <c.icon className="w-5 h-5 text-burger" />
+            <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-burger/25 to-mustard/15 border border-burger/25 flex items-center justify-center shrink-0">
+              <c.icon className="w-5 h-5 text-mustard" />
             </div>
             <div className="min-w-0">
               <h2 className="text-white font-semibold group-hover:text-mustard transition-colors">{c.label}</h2>
               <p className="text-white/40 text-sm mt-0.5">{c.desc}</p>
             </div>
-            <ArrowRight className="w-4 h-4 text-white/25 ml-auto mt-1 shrink-0 group-hover:text-mustard transition-colors" />
+            <ArrowRight className="w-4 h-4 text-white/25 ml-auto mt-1 shrink-0 group-hover:text-mustard group-hover:translate-x-1 transition-[color,transform] duration-200" />
           </Link>
         ))}
       </div>
 
-      <div className="card overflow-hidden">
+      <div className="card card-dark overflow-hidden">
         <div className="px-5 py-4 border-b border-white/8 flex items-center justify-between">
-          <h2 className="font-bold text-white">Pedidos recientes</h2>
+          <div>
+            <span className="eyebrow text-white/35">Actividad</span>
+            <h2 className="font-bold text-white leading-tight">Pedidos recientes</h2>
+          </div>
           <Link href="/kitchen" className="text-xs font-semibold text-mustard hover:underline">
             Ver en cocina
           </Link>
@@ -156,7 +189,7 @@ export default function AdminDashboard() {
             {recentOrders.map((o) => {
               const meta = getStatusMeta(o.status);
               return (
-                <div key={o.id} className="flex items-center gap-3 px-5 py-3">
+                <div key={o.id} className="flex items-center gap-3 px-5 py-3 transition-colors hover:bg-white/[0.035]">
                   <span className="display text-lg text-white/80 w-14 shrink-0">#{formatDisplayId(o.displayId)}</span>
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-semibold text-white truncate">{o.customerName}</p>

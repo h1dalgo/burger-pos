@@ -36,7 +36,7 @@ export default function OrderCard({ order, isNew, pending, onAction }: Props) {
       initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.9, transition: { duration: 0.2 } }}
-      className={`bg-card/95 backdrop-blur-sm rounded-xl border border-white/6 border-l-[3px] ${meta.borderLeft} shadow-card p-4 space-y-3`}
+      className={`bg-card/95 backdrop-blur-sm rounded-xl border border-white/6 border-l-[3px] ${meta.borderLeft} shadow-card hover:shadow-lift transition-shadow p-4 space-y-3`}
     >
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">

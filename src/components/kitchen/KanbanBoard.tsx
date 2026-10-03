@@ -156,7 +156,7 @@ export default function KanbanBoard() {
 
   return (
     <div
-      className="h-screen bg-night flex flex-col"
+      className="h-screen page-dark flex flex-col"
       style={{
         backgroundImage: 'radial-gradient(ellipse at 50% 0%, rgba(232,93,4,0.06) 0%, transparent 60%)',
       }}
