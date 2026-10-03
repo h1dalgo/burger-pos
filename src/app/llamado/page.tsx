@@ -47,12 +47,14 @@ export default function LlamadoPage() {
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, ease: 'easeOut' }}
-          className="card p-7 space-y-6"
+          className="card p-7 space-y-6 relative overflow-hidden"
         >
+          <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-burger via-mustard to-burger/70" />
           <div className="text-center space-y-3">
             <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-burger to-mustard flex items-center justify-center mx-auto shadow-lg">
               <ChefHat className="w-8 h-8 text-white" />
             </div>
+            <span className="eyebrow text-burger">Atención</span>
             <h1 className="display text-3xl text-carbon">¿NECESITAS AYUDA?</h1>
             <p className="text-carbon/55 text-sm">Selecciona tu mesa y la opción que necesitas</p>
           </div>

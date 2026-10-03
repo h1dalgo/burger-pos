@@ -24,8 +24,9 @@ export default function SuccessScreen({ orderId }: Props) {
         initial={{ opacity: 0, scale: 0.8 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.5 }}
-        className="text-center max-w-sm w-full card p-8"
+        className="text-center max-w-sm w-full card p-8 relative overflow-hidden"
       >
+        <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-mint via-mustard to-burger/70" />
         <motion.div
           initial={{ scale: 0.95, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
@@ -34,7 +35,8 @@ export default function SuccessScreen({ orderId }: Props) {
           <CheckCircle className="w-20 h-20 text-mint mx-auto" strokeWidth={1.5} />
         </motion.div>
 
-        <h1 className="text-2xl font-bold text-carbon mt-4">Pedido Registrado</h1>
+        <span className="eyebrow text-burger">Éxito</span>
+        <h1 className="text-2xl font-bold text-carbon mt-2">Pedido Registrado</h1>
 
         {showId && (
           <motion.div

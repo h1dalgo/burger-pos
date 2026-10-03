@@ -57,8 +57,9 @@ export default function WelcomeForm() {
         initial={{ opacity: 0, y: 40 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, ease: 'easeOut' }}
-        className="w-full max-w-md card p-8"
+        className="w-full max-w-md card p-8 relative overflow-hidden"
       >
+        <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-burger via-mustard to-burger/70" />
         <motion.div
           initial={{ scale: 0.95, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
@@ -85,7 +86,7 @@ export default function WelcomeForm() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.3 }}
-          className="display text-4xl text-center text-carbon mb-2"
+          className="display text-4xl text-center text-gradient-brand mb-2"
         >
           {loadingSettings ? <span className="inline-block w-40 h-9 skeleton mx-auto" /> : businessName}
         </motion.h1>
