@@ -5,10 +5,7 @@ export interface StatusMeta {
   actionLabel: string;
   next: OrderStatus | null;
   dot: string;
-  columnBg: string;
-  borderLeft: string;
   badge: string;
-  text: string;
 }
 
 export const BOARD_STATUSES: OrderStatus[] = [
@@ -23,51 +20,36 @@ export const STATUS_META: Record<OrderStatus, StatusMeta> = {
     title: 'Esperando Confirmación',
     actionLabel: 'Confirmar Pago',
     next: 'PENDING',
-    dot: '#A855F7',
-    columnBg: 'from-purple-900/25 via-transparent to-transparent',
-    borderLeft: 'border-l-purple-500',
-    badge: 'bg-purple-500/15 text-purple-300',
-    text: 'text-purple-300',
+    dot: '#6E3AA7',
+    badge: 'bg-status-waiting/12 text-status-waiting',
   },
   PENDING: {
     title: 'Pendiente',
     actionLabel: 'Iniciar Preparación',
     next: 'IN_PREPARATION',
-    dot: '#EF4444',
-    columnBg: 'from-red-900/25 via-transparent to-transparent',
-    borderLeft: 'border-l-red-500',
-    badge: 'bg-red-500/15 text-red-300',
-    text: 'text-red-300',
+    dot: '#C1121F',
+    badge: 'bg-status-pending/12 text-status-pending',
   },
   IN_PREPARATION: {
     title: 'En Preparación',
     actionLabel: 'Marcar Listo',
     next: 'READY',
-    dot: '#EAB308',
-    columnBg: 'from-yellow-900/20 via-transparent to-transparent',
-    borderLeft: 'border-l-yellow-500',
-    badge: 'bg-yellow-500/15 text-yellow-200',
-    text: 'text-yellow-200',
+    dot: '#A15C00',
+    badge: 'bg-status-preparing/15 text-status-preparing',
   },
   READY: {
     title: 'Listo para Servir',
     actionLabel: 'Entregado',
     next: 'DELIVERED',
-    dot: '#06D6A0',
-    columnBg: 'from-mint/12 via-transparent to-transparent',
-    borderLeft: 'border-l-mint',
-    badge: 'bg-mint/15 text-mint',
-    text: 'text-mint',
+    dot: '#1B7A43',
+    badge: 'bg-mint/12 text-mint-ink',
   },
   DELIVERED: {
     title: 'Entregado',
     actionLabel: 'Entregado',
     next: null,
     dot: '#6B7280',
-    columnBg: 'from-gray-800/30 via-transparent to-transparent',
-    borderLeft: 'border-l-gray-500',
-    badge: 'bg-gray-500/15 text-gray-300',
-    text: 'text-gray-300',
+    badge: 'bg-carbon/10 text-carbon/70',
   },
 };
 

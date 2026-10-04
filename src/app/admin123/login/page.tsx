@@ -28,26 +28,21 @@ export default function AdminLoginPage() {
   };
 
   return (
-    <div
-      className="min-h-screen bg-night flex items-center justify-center p-4"
-      style={{
-        backgroundImage: 'radial-gradient(ellipse at 50% 0%, rgba(232,93,4,0.08) 0%, transparent 60%)',
-      }}
-    >
+    <div className="min-h-screen bg-cream flex items-center justify-center p-4">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         className="w-full max-w-sm"
       >
         <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-gradient-to-br from-burger to-mustard rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-pop">
-            <Lock className="w-8 h-8 text-white" />
+          <div className="w-16 h-16 bg-burger border-2 border-carbon rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-pop">
+            <Lock className="w-8 h-8 text-cream" />
           </div>
-          <h1 className="display text-4xl text-gradient-brand">ADMIN</h1>
-          <p className="text-white/45 text-sm mt-1">Ingresa el PIN de administrador</p>
+          <h1 className="display text-4xl text-carbon sign-yellow">ADMIN</h1>
+          <p className="text-carbon/65 text-sm mt-1">Ingresa el PIN de administrador</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="card card-dark p-6 space-y-4">
+        <form onSubmit={handleSubmit} className="card p-6 space-y-4">
           <input
             type="password"
             value={pin}
@@ -58,7 +53,7 @@ export default function AdminLoginPage() {
             placeholder="PIN"
             aria-label="PIN de administrador"
             aria-invalid={error ? true : undefined}
-            className="field field-dark w-full text-center text-2xl tracking-widest"
+            className="field w-full text-center text-2xl tracking-widest"
             maxLength={10}
             autoFocus
           />

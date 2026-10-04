@@ -7,14 +7,12 @@ interface TextFieldProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label?: string;
   hint?: string;
   error?: string;
-  dark?: boolean;
 }
 
 export function TextField({
   label,
   hint,
   error,
-  dark = false,
   className,
   id,
   ...props
@@ -32,10 +30,7 @@ export function TextField({
       {label && (
         <label
           htmlFor={inputId}
-          className={cn(
-            'mb-1.5 block text-sm font-semibold',
-            dark ? 'text-white/70' : 'text-carbon/70'
-          )}
+          className="mb-1.5 block text-sm font-semibold text-carbon/75"
         >
           {label}
         </label>
@@ -44,7 +39,7 @@ export function TextField({
         id={inputId}
         aria-invalid={error ? true : undefined}
         aria-describedby={describedBy}
-        className={cn('field', dark && 'field-dark', className)}
+        className={cn('field', className)}
         {...props}
       />
       {error ? (
@@ -52,7 +47,7 @@ export function TextField({
           {error}
         </p>
       ) : hint ? (
-        <p id={`${inputId}-hint`} className={cn('mt-1.5 text-xs', dark ? 'text-white/40' : 'text-carbon/50')}>
+        <p id={`${inputId}-hint`} className="mt-1.5 text-xs text-carbon/60">
           {hint}
         </p>
       ) : null}

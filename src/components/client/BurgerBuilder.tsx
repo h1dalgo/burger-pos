@@ -34,7 +34,7 @@ export default function BurgerBuilder({ defaultIngredients, removedIngredients, 
 
   return (
     <div className="flex flex-col items-center gap-0.5 py-4" aria-hidden="true">
-      <div className="w-32 h-6 bg-gradient-to-b from-amber-200 to-amber-300 rounded-t-full shadow-sm" />
+      <div className="w-32 h-6 bg-amber-300 rounded-t-full" />
       <AnimatePresence initial={false}>
         {addedExtras.map((extra) => (
           <motion.div
@@ -43,7 +43,7 @@ export default function BurgerBuilder({ defaultIngredients, removedIngredients, 
             animate={{ scaleY: 1, opacity: 1 }}
             exit={{ scaleY: 0, opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="w-28 h-3 bg-gradient-to-r from-green-400 to-green-500 rounded-sm"
+            className="w-28 h-3 bg-green-500 rounded-sm"
             title={`+${extra.name}`}
           />
         ))}
@@ -70,7 +70,7 @@ export default function BurgerBuilder({ defaultIngredients, removedIngredients, 
           ))}
         </div>
       )}
-      <div className="w-32 h-5 bg-gradient-to-t from-amber-200 to-amber-300 rounded-b-full mt-0.5 shadow-sm" />
+      <div className="w-32 h-5 bg-amber-300 rounded-b-full mt-0.5" />
     </div>
   );
 }

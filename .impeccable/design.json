@@ -1,0 +1,235 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-04T00:00:00.000Z",
+  "title": "Design System: Burger POS",
+  "extensions": {
+    "colorMeta": {
+      "burger": {
+        "role": "primary",
+        "displayName": "Rojo de Fachada",
+        "canonical": "#d9261c",
+        "tonalRamp": ["#3d0a07", "#5f1210", "#8a1a15", "#b01e15", "#d9261c", "#e34a41", "#ef8079", "#f9b8b3"]
+      },
+      "burger-deep": {
+        "role": "primary",
+        "displayName": "Rojo Profundo",
+        "canonical": "#b01e15",
+        "tonalRamp": ["#2f0705", "#4d0e0b", "#8a1a15", "#b01e15", "#c22218", "#d9261c", "#e34a41", "#ef8079"]
+      },
+      "mustard": {
+        "role": "secondary",
+        "displayName": "Mostaza de Letrero",
+        "canonical": "#ffc72c",
+        "tonalRamp": ["#3d2f00", "#5f4900", "#8a6a00", "#b48c00", "#d9a600", "#ffc72c", "#ffd763", "#ffe9a1"]
+      },
+      "mint": {
+        "role": "tertiary",
+        "displayName": "Verde de Cocina",
+        "canonical": "#1b7a43",
+        "tonalRamp": ["#062b16", "#0a3d20", "#0f5132", "#16653a", "#1b7a43", "#3f9c66", "#79c096", "#b3ddc6"]
+      },
+      "rose": {
+        "role": "tertiary",
+        "displayName": "Rosa Peligro",
+        "canonical": "#9e1b32",
+        "tonalRamp": ["#2f0710", "#4d0d1a", "#6f1324", "#9e1b32", "#b64056", "#c9707f", "#dc9faa", "#eecdd4"]
+      },
+      "azul": {
+        "role": "tertiary",
+        "displayName": "Azul de Foco",
+        "canonical": "#12489b",
+        "tonalRamp": ["#041634", "#082451", "#0c3473", "#12489b", "#3a69b7", "#678bc9", "#94aedb", "#c1d1ec"]
+      },
+      "cream": {
+        "role": "neutral",
+        "displayName": "Crema Esmalte",
+        "canonical": "#fdf6e3",
+        "tonalRamp": ["#2b261e", "#5c564a", "#8f887a", "#c2bbae", "#e5dcc9", "#fdf6e3", "#fefbf2", "#fffefa"]
+      },
+      "card": {
+        "role": "neutral",
+        "displayName": "Carta",
+        "canonical": "#fffdf6",
+        "tonalRamp": ["#332e26", "#635d51", "#968f81", "#c9c2b4", "#ebe5d7", "#fffdf6", "#fffefa", "#ffffff"]
+      },
+      "carbon": {
+        "role": "neutral",
+        "displayName": "Tinta Carburó",
+        "canonical": "#1a1712",
+        "tonalRamp": ["#1a1712", "#2b2721", "#454038", "#5f594f", "#7a7367", "#948d81", "#aea79c", "#c8c1b7"]
+      },
+      "night": {
+        "role": "neutral",
+        "displayName": "Noche",
+        "canonical": "#211c15",
+        "tonalRamp": ["#211c15", "#332d24", "#4a4339", "#615a4f", "#797267", "#918a7f", "#a9a298", "#c1bab0"]
+      },
+      "status-waiting": {
+        "role": "tertiary",
+        "displayName": "Estado Esperando",
+        "canonical": "#6e3aa7",
+        "tonalRamp": ["#1f0c38", "#331752", "#482170", "#5a2d8d", "#6e3aa7", "#8b5dc0", "#a884d3", "#c6b1e6"]
+      },
+      "status-pending": {
+        "role": "tertiary",
+        "displayName": "Estado Pendiente",
+        "canonical": "#c1121f",
+        "tonalRamp": ["#3a060a", "#5c0a0f", "#860e16", "#a5101b", "#c1121f", "#d3414b", "#e2737a", "#f0a7ab"]
+      },
+      "status-preparing": {
+        "role": "tertiary",
+        "displayName": "Estado Preparando",
+        "canonical": "#a15c00",
+        "tonalRamp": ["#331d00", "#523000", "#774600", "#8f5200", "#a15c00", "#b97a24", "#d19c55", "#e6c18b"]
+      },
+      "status-ready": {
+        "role": "tertiary",
+        "displayName": "Estado Listo",
+        "canonical": "#1b7a43",
+        "tonalRamp": ["#062b16", "#0a3d20", "#0f5132", "#16653a", "#1b7a43", "#3f9c66", "#79c096", "#b3ddc6"]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Alfa Slab One",
+        "purpose": "Sólo titulares display con sombra .sign*; la fachada del sistema."
+      },
+      "body": {
+        "displayName": "Archivo",
+        "purpose": "UI completa: títulos 700, cuerpo 400, labels uppercase 700, cifras tabulares."
+      },
+      "label": {
+        "displayName": "Archivo Label",
+        "purpose": "Uppercase 700 con tracking: labels de campo, badges, nav, contadores."
+      },
+      "mono": {
+        "displayName": "JetBrains Mono",
+        "purpose": "IDs de orden, claves y datos crudos."
+      }
+    },
+    "shadows": [
+      { "name": "shadow-card", "value": "3px 3px 0 #1a1712", "purpose": "Reposo de placa: .card, botones, filas en reposo." },
+      { "name": "shadow-lift", "value": "4px 4px 0 #1a1712", "purpose": "Hover de .lift junto a translateY(-2px)." },
+      { "name": "shadow-pop", "value": "5px 5px 0 #1a1712", "purpose": "Capas elevadas: drawers, bottom sheets, toasts, modales." },
+      { "name": "shadow-glow-brand", "value": "4px 4px 0 #d9261c", "purpose": "Hover acento de .lift-brand — sombra roja, nunca blur." },
+      { "name": "sign-text", "value": "0.06em 0.06em 0 <tinta>", "purpose": "Sombra de dos tintas de displays: .sign (carbon), .sign-yellow (mustard), .sign-red (burger), .sign-cream (cream)." },
+      { "name": "focus-outline", "value": "3px solid #12489b, offset 2px", "purpose": "Foco accesible global — outline, nunca sombra." }
+    ],
+    "motion": [
+      { "name": "btn-press", "value": "transform 0.12s ease, box-shadow 0.12s ease; active translate(3px,3px)", "purpose": "El botón se hunde exactamente sobre su sombra de 3px." },
+      { "name": "btn-color", "value": "background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease", "purpose": "Cambios de color de estado en botones." },
+      { "name": "lift-hover", "value": "transform 0.18s ease, box-shadow 0.18s ease; translateY(-2px)", "purpose": "Hover de placas navegables (hover:hover)." },
+      { "name": "chip-press", "value": "transform 0.1s ease; scale(0.97); border/background/color 0.15s ease", "purpose": "Presión de chip y transiciones de selección." },
+      { "name": "field-focus", "value": "border-color 0.15s ease, box-shadow 0.15s ease", "purpose": "Focus de inputs: borde azul + halo 3px." },
+      { "name": "skeleton-shimmer", "value": "ds-shimmer 1.4s ease-in-out infinite", "purpose": "Placeholder de carga." },
+      { "name": "spinner", "value": "ds-spin 0.7s linear infinite", "purpose": "Indicador inline." },
+      { "name": "reduced-motion", "value": "animation/transition-duration 0.01ms !important", "purpose": "prefers-reduced-motion global; entradas también anidadas en MotionConfig." }
+    ],
+    "breakpoints": [
+      { "name": "sm", "value": "640px" },
+      { "name": "md", "value": "768px" },
+      { "name": "lg", "value": "1024px" },
+      { "name": "xl", "value": "1280px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "CTA principal rojo con borde de tinta y sombra sólida que se hunde al presionar.",
+      "html": "<button class=\"ds-btn ds-btn-primary\">COBRAR ORDEN</button>",
+      "css": ".ds-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; border-radius: 8px; font-family: Archivo, system-ui, sans-serif; font-size: 14px; line-height: 20px; font-weight: 700; height: 44px; padding: 0 20px; white-space: nowrap; user-select: none; border: 2px solid var(--color-carbon, #1a1712); box-shadow: 3px 3px 0 var(--color-carbon, #1a1712); transition: transform 0.12s ease, box-shadow 0.12s ease, background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease; } .ds-btn:active:not(:disabled) { transform: translate(3px, 3px); box-shadow: 0 0 0 var(--color-carbon, #1a1712); } .ds-btn:disabled { opacity: 0.5; pointer-events: none; } .ds-btn:focus-visible { outline: 3px solid var(--color-azul, #12489b); outline-offset: 2px; } .ds-btn-primary { background-color: var(--color-burger, #d9261c); color: var(--color-cream, #fdf6e3); } .ds-btn-primary:hover { background-color: var(--color-burger-dark, #b01e15); }"
+    },
+    {
+      "name": "Solid Button",
+      "kind": "button",
+      "refersTo": "button-solid",
+      "description": "CTA secundario mostaza — segundo tinta del sistema.",
+      "html": "<button class=\"ds-btn ds-btn-solid\">AGREGAR</button>",
+      "css": ".ds-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; border-radius: 8px; font-family: Archivo, system-ui, sans-serif; font-size: 14px; font-weight: 700; height: 44px; padding: 0 20px; border: 2px solid var(--color-carbon, #1a1712); box-shadow: 3px 3px 0 var(--color-carbon, #1a1712); transition: transform 0.12s ease, box-shadow 0.12s ease, background-color 0.15s ease; } .ds-btn:active:not(:disabled) { transform: translate(3px, 3px); box-shadow: 0 0 0 var(--color-carbon, #1a1712); } .ds-btn:focus-visible { outline: 3px solid var(--color-azul, #12489b); outline-offset: 2px; } .ds-btn-solid { background-color: var(--color-mustard, #ffc72c); color: var(--color-carbon, #1a1712); } .ds-btn-solid:hover { background-color: #f0b400; }"
+    },
+    {
+      "name": "Text Field",
+      "kind": "input",
+      "refersTo": "input-text",
+      "description": "Campo esmaltado con borde de tinta, foco azul y placeholder con contraste ≥4.5:1.",
+      "html": "<input class=\"ds-field\" placeholder=\"Ej: Juan\" />",
+      "css": ".ds-field { box-sizing: border-box; width: 100%; border-radius: 8px; border: 2px solid rgb(26 23 18 / 0.35); background-color: var(--color-card, #fffdf6); padding: 12px 16px; font-family: Archivo, system-ui, sans-serif; font-size: 16px; line-height: 24px; color: var(--color-carbon, #1a1712); transition: border-color 0.15s ease, box-shadow 0.15s ease; } .ds-field::placeholder { color: rgb(26 23 18 / 0.72); } .ds-field:hover:not(:disabled) { border-color: rgb(26 23 18 / 0.6); } .ds-field:focus { outline: none; border-color: var(--color-azul, #12489b); box-shadow: 0 0 0 3px rgb(18 72 155 / 0.25); } .ds-field:disabled { opacity: 0.5; cursor: not-allowed; }"
+    },
+    {
+      "name": "Chip",
+      "kind": "chip",
+      "refersTo": "chip / chip-selected",
+      "description": "Píldora de selección; activa en rojo/crema por defecto, con variantes menta y rosa.",
+      "html": "<button class=\"ds-chip\" aria-pressed=\"true\">HAMBURGUESA</button> <button class=\"ds-chip\" aria-pressed=\"false\">PAPAS</button>",
+      "css": ".ds-chip { display: inline-flex; align-items: center; justify-content: center; gap: 8px; border-radius: 9999px; border: 2px solid rgb(26 23 18 / 0.3); background-color: var(--color-card, #fffdf6); color: var(--color-carbon, #1a1712); padding: 8px 16px; font-family: Archivo, system-ui, sans-serif; font-size: 14px; font-weight: 600; transition: border-color 0.15s ease, background-color 0.15s ease, color 0.15s ease, transform 0.1s ease; } .ds-chip:hover:not([aria-pressed=\"true\"]):not(:disabled) { border-color: var(--color-carbon, #1a1712); } .ds-chip:active:not(:disabled) { transform: scale(0.97); } .ds-chip[aria-pressed=\"true\"] { border-color: var(--color-carbon, #1a1712); background-color: var(--color-burger, #d9261c); color: var(--color-cream, #fdf6e3); } .ds-chip:focus-visible { outline: 3px solid var(--color-azul, #12489b); outline-offset: 2px; }"
+    },
+    {
+      "name": "Card Plate",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "Placa esmaltada base: carta sobre crema, borde 2px tinta, sombra sólida 3px, lift a 4px en hover.",
+      "html": "<div class=\"ds-card\"><strong class=\"ds-card-title\">Combo Esquina</strong><span class=\"ds-card-meta\">$189.00</span></div>",
+      "css": ".ds-card { box-sizing: border-box; display: flex; align-items: center; justify-content: space-between; gap: 16px; background-color: var(--color-card, #fffdf6); color: var(--color-carbon, #1a1712); border-radius: 12px; border: 2px solid var(--color-carbon, #1a1712); box-shadow: 3px 3px 0 var(--color-carbon, #1a1712); padding: 16px; font-family: Archivo, system-ui, sans-serif; transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease; } .ds-card:hover { transform: translateY(-2px); box-shadow: 4px 4px 0 var(--color-carbon, #1a1712); } .ds-card-title { font-size: 15px; font-weight: 700; } .ds-card-meta { font-size: 14px; font-variant-numeric: tabular-nums; font-weight: 700; }"
+    },
+    {
+      "name": "Status Badge",
+      "kind": "chip",
+      "refersTo": "badges",
+      "description": "Píldora de estado con tinte del token y punto sólido del hex plano.",
+      "html": "<span class=\"ds-badge ds-badge-preparing\"><span class=\"ds-dot\"></span>PREPARANDO</span>",
+      "css": ".ds-badge { display: inline-flex; align-items: center; gap: 6px; border-radius: 9999px; padding: 4px 10px; font-family: Archivo, system-ui, sans-serif; font-size: 12px; line-height: 16px; font-weight: 700; white-space: nowrap; } .ds-badge-preparing { background-color: rgb(161 92 0 / 0.14); color: #8a5200; } .ds-badge-ready { background-color: rgb(27 122 67 / 0.14); color: var(--color-mint-ink, #0f5132); } .ds-dot { width: 8px; height: 8px; border-radius: 9999px; background-color: currentColor; }"
+    },
+    {
+      "name": "Active Nav Item",
+      "kind": "nav",
+      "refersTo": "nav-item-active",
+      "description": "Placa mostaza de nav activa — una sola por pantalla, match exacto de ruta.",
+      "html": "<nav class=\"ds-nav\"><a class=\"ds-nav-item\" aria-current=\"page\">Productos</a><a class=\"ds-nav-item\">Órdenes</a></nav>",
+      "css": ".ds-nav { display: flex; flex-direction: column; gap: 6px; background: var(--color-burger, #d9261c); border-right: 2px solid var(--color-carbon, #1a1712); padding: 16px 10px; } .ds-nav-item { display: block; border-radius: 8px; padding: 8px 12px; color: var(--color-cream, #fdf6e3); font-family: Archivo, system-ui, sans-serif; font-size: 14px; font-weight: 600; text-decoration: none; transition: background-color 0.15s ease, color 0.15s ease; } .ds-nav-item:hover { background-color: rgb(253 246 227 / 0.1); } .ds-nav-item[aria-current=\"page\"] { background-color: var(--color-mustard, #ffc72c); color: var(--color-carbon, #1a1712); border: 2px solid var(--color-carbon, #1a1712); font-weight: 700; } .ds-nav-item:focus-visible { outline: 3px solid var(--color-azul, #12489b); outline-offset: 2px; }"
+    },
+    {
+      "name": "Two-Ink Sign Heading",
+      "kind": "custom",
+      "refersTo": ".display + .sign*",
+      "description": "Pieza firma: display Alfa Slab One con sombra dura de segunda tinta a 0.06em.",
+      "html": "<h1 class=\"ds-sign-head\">COCINA</h1>",
+      "css": ".ds-sign-head { margin: 0; font-family: \"Alfa Slab One\", Georgia, serif; font-weight: 400; letter-spacing: -0.01em; line-height: 1.05; color: var(--color-cream, #fdf6e3); text-shadow: 0.06em 0.06em 0 var(--color-mustard, #ffc72c); }"
+    }
+  ],
+  "narrative": {
+    "northStar": "Rótulo de Esquina",
+    "overview": "Burger POS viste como el rótulo esmaltado a mano de una hamburguesería de esquina latinoamericana: planos de crema, bloques de color a saturación plena, letras de bloque con sombra dura de dos tintas. El sistema no finge herencia fotográfica —la materia es pintura plana sobre chapa— y por eso toda superficie se construye con placas esmaltadas (borde de tinta de 2px, esquinas cortas, sombra sólida desplazada) en vez de tarjetas difusas.\n\nLa app es una herramienta de servicio (modo operate): el mundo presta tipografía, paleta, densidad y su movimiento firma, no composiciones. La densidad es de piso de trabajo —filas escaneables, cifras tabulares, un solo vistazo por orden— y el color estructural (rojo de barra y riel, mostaza de placas activas) hace el trabajo de orientación antes que cualquier degradado o glass.\n\nEl momento memorable es la sombra de dos tintas: .sign desplaza cada titular display una fracción de em (0.06em, blur cero) en un segundo tinta —mostaza sobre rojo, mostaza sobre carbon— como si el rótulo estuviera recién pintado. Ese gesto, más los bloques rojo/mostaza a saturación plena, es lo que se recuerda al cerrar la pestaña.",
+    "keyCharacteristics": [
+      "Piso crema con carcasa roja a saturación plena (barra superior, riel de admin, headers de cocina y meseros).",
+      "Sombra dura de dos tintas en todo display (.sign, .sign-yellow, .sign-red, .sign-cream).",
+      "Profundidad sólida desplazada (3/4/5px, blur cero) — screen-print, nunca sombra ambiental.",
+      "Archivo para UI + Alfa Slab One para display, self-hosted; cifras tabulares en dinero y tiempos.",
+      "Placas esmaltadas planas: borde 2px tinta, radio ≤16px, fondo carta sobre fondo crema.",
+      "Movimiento solo de entrada o de estado, transform+opacity, con prefers-reduced-motion respetado."
+    ],
+    "rules": [
+      { "name": "The Tinta Rule", "body": "Carbon es la única tinta de cuerpo sobre superficies claras: negro puro y grises Tailwind de texto están prohibidos. Todo texto es un token o un alfa de carbon con ≥4.5:1 (placeholders incluidos: alfa 0.72).", "section": "colors" },
+      { "name": "The Saturation Rule", "body": "Rojo y mostaza solo a saturación plena en su rol estructural; cuando amortiguan fondos usan el alpha del mismo token (10–30%), nunca una mezcla pastel nueva.", "section": "colors" },
+      { "name": "The Two-Ink Type Rule", "body": "Cada display lleva UNA sombra dura de segunda tinta a 0.06em en X/Y con blur cero (.sign = tinta, .sign-yellow = mostaza, .sign-red = rojo, .sign-cream = crema). Nunca blur, nunca gradiente de texto, nunca un tercer color en la sombra.", "section": "typography" },
+      { "name": "The Hard-Shadow Rule", "body": "Toda profundidad es un desplazamiento sólido de carbon con blur cero (3/4/5px). Si necesitas que algo se eleve, muévelo y engrosa su sombra sólida; no la difumines.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do montar toda superficie nueva sobre crema + placas de carta con borde 2px tinta y sombra sólida 3px.",
+      "Do poner .sign-yellow a los displays sobre rojo/carbon y .sign sobre crema; sombra exacta 0.06em, blur cero.",
+      "Do usar rojo y mostaza a saturación plena en estructura (barra, riel, header) y alpha del mismo token para tintes de fondo.",
+      "Do mantener placeholder ≥0.72 de alfa de tinta, focus azul global y tabular-nums en todo número operativo.",
+      "Do animar solo entrada/estado con transform+opacity y respetar prefers-reduced-motion.",
+      "Do elegir exact-match para nav activa (una sola placa mostaza por pantalla)."
+    ],
+    "donts": [
+      "Don't difuminar sombras: blur de sombra está prohibido; profundidad = desplazamiento sólido de carbon.",
+      "Don't usar negros puros, grises Tailwind de texto, placeholders claros (<4.5:1) ni texto de color sin token.",
+      "Don't escribir kickers/eyebrows sobre títulos, gradientes de texto, glass/blur de fondo ni emoji/unicode como iconos (solo lucide de trazo único).",
+      "Don't pintar bordes laterales coloreados >1px ni tarjetas anidadas dentro de tarjetas.",
+      "Don't exceder 16px de radio en placas ni inventar tokens de color fuera de esta paleta.",
+      "Don't animar UI frecuente (filtros, filas, toggles) —el movimiento es de entrada, de estado o de presión, y el botón se hunde 3px sobre su sombra en active."
+    ]
+  }
+}

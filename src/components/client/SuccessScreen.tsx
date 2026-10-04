@@ -26,7 +26,7 @@ export default function SuccessScreen({ orderId }: Props) {
         transition={{ duration: 0.5 }}
         className="text-center max-w-sm w-full card p-8 relative overflow-hidden"
       >
-        <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-mint via-mustard to-burger/70" />
+        <div className="absolute top-0 inset-x-0 h-1.5 bg-mint" />
         <motion.div
           initial={{ scale: 0.95, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
@@ -35,8 +35,7 @@ export default function SuccessScreen({ orderId }: Props) {
           <CheckCircle className="w-20 h-20 text-mint mx-auto" strokeWidth={1.5} />
         </motion.div>
 
-        <span className="eyebrow text-burger">Éxito</span>
-        <h1 className="text-2xl font-bold text-carbon mt-2">Pedido Registrado</h1>
+        <h1 className="display text-3xl text-carbon sign-yellow mt-4">Pedido Registrado</h1>
 
         {showId && (
           <motion.div
@@ -45,7 +44,7 @@ export default function SuccessScreen({ orderId }: Props) {
             className="mt-5"
           >
             <p className="text-sm text-carbon/55">Tu número de pedido es:</p>
-            <p className="display text-6xl text-burger mt-2 tabular-nums">
+            <p className="display text-6xl text-burger sign mt-2 tabular-nums">
               #{String(orderId).padStart(4, '0')}
             </p>
           </motion.div>
@@ -57,7 +56,7 @@ export default function SuccessScreen({ orderId }: Props) {
           transition={{ delay: 0.4 }}
           className="mt-5"
         >
-          <div className="inline-flex items-center gap-2 bg-burger/8 text-burger text-sm font-semibold px-4 py-2 rounded-full">
+          <div className="inline-flex items-center gap-2 bg-mustard text-carbon border-2 border-carbon rounded-full px-4 py-2 text-sm font-bold">
             <span className="w-2 h-2 rounded-full bg-burger animate-pulse" />
             Esperando confirmación de pago
           </div>

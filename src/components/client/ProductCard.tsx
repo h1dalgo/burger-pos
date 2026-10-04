@@ -30,8 +30,8 @@ export default function ProductCard({ product, isAvailable, onSelect, index, ent
       aria-label={`${product.name}, ${formatPrice(Number(product.basePrice))}${isAvailable ? '' : ', agotado'}`}
       className={`group relative text-left rounded-2xl p-4 transition-[background-color,border-color,box-shadow,transform] ${
         isAvailable
-          ? 'card hover:border-burger/40 hover:shadow-pop lift active:scale-[0.98]'
-          : 'bg-carbon/4 border border-carbon/8 opacity-60 cursor-not-allowed'
+          ? 'card lift hover:shadow-pop active:translate-x-[3px] active:translate-y-[3px] active:shadow-none'
+          : 'rounded-2xl p-4 bg-carbon/5 border-2 border-carbon/25 opacity-70 cursor-not-allowed'
       }`}
     >
       {!isAvailable && (
@@ -41,7 +41,7 @@ export default function ProductCard({ product, isAvailable, onSelect, index, ent
       )}
 
       <div className="flex items-start gap-3.5">
-        <div className="w-20 h-20 rounded-xl overflow-hidden flex-shrink-0 bg-carbon/5 flex items-center justify-center">
+        <div className="w-20 h-20 rounded-xl overflow-hidden flex-shrink-0 bg-carbon/5 border-2 border-carbon/15 flex items-center justify-center">
           {hasImage ? (
             <img
               src={imageUrl}
@@ -58,7 +58,7 @@ export default function ProductCard({ product, isAvailable, onSelect, index, ent
         <div className="flex-1 min-w-0">
           <h3 className="font-bold text-carbon text-base leading-snug">{product.name}</h3>
           <p className="text-sm text-carbon/55 mt-0.5 line-clamp-2">{product.description}</p>
-          <p className="font-bold text-burger text-lg mt-2 tabular-nums">
+          <p className="inline-block bg-mustard text-carbon border-2 border-carbon rounded-md px-2 py-0.5 font-bold text-lg mt-2 tabular-nums">
             {formatPrice(Number(product.basePrice))}
           </p>
         </div>
@@ -66,9 +66,9 @@ export default function ProductCard({ product, isAvailable, onSelect, index, ent
         {isAvailable && (
           <div
             aria-hidden="true"
-            className="w-11 h-11 rounded-full bg-gradient-to-br from-burger to-mustard flex items-center justify-center flex-shrink-0 shadow-md transition-transform group-hover:scale-105"
+            className="w-11 h-11 rounded-full bg-burger border-2 border-carbon flex items-center justify-center flex-shrink-0 shadow-card transition-transform group-hover:scale-105 group-hover:-translate-y-0.5"
           >
-            <Plus className="w-5 h-5 text-white" />
+            <Plus className="w-5 h-5 text-cream" />
           </div>
         )}
       </div>

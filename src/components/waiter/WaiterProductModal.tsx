@@ -98,24 +98,24 @@ export default function WaiterProductModal({ product, onClose, onAdd }: Props) {
         onClick={(e) => e.stopPropagation()}
         className="relative w-full sm:max-w-lg max-h-[85vh] bg-card rounded-t-3xl sm:rounded-3xl overflow-hidden flex flex-col shadow-pop"
       >
-        <div className="sticky top-0 bg-card z-10 px-5 pt-4 pb-3 border-b border-white/8 flex items-start justify-between gap-3 shrink-0">
+        <div className="sticky top-0 bg-card z-10 px-5 pt-4 pb-3 border-b-2 border-carbon flex items-start justify-between gap-3 shrink-0">
           <div className="min-w-0">
-            <h2 className="display text-xl text-white leading-tight">{product.name}</h2>
-            <p className="text-sm text-white/50 line-clamp-2">{product.description}</p>
+            <h2 className="display text-xl text-carbon leading-tight">{product.name}</h2>
+            <p className="text-sm text-carbon/65 line-clamp-2">{product.description}</p>
           </div>
           <button
             type="button"
             onClick={onClose}
             aria-label="Cerrar"
-            className="w-8 h-8 shrink-0 rounded-full bg-white/8 hover:bg-white/15 flex items-center justify-center transition-colors"
+            className="w-8 h-8 shrink-0 rounded-full bg-carbon/8 hover:bg-carbon/15 flex items-center justify-center transition-colors"
           >
-            <X className="w-4 h-4 text-white/70" />
+            <X className="w-4 h-4 text-carbon/70" />
           </button>
         </div>
 
         <div className="flex-1 overflow-y-auto px-5 py-4 space-y-5">
           {product.imageUrl && !imageBroken && (
-            <div className="w-full h-44 rounded-xl overflow-hidden bg-black/30">
+            <div className="w-full h-44 rounded-xl overflow-hidden bg-carbon/10">
               <img
                 src={product.imageUrl}
                 alt={product.name}
@@ -125,14 +125,14 @@ export default function WaiterProductModal({ product, onClose, onAdd }: Props) {
             </div>
           )}
           {!product.imageUrl && (
-            <div className="w-full h-24 rounded-xl bg-white/4 flex items-center justify-center text-white/25">
+            <div className="w-full h-24 rounded-xl bg-carbon/8 flex items-center justify-center text-carbon/40">
               <ImageOff className="w-6 h-6" />
             </div>
           )}
 
           {product.hasVariation && (
             <div>
-              <p className="text-sm font-semibold text-white/70 mb-2">Selecciona:</p>
+              <p className="text-sm font-semibold text-carbon/75 mb-2">Selecciona:</p>
               <div className="flex gap-2 flex-wrap">
                 {product.variations.map((v) => (
                   <button
@@ -156,7 +156,7 @@ export default function WaiterProductModal({ product, onClose, onAdd }: Props) {
 
           {product.requiredSelections.map((rs) => (
             <div key={rs.id}>
-              <p className="text-sm font-semibold text-white/70 mb-2">
+              <p className="text-sm font-semibold text-carbon/75 mb-2">
                 {rs.label}
                 {rs.maxSelections > 1 ? ` (máx ${rs.maxSelections})` : ''}
               </p>
@@ -182,7 +182,7 @@ export default function WaiterProductModal({ product, onClose, onAdd }: Props) {
 
           {product.defaultIngredients.length > 0 && (
             <div>
-              <p className="text-sm font-semibold text-white/70 mb-2">Ingredientes (toca para quitar):</p>
+              <p className="text-sm font-semibold text-carbon/75 mb-2">Ingredientes (toca para quitar):</p>
               <div className="flex flex-wrap gap-2">
                 {product.defaultIngredients.map((ing) => {
                   const isRemoved = removed.includes(ing.name);
@@ -209,7 +209,7 @@ export default function WaiterProductModal({ product, onClose, onAdd }: Props) {
 
           {product.extraIngredients.length > 0 && (
             <div>
-              <p className="text-sm font-semibold text-white/70 mb-2">Extras:</p>
+              <p className="text-sm font-semibold text-carbon/75 mb-2">Extras:</p>
               <div className="flex flex-wrap gap-2">
                 {product.extraIngredients.map((extra) => {
                   const added = extras.find((e) => e.id === extra.id);
@@ -235,13 +235,13 @@ export default function WaiterProductModal({ product, onClose, onAdd }: Props) {
           )}
 
           <div>
-            <label className="text-sm font-semibold text-white/70 mb-2 block">Nota:</label>
+            <label className="text-sm font-semibold text-carbon/75 mb-2 block">Nota:</label>
             <textarea
               value={note}
               onChange={(e) => setNote(e.target.value)}
               placeholder="Ej: Sin cebolla extra, bien tostado..."
               rows={2}
-              className="field-dark field-textarea w-full"
+              className="field field-textarea w-full"
             />
           </div>
 
@@ -251,21 +251,21 @@ export default function WaiterProductModal({ product, onClose, onAdd }: Props) {
                 type="button"
                 aria-label="Disminuir cantidad"
                 onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                className="w-11 h-11 rounded-xl bg-white/8 hover:bg-white/15 flex items-center justify-center transition-colors"
+                className="w-11 h-11 rounded-xl bg-carbon/8 hover:bg-carbon/15 flex items-center justify-center transition-colors"
               >
-                <Minus className="w-4 h-4 text-white" />
+                <Minus className="w-4 h-4 text-carbon" />
               </button>
-              <span className="font-bold text-lg text-white w-6 text-center tabular-nums">{quantity}</span>
+              <span className="font-bold text-lg text-carbon w-6 text-center tabular-nums">{quantity}</span>
               <button
                 type="button"
                 aria-label="Aumentar cantidad"
                 onClick={() => setQuantity(quantity + 1)}
-                className="w-11 h-11 rounded-xl bg-white/8 hover:bg-white/15 flex items-center justify-center transition-colors"
+                className="w-11 h-11 rounded-xl bg-carbon/8 hover:bg-carbon/15 flex items-center justify-center transition-colors"
               >
-                <Plus className="w-4 h-4 text-white" />
+                <Plus className="w-4 h-4 text-carbon" />
               </button>
             </div>
-            <span className="font-bold text-lg text-mustard tabular-nums">
+            <span className="bg-mustard border-2 border-carbon rounded-lg px-2 py-0.5 font-bold text-lg text-carbon tabular-nums">
               {formatPrice(unitPrice * quantity)}
             </span>
           </div>
@@ -277,7 +277,7 @@ export default function WaiterProductModal({ product, onClose, onAdd }: Props) {
           )}
         </div>
 
-        <div className="shrink-0 px-5 py-4 border-t border-white/8 bg-card pb-[calc(1rem+env(safe-area-inset-bottom))]">
+        <div className="shrink-0 px-5 py-4 border-t-2 border-carbon bg-card pb-[calc(1rem+env(safe-area-inset-bottom))]">
           <button type="button" onClick={handleAdd} className="btn btn-primary w-full h-12">
             {`Agregar al Pedido — ${formatPrice(unitPrice * quantity)}`}
           </button>

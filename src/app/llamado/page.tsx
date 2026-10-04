@@ -49,13 +49,12 @@ export default function LlamadoPage() {
           transition={{ duration: 0.5, ease: 'easeOut' }}
           className="card p-7 space-y-6 relative overflow-hidden"
         >
-          <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-burger via-mustard to-burger/70" />
+          <div className="absolute top-0 inset-x-0 h-1.5 bg-mustard" />
           <div className="text-center space-y-3">
-            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-burger to-mustard flex items-center justify-center mx-auto shadow-lg">
-              <ChefHat className="w-8 h-8 text-white" />
+            <div className="w-16 h-16 rounded-2xl bg-burger border-2 border-carbon flex items-center justify-center mx-auto shadow-card">
+              <ChefHat className="w-8 h-8 text-cream" />
             </div>
-            <span className="eyebrow text-burger">Atención</span>
-            <h1 className="display text-3xl text-carbon">¿NECESITAS AYUDA?</h1>
+            <h1 className="display text-3xl text-carbon sign-yellow">¿NECESITAS AYUDA?</h1>
             <p className="text-carbon/55 text-sm">Selecciona tu mesa y la opción que necesitas</p>
           </div>
 
@@ -110,12 +109,12 @@ export default function LlamadoPage() {
             exit={{ opacity: 0, scale: 0.8 }}
             transition={{ type: 'spring', damping: 20, stiffness: 300 }}
             role="status"
-            className="fixed bottom-8 left-4 right-4 max-w-sm mx-auto bg-card text-white rounded-2xl p-5 shadow-pop flex items-center gap-4 border border-white/10"
+            className="fixed bottom-8 left-4 right-4 max-w-sm mx-auto bg-card text-carbon rounded-2xl p-5 border-2 border-carbon shadow-pop flex items-center gap-4"
           >
             <CheckCircle2 className="w-8 h-8 shrink-0 text-mint" />
             <div>
               <p className="font-bold">¡Solicitud enviada!</p>
-              <p className="text-sm text-white/70">
+              <p className="text-sm text-carbon/70">
                 Mesa {success.table} — {success.type === 'call' ? 'Mesero en camino' : 'Cuenta solicitada'}
               </p>
             </div>

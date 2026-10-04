@@ -59,7 +59,7 @@ export default function WelcomeForm() {
         transition={{ duration: 0.6, ease: 'easeOut' }}
         className="w-full max-w-md card p-8 relative overflow-hidden"
       >
-        <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-burger via-mustard to-burger/70" />
+        <div className="absolute top-0 inset-x-0 h-1.5 bg-burger" />
         <motion.div
           initial={{ scale: 0.95, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
@@ -76,8 +76,8 @@ export default function WelcomeForm() {
               className="w-28 h-28 object-contain"
             />
           ) : (
-            <div className="w-24 h-24 bg-gradient-to-br from-burger to-mustard rounded-full flex items-center justify-center shadow-lg">
-              <UtensilsCrossed className="w-12 h-12 text-white" />
+            <div className="w-24 h-24 bg-burger border-2 border-carbon rounded-full flex items-center justify-center shadow-card">
+              <UtensilsCrossed className="w-12 h-12 text-cream" />
             </div>
           )}
         </motion.div>
@@ -86,7 +86,7 @@ export default function WelcomeForm() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.3 }}
-          className="display text-4xl text-center text-gradient-brand mb-2"
+          className="display text-4xl text-center text-carbon sign-yellow mb-2"
         >
           {loadingSettings ? <span className="inline-block w-40 h-9 skeleton mx-auto" /> : businessName}
         </motion.h1>

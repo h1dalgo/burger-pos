@@ -66,9 +66,8 @@ export default function AdminProductsPage() {
     <div>
       <div className="flex items-center justify-between mb-6 gap-3">
         <div>
-          <span className="eyebrow text-burger">Menú</span>
-          <h1 className="display text-4xl text-white leading-none mt-1.5">PRODUCTOS</h1>
-          <p className="text-sm text-white/40 mt-1">Gestiona el menú del restaurante</p>
+          <h1 className="display text-4xl text-carbon sign-yellow leading-none">PRODUCTOS</h1>
+          <p className="text-sm text-carbon/65 mt-2">Gestiona el menú del restaurante</p>
         </div>
         <Link href="/admin123/products/new">
           <Button variant="primary" size="sm">
@@ -79,7 +78,7 @@ export default function AdminProductsPage() {
       </div>
 
       {error && (
-        <div className="flex items-center justify-between gap-3 bg-rose/10 border border-rose/30 text-rose px-4 py-3 rounded-xl text-sm font-semibold mb-4">
+        <div className="flex items-center justify-between gap-3 bg-rose/10 border-2 border-rose/40 text-rose px-4 py-3 rounded-xl text-sm font-semibold mb-4">
           <span className="flex items-center gap-2">
             <AlertTriangle className="w-4 h-4" />
             No pudimos cargar los productos
@@ -95,15 +94,14 @@ export default function AdminProductsPage() {
           Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-20 rounded-xl" />)
         ) : products && products.length === 0 ? (
           <EmptyState
-            dark
             icon={<ShoppingBag className="w-8 h-8" />}
             title="No hay productos"
             description="Crea el primero con el botón Nuevo."
           />
         ) : (
           products?.map((p) => (
-            <div key={p.id} className="card card-dark p-4 flex items-center gap-4 transition-colors hover:bg-white/[0.035]">
-              <div className="w-12 h-12 rounded-lg bg-night flex items-center justify-center overflow-hidden shrink-0">
+            <div key={p.id} className="card p-4 flex items-center gap-4 transition-colors hover:bg-carbon/[0.04]">
+              <div className="w-12 h-12 rounded-lg bg-carbon/8 border-2 border-carbon/15 flex items-center justify-center overflow-hidden shrink-0">
                 {p.imageUrl ? (
                   <img
                     src={p.imageUrl}
@@ -114,12 +112,12 @@ export default function AdminProductsPage() {
                     }}
                   />
                 ) : (
-                  <ImageOff className="w-5 h-5 text-white/25" />
+                  <ImageOff className="w-5 h-5 text-carbon/40" />
                 )}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-white font-semibold text-sm truncate">{p.name}</p>
-                <p className="text-white/40 text-xs truncate">
+                <p className="text-carbon font-semibold text-sm truncate">{p.name}</p>
+                <p className="text-carbon/65 text-xs truncate">
                   {p.category?.name} · {formatPrice(Number(p.basePrice))}
                   {!p.isAvailable && <span className="text-rose ml-2 font-semibold">Agotado</span>}
                 </p>
@@ -127,7 +125,7 @@ export default function AdminProductsPage() {
 
               {confirmId === p.id ? (
                 <div className="flex items-center gap-2 shrink-0">
-                  <span className="text-xs text-white/60 hidden sm:inline">¿Eliminar?</span>
+                  <span className="text-xs text-carbon/70 hidden sm:inline">¿Eliminar?</span>
                   <Button
                     variant="danger"
                     size="sm"
@@ -149,7 +147,7 @@ export default function AdminProductsPage() {
                   <Link
                     href={`/admin123/products/${p.id}`}
                     aria-label={`Editar ${p.name}`}
-                    className="p-2 rounded-lg bg-white/8 text-white/60 hover:text-white hover:bg-white/15 transition-colors"
+                    className="p-2 rounded-lg bg-carbon/8 text-carbon/65 hover:text-carbon hover:bg-carbon/15 transition-colors"
                   >
                     <Edit2 className="w-4 h-4" />
                   </Link>
@@ -157,7 +155,7 @@ export default function AdminProductsPage() {
                     type="button"
                     aria-label={`Eliminar ${p.name}`}
                     onClick={() => setConfirmId(p.id)}
-                    className="p-2 rounded-lg bg-white/8 text-white/60 hover:text-rose hover:bg-rose/10 transition-colors"
+                    className="p-2 rounded-lg bg-carbon/8 text-carbon/65 hover:text-rose hover:bg-rose/10 transition-colors"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>

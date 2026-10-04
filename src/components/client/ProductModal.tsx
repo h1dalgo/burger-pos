@@ -140,7 +140,7 @@ export default function ProductModal({ product, onClose }: Props) {
             ref={closeRef}
             onClick={onClose}
             aria-label="Cerrar"
-            className="w-9 h-9 shrink-0 rounded-full bg-white shadow flex items-center justify-center hover:bg-carbon/5 transition-colors"
+            className="w-9 h-9 shrink-0 rounded-full bg-card border-2 border-carbon flex items-center justify-center hover:bg-mustard transition-colors"
           >
             <X className="w-4.5 h-4.5 text-carbon" />
           </button>
@@ -275,7 +275,7 @@ export default function ProductModal({ product, onClose }: Props) {
                 onClick={() => setQuantity(Math.max(1, quantity - 1))}
                 disabled={quantity <= 1}
                 aria-label="Quitar uno"
-                className="w-10 h-10 rounded-full bg-white border border-carbon/12 flex items-center justify-center disabled:opacity-40 hover:bg-carbon/5 transition-colors"
+                className="w-10 h-10 rounded-full bg-card border-2 border-carbon/30 flex items-center justify-center disabled:opacity-40 hover:border-carbon transition-colors"
               >
                 <Minus className="w-4 h-4 text-carbon" />
               </button>
@@ -285,7 +285,7 @@ export default function ProductModal({ product, onClose }: Props) {
               <button
                 onClick={() => setQuantity(quantity + 1)}
                 aria-label="Agregar uno"
-                className="w-10 h-10 rounded-full bg-white border border-carbon/12 flex items-center justify-center hover:bg-carbon/5 transition-colors"
+                className="w-10 h-10 rounded-full bg-card border-2 border-carbon/30 flex items-center justify-center hover:border-carbon transition-colors"
               >
                 <Plus className="w-4 h-4 text-carbon" />
               </button>

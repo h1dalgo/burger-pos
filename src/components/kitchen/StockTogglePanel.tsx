@@ -82,24 +82,24 @@ export default function StockTogglePanel({ onClose }: Props) {
       animate={{ x: 0, opacity: 1 }}
       exit={{ x: 360, opacity: 0 }}
       transition={{ type: 'spring', damping: 25, stiffness: 250 }}
-      className="fixed right-0 top-0 bottom-0 w-80 bg-card/95 backdrop-blur-xl border-l border-white/8 z-40 overflow-y-auto shadow-2xl"
+      className="fixed right-0 top-0 bottom-0 w-80 bg-card border-l-2 border-carbon z-40 overflow-y-auto shadow-pop"
       role="dialog"
       aria-label="Control de stock"
     >
-      <div className="sticky top-0 bg-card/95 backdrop-blur-xl px-5 py-4 border-b border-white/8 flex items-center justify-between z-10">
+      <div className="sticky top-0 bg-card px-5 py-4 border-b-2 border-carbon flex items-center justify-between z-10">
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-burger to-mustard flex items-center justify-center shadow-md">
-            <Package className="w-4 h-4 text-white" />
+          <div className="w-8 h-8 rounded-lg bg-mustard border-2 border-carbon flex items-center justify-center">
+            <Package className="w-4 h-4 text-carbon" />
           </div>
           <div>
-            <h2 className="font-bold text-white text-sm">Control de Stock</h2>
-            <p className="text-[10px] text-white/40 uppercase tracking-wider">Activar / Desactivar</p>
+            <h2 className="font-bold text-carbon text-sm">Control de Stock</h2>
+            <p className="text-[10px] text-carbon/60 uppercase tracking-wider">Activar / Desactivar</p>
           </div>
         </div>
         <button
           onClick={onClose}
           aria-label="Cerrar panel de stock"
-          className="text-white/50 hover:text-white hover:bg-white/10 p-1.5 rounded-lg transition-colors"
+          className="text-carbon/60 hover:text-carbon hover:bg-carbon/10 p-1.5 rounded-lg transition-colors"
         >
           <X className="w-4 h-4" />
         </button>
@@ -120,7 +120,7 @@ export default function StockTogglePanel({ onClose }: Props) {
         {status === 'error' && (
           <div className="text-center py-10 space-y-3">
             <AlertTriangle className="w-8 h-8 mx-auto text-rose" />
-            <p className="text-sm text-white/60">No pudimos cargar los productos</p>
+            <p className="text-sm text-carbon/70">No pudimos cargar los productos</p>
             <Button
               variant="outline"
               size="sm"
@@ -135,7 +135,7 @@ export default function StockTogglePanel({ onClose }: Props) {
         )}
 
         {status === 'ready' && categories.length === 0 && (
-          <div className="text-center text-white/35 py-12">
+          <div className="text-center text-carbon/45 py-12">
             <Package className="w-8 h-8 mx-auto mb-2 opacity-50" />
             <p className="text-sm">Sin productos</p>
           </div>
@@ -154,14 +154,14 @@ export default function StockTogglePanel({ onClose }: Props) {
                   });
                 }}
                 aria-expanded={expanded.has(cat.id)}
-                className="w-full flex items-center gap-2 px-3 py-2.5 rounded-xl hover:bg-white/6 transition-colors text-left"
+                className="w-full flex items-center gap-2 px-3 py-2.5 rounded-xl hover:bg-carbon/[0.05] transition-colors text-left"
               >
                 {expanded.has(cat.id) ? (
-                  <ChevronDown className="w-4 h-4 text-mustard shrink-0" />
+                  <ChevronDown className="w-4 h-4 text-burger shrink-0" />
                 ) : (
-                  <ChevronRight className="w-4 h-4 text-white/40 shrink-0" />
+                  <ChevronRight className="w-4 h-4 text-carbon/50 shrink-0" />
                 )}
-                <span className="text-sm font-semibold text-white">{cat.name}</span>
+                <span className="text-sm font-semibold text-carbon">{cat.name}</span>
                 <span className="ml-auto text-[10px] font-mono">
                   {cat.products.filter((p) => !p.isAvailable).length > 0 && (
                     <span className="text-rose">
@@ -179,17 +179,17 @@ export default function StockTogglePanel({ onClose }: Props) {
                     exit={{ height: 0, opacity: 0 }}
                     className="overflow-hidden"
                   >
-                    <div className="ml-4 mr-1 space-y-0.5 pb-2 border-l-2 border-white/8 pl-3">
+                    <div className="ml-4 mr-1 space-y-0.5 pb-2 border-l-2 border-carbon/15 pl-3">
                       {cat.products.map((product) => (
                         <div key={product.id}>
-                          <div className="flex items-center justify-between py-1.5 px-2 rounded-lg hover:bg-white/6 transition-colors">
+                          <div className="flex items-center justify-between py-1.5 px-2 rounded-lg hover:bg-carbon/[0.05] transition-colors">
                             <div className="flex items-center gap-2 min-w-0">
                               {!product.isAvailable && (
                                 <AlertTriangle className="w-3 h-3 text-rose shrink-0" />
                               )}
                               <span
                                 className={`text-sm truncate ${
-                                  product.isAvailable ? 'text-white/90' : 'text-white/40 line-through'
+                                  product.isAvailable ? 'text-carbon' : 'text-carbon/50 line-through'
                                 }`}
                               >
                                 {product.name}
@@ -203,7 +203,7 @@ export default function StockTogglePanel({ onClose }: Props) {
                               onClick={() => toggleAvailability('product', product.id, product.isAvailable)}
                               disabled={saving === product.id}
                               className={`relative w-10 h-5 rounded-full transition-[background-color,opacity] shrink-0 disabled:opacity-50 ${
-                                product.isAvailable ? 'bg-mint' : 'bg-white/20'
+                                product.isAvailable ? 'bg-mint' : 'bg-carbon/25'
                               }`}
                             >
                               <motion.div
@@ -217,11 +217,11 @@ export default function StockTogglePanel({ onClose }: Props) {
                           {product.variations?.map((v) => (
                             <div
                               key={v.id}
-                              className="flex items-center justify-between py-1 px-2 ml-3 rounded-lg hover:bg-white/6 transition-colors"
+                              className="flex items-center justify-between py-1 px-2 ml-3 rounded-lg hover:bg-carbon/[0.05] transition-colors"
                             >
                               <span
                                 className={`text-xs truncate ${
-                                  v.isAvailable ? 'text-white/60' : 'text-white/35 line-through'
+                                  v.isAvailable ? 'text-carbon/70' : 'text-carbon/45 line-through'
                                 }`}
                               >
                                 {v.name}
@@ -234,7 +234,7 @@ export default function StockTogglePanel({ onClose }: Props) {
                                 onClick={() => toggleAvailability('variation', v.id, v.isAvailable)}
                                 disabled={saving === v.id}
                                 className={`relative w-8 h-4 rounded-full transition-[background-color,opacity] shrink-0 disabled:opacity-50 ${
-                                  v.isAvailable ? 'bg-mint' : 'bg-white/20'
+                                  v.isAvailable ? 'bg-mint' : 'bg-carbon/25'
                                 }`}
                               >
                                 <motion.div

@@ -65,9 +65,8 @@ export default function AdminSettingsPage() {
 
   return (
     <div>
-      <span className="eyebrow text-burger">Ajustes</span>
-      <h1 className="display text-4xl text-white leading-none mt-1.5">CONFIGURACIÓN DEL NEGOCIO</h1>
-      <p className="text-sm text-white/40 mt-1 mb-6">Datos generales del restaurante</p>
+      <h1 className="display text-4xl text-carbon sign-yellow leading-none">CONFIGURACIÓN DEL NEGOCIO</h1>
+      <p className="text-sm text-carbon/65 mt-2 mb-6">Datos generales del restaurante</p>
 
       {loading ? (
         <div className="max-w-lg space-y-6">
@@ -76,43 +75,41 @@ export default function AdminSettingsPage() {
           <Skeleton className="h-20 rounded-xl" />
         </div>
       ) : (
-      <div className="max-w-lg card card-dark p-6 space-y-6">
+      <div className="max-w-lg card p-6 space-y-6">
         <div>
-          <label className="block text-sm text-white/60 mb-1.5">Nombre del Negocio</label>
+          <label className="block text-sm font-semibold text-carbon/75 mb-1.5">Nombre del Negocio</label>
           <TextField
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="Ej: Burger House"
-            dark
           />
         </div>
 
         <div>
-          <label className="block text-sm text-white/60 mb-1.5">Número de Mesas</label>
+          <label className="block text-sm font-semibold text-carbon/75 mb-1.5">Número de Mesas</label>
           <TextField
             type="number"
             min={1}
             max={100}
             value={tableCount}
             onChange={(e) => setTableCount(Number(e.target.value))}
-            dark
           />
         </div>
 
         <div>
-          <label className="block text-sm text-white/60 mb-1.5">Logo del Negocio</label>
+          <label className="block text-sm font-semibold text-carbon/75 mb-1.5">Logo del Negocio</label>
           <input
             type="file"
             accept="image/*"
             onChange={handleLogo}
-            className="text-sm text-white/50 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-burger file:text-white file:text-sm file:font-semibold file:cursor-pointer"
+            className="text-sm text-carbon/60 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-burger file:text-white file:text-sm file:font-semibold file:cursor-pointer"
           />
           {logoPreview && (
             <div className="mt-3 relative inline-block">
               <img
                 src={logoPreview}
                 alt="Logo"
-                className="w-32 h-32 object-contain rounded-xl border border-white/10 bg-night"
+                className="w-32 h-32 object-contain rounded-xl border-2 border-carbon/20 bg-carbon/8"
               />
               <button
                 type="button"

@@ -1,0 +1,169 @@
+{
+  "title": "Elige el mundo visual",
+  "question": "El roll asignó «Cartel Serigrafiado». Mantenlo, toma un alternativo o pide re-roll.",
+  "options": [
+    {
+      "id": "assigned",
+      "label": "Cartel Serigrafiado",
+      "kicker": "THE ROLL",
+      "lineage": "carteles de conciertos serigrafiados, tinta fluor sobre papel",
+      "thesis": "Cada pantalla es un bill serigrafiado: tinta fluor a plena mancha, condensada gigante y sobreimpresión en los estados.",
+      "palette": ["#ff4a1c", "#ffc93c", "#191512", "#f2ead9"],
+      "materials": ["serigrafía fluorescente", "sobreimpresión de tintas"],
+      "viewport": "Shell operativa a sangre completa: masthead en condensada gigante, fila de KPIs con cifras en ámbar fluor, tabla de pedidos en columnas de bill y rail de navegación como tinta negra.",
+      "risk": "Si la tinta ruidosa entra en las tablas de cocina se pierde claridad operativa.",
+      "raised": [
+        { "from": "challenger-lexicon", "raise": "Disciplina de medida (del lexicon): el display grita, pero datos y tablas viven en una medida fija estable." },
+        { "from": "challenger-annual", "raise": "Cuadrícula de registro (del anual): hairlines e intersectores como orden invisible bajo la tinta." },
+        { "from": "challenger-datamatics", "raise": "Densidad de datos (de Datamatics): cifras tabulares monoespaciadas para KPIs, contadores y temporizadores." }
+      ],
+      "wireframe": { "cols": 12, "rows": 10, "regions": [
+        { "label": "rail nav (tinta negra)", "x": 0, "y": 0, "w": 2, "h": 10 },
+        { "label": "masthead bill condensado", "x": 2, "y": 0, "w": 10, "h": 2, "accent": true },
+        { "label": "KPIs cifras ámbar", "x": 2, "y": 2, "w": 10, "h": 2 },
+        { "label": "tabla pedidos", "x": 2, "y": 4, "w": 7, "h": 4 },
+        { "label": "actividad lateral", "x": 9, "y": 4, "w": 3, "h": 4 },
+        { "label": "barra de estado", "x": 2, "y": 8, "w": 10, "h": 2 }
+      ]}
+    },
+    {
+      "id": "model-pick",
+      "label": "Rótulo de Esquina",
+      "kicker": "IMPECCABLE'S PICK",
+      "lineage": "rótulos pintados a mano de hamburgueserías latinoamericanas",
+      "thesis": "La fachada del local como interfaz: letras gordas pintadas y bloques de color a saturación plena.",
+      "palette": ["#e0281c", "#ffcb05", "#0b3d91", "#fdf6e8"],
+      "materials": ["esmalte pintado", "letra gorda a mano"],
+      "viewport": "Fachada completa: letrero pintado arriba como shell, precios en bloques de color, operación debajo con la misma pintura.",
+      "risk": "Es el terreno más conocido de esta categoría; puede leerse como la opción segura.",
+      "wireframe": { "cols": 12, "rows": 10, "regions": [
+        { "label": "letrero pintado (shell)", "x": 0, "y": 0, "w": 12, "h": 2, "accent": true },
+        { "label": "rail nav", "x": 0, "y": 2, "w": 2, "h": 8 },
+        { "label": "bloques de precios KPI", "x": 2, "y": 2, "w": 10, "h": 2 },
+        { "label": "área de trabajo", "x": 2, "y": 4, "w": 7, "h": 6 },
+        { "label": "resumen lateral", "x": 9, "y": 4, "w": 3, "h": 6 }
+      ]}
+    },
+    {
+      "id": "challenger-ticket",
+      "label": "Cupón Carbon",
+      "verdict": "competitive",
+      "lineage": "cupones de avión con copia carbon y sellos de goma",
+      "thesis": "El pedido como cupón carbon que se sella en cada estado: nada desaparece, se cancela.",
+      "palette": ["#12244f", "#c8102e", "#4b2e83", "#f5f1e8"],
+      "materials": ["cupón carbon", "sellos de goma"],
+      "viewport": "Cupón reglado con campos fijos; el estado del pedido se estampa encima y la pila de cupones muestra lo que queda.",
+      "case": "Fusiona muy bien: cupón = orden y sellos = estados; pierde en identificación con la cultura de la hamburguesa.",
+      "risk": "El mundo aeropuerto compite con el mundo del local.",
+      "hero": "https://impeccable.style/worlds/cards/vernacular-ephemera-jet-age-ticket-wallet-hero.webp",
+      "board": "https://impeccable.style/worlds/cards/vernacular-ephemera-jet-age-ticket-wallet.webp",
+      "wireframe": { "cols": 12, "rows": 10, "regions": [
+        { "label": "cabecera de cupón", "x": 0, "y": 0, "w": 12, "h": 2, "accent": true },
+        { "label": "campos reglados", "x": 0, "y": 2, "w": 7, "h": 8 },
+        { "label": "sello de estado", "x": 7, "y": 2, "w": 5, "h": 4 },
+        { "label": "pila de cupones", "x": 7, "y": 6, "w": 5, "h": 4 }
+      ]}
+    },
+    {
+      "id": "challenger-transit",
+      "label": "Línea de Servicio",
+      "verdict": "competitive",
+      "lineage": "diagramas de metro en esmalte vidriado",
+      "thesis": "La vida del pedido como línea de metro: estaciones de estado y transbordos de prioridad.",
+      "palette": ["#0d1b4c", "#e23d28", "#f2b632", "#f5f2ea"],
+      "materials": ["esmalte vidriado", "línea pintada"],
+      "viewport": "Shell con la línea de estados del pedido corriendo como eje: estaciones en cada paso y la ruta activa encendida.",
+      "case": "La línea de estados da claridad operativa inmediata; pierde el mundo cálido del local.",
+      "risk": "El mapa puede volverse metáfora y dejar de leerse como producto.",
+      "hero": "https://impeccable.style/worlds/cards/wayfinding-cartography-signage-midnight-transit-diagram-hero.webp",
+      "board": "https://impeccable.style/worlds/cards/wayfinding-cartography-signage-midnight-transit-diagram.webp",
+      "wireframe": { "cols": 12, "rows": 10, "regions": [
+        { "label": "cabecera shell", "x": 0, "y": 0, "w": 12, "h": 1 },
+        { "label": "línea de estados", "x": 0, "y": 1, "w": 12, "h": 2, "accent": true },
+        { "label": "estaciones / filtros", "x": 0, "y": 3, "w": 12, "h": 1 },
+        { "label": "columna de trabajo", "x": 0, "y": 4, "w": 8, "h": 6 },
+        { "label": "detalle de ruta", "x": 8, "y": 4, "w": 4, "h": 6 }
+      ]}
+    },
+    {
+      "id": "challenger-streaming",
+      "label": "Muro de Pósteres",
+      "verdict": "competitive",
+      "lineage": "muro de catálogo streaming: filas de tiles con foco-expand",
+      "thesis": "La carta como muro de tiles: la fila enfocada se expande y el resto se aparta.",
+      "palette": ["#0f0f0f", "#1c1c1c", "#e6e6e6", "#f5b301"],
+      "materials": ["póster a sangre", "tile con foco"],
+      "viewport": "Filas horizontales de tiles de producto; el tile enfocado crece con nombre, precio y línea corta mientras el muro se atenúa.",
+      "case": "Navegación de carta perfecta en móvil; pierde fuera de ese flujo, aporta poco a cocina y admin.",
+      "risk": "Débil fuera de la carta: cocina y admin necesitan otra estructura.",
+      "hero": "https://impeccable.style/worlds/cards/pop-culture-shelf-streaming-title-card-wall-hero.webp",
+      "board": "https://impeccable.style/worlds/cards/pop-culture-shelf-streaming-title-card-wall.webp",
+      "wireframe": { "cols": 12, "rows": 10, "regions": [
+        { "label": "barra superior", "x": 0, "y": 0, "w": 12, "h": 1 },
+        { "label": "fila 1 (foco)", "x": 0, "y": 1, "w": 12, "h": 3, "accent": true },
+        { "label": "fila 2", "x": 0, "y": 4, "w": 12, "h": 3 },
+        { "label": "fila 3", "x": 0, "y": 7, "w": 12, "h": 3 }
+      ]}
+    },
+    {
+      "id": "challenger-lexicon",
+      "label": "Lexicon de Mesa",
+      "verdict": "declined",
+      "lineage": "página de lexicon decimonónica con placa cromolitográfica",
+      "thesis": "El menú como lexicon: entradas con jerarquía por aparato y palabras-guía de categoría.",
+      "palette": ["#f4ecd8", "#1a1512", "#b33a25", "#2c5e3f"],
+      "materials": ["papel sin estucar", "placa enmarcada"],
+      "viewport": "Columna de medida fija con palabras-guía arriba y el color confinado a placas bordeadas.",
+      "case": "Pierde ambos ejes: el mundo del diccionario no es la cultura de la hamburguesa y el aparato jerárquico pelea con la lectura de precios.",
+      "kept": "Disciplina de medida: el display grita, pero datos y tablas viven en medida fija.",
+      "hero": "https://impeccable.style/worlds/cards/rw-lexicon-shoulder-and-plate-hero.webp",
+      "board": "https://impeccable.style/worlds/cards/rw-lexicon-shoulder-and-plate.webp"
+    },
+    {
+      "id": "challenger-annual",
+      "label": "Anual de Diseño",
+      "verdict": "declined",
+      "lineage": "sección de láminas de anual de diseño con registro de impresión",
+      "thesis": "La operación como anual de diseño: registro, hairlines y un solo grotesco.",
+      "palette": ["#f5f4f6", "#16181a", "#c9c7c4", "#dcd8ee"],
+      "materials": ["offset casi blanco", "tinta plana"],
+      "viewport": "Hoja continua con barra de tokens monoespaciados, crosshairs en las esquinas de las láminas y hairlines dividiendo filas.",
+      "case": "Pierde ambos ejes: el mundo editorial de diseño no identifica al comensal y la austeridad apaga el apetito.",
+      "kept": "Cuadrícula de registro: hairlines e intersectores como orden invisible bajo la tinta.",
+      "hero": "https://impeccable.style/worlds/cards/design-annual-s-plate-section-hero.webp",
+      "board": "https://impeccable.style/worlds/cards/design-annual-s-plate-section.webp"
+    },
+    {
+      "id": "challenger-datamatics",
+      "label": "Campo de Datos",
+      "verdict": "declined",
+      "lineage": "datamatics: barras de código y retículas senoidales B/N",
+      "thesis": "Los números como campo de datos: columnas tabulares y contraste absoluto.",
+      "palette": ["#000000", "#ffffff"],
+      "materials": ["barras hairline", "monoespaciado puro"],
+      "viewport": "Muro de barras B/N con lecturas monoespaciadas empaquetadas en columnas de datos.",
+      "case": "Pierde ambos ejes: el mundo del arte de datos no identifica a la hamburguesería y el estroboscopio B/N es hostilo en piso y cocina.",
+      "kept": "Densidad de datos: cifras tabulares monoespaciadas para KPIs y temporizadores.",
+      "hero": "https://impeccable.style/worlds/cards/ikeda-datamatics-hero.webp",
+      "board": "https://impeccable.style/worlds/cards/ikeda-datamatics.webp"
+    }
+  ],
+  "reroll": { "registers": ["safer", "bolder"] },
+  "steer": true,
+  "canon": true,
+  "canonCard": {
+    "label": "El estándar de la categoría",
+    "thesis": "La app de pedidos que todos imitan, ejecutada con craft impecable.",
+    "palette": ["#ffffff", "#111827", "#ea1d2c"],
+    "materials": ["gradiente cálido", "tarjetas redondeadas"],
+    "viewport": "El arreglo esperado: hero con foto del producto, grid de tarjetas y acento rojo.",
+    "risk": "Indistinguible de la competencia por diseño.",
+    "wireframe": { "cols": 12, "rows": 10, "regions": [
+      { "label": "hero con foto", "x": 0, "y": 0, "w": 12, "h": 3, "accent": true },
+      { "label": "nav categorías", "x": 0, "y": 3, "w": 12, "h": 1 },
+      { "label": "grid tarjetas", "x": 0, "y": 4, "w": 8, "h": 6 },
+      { "label": "carrito", "x": 8, "y": 4, "w": 4, "h": 6 }
+    ]}
+  },
+  "buildPath": { "value": "code", "toggle": false }
+}

@@ -93,19 +93,21 @@ export default function MenuPage() {
 
   return (
     <div className="min-h-screen bg-cream pb-28">
-      <div className="sticky top-0 z-30 bg-white border-b border-carbon/8 shadow-sm">
+      <div className="sticky top-0 z-30 bg-burger border-b-2 border-carbon">
         <div className="max-w-5xl mx-auto">
           <header className="px-4 py-3 flex items-center gap-3">
             <button
               onClick={() => router.push('/')}
               aria-label="Volver al inicio"
-              className="w-9 h-9 -ml-1.5 rounded-full flex items-center justify-center text-carbon hover:bg-carbon/5 transition-colors"
+              className="w-9 h-9 -ml-1.5 rounded-full bg-cream border-2 border-carbon flex items-center justify-center text-carbon hover:bg-mustard transition-colors"
             >
               <ArrowLeft className="w-5 h-5" />
             </button>
-            <div className="min-w-0">
-              <p className="text-xs text-carbon/50">Mesa {tableNumber}</p>
-              <p className="font-semibold text-sm text-carbon truncate">¡Hola, {customerName}!</p>
+            <div className="min-w-0 flex items-center gap-2.5">
+              <span className="shrink-0 text-[11px] font-bold uppercase bg-mustard text-carbon border-2 border-carbon rounded-full px-2.5 py-1 tabular-nums">
+                Mesa {tableNumber}
+              </span>
+              <p className="display text-xl text-cream sign truncate">¡Hola, {customerName}!</p>
             </div>
           </header>
 
@@ -119,7 +121,6 @@ export default function MenuPage() {
               }}
             />
           )}
-          <div className="h-0.5 bg-gradient-to-r from-burger via-mustard to-burger/70" />
         </div>
       </div>
 
@@ -170,9 +171,9 @@ export default function MenuPage() {
 
             {unavailableInCategory.length > 0 && (
               <div className="pt-2">
-                <p className="eyebrow text-carbon/40 mb-3">
+                <span className="badge badge-neutral mb-3">
                   No disponibles
-                </p>
+                </span>
                 <div className="grid gap-3 sm:grid-cols-2">
                   {unavailableInCategory.map((product, i) => (
                     <ProductCard

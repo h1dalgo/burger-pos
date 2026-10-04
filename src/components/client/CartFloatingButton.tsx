@@ -24,7 +24,7 @@ export default function CartFloatingButton({ onClick }: Props) {
       whileTap={{ scale: 0.95 }}
       onClick={onClick}
       aria-label={`Ver pedido: ${totalItems} productos, ${formatPrice(totalAmount)}`}
-      className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 flex items-center gap-3 bg-gradient-to-r from-burger to-mustard text-white pl-5 pr-6 py-3.5 rounded-full shadow-pop font-semibold"
+      className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 flex items-center gap-3 bg-burger text-cream pl-5 pr-6 py-3.5 rounded-full border-2 border-carbon shadow-pop font-bold sign"
     >
       <div className="relative">
         <ShoppingBag className="w-5 h-5" />
@@ -34,7 +34,7 @@ export default function CartFloatingButton({ onClick }: Props) {
             initial={{ scale: 1.5, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 1.5, opacity: 0 }}
-            className="absolute -top-2 -right-3 min-w-5 h-5 px-1 bg-carbon text-white text-xs font-bold rounded-full flex items-center justify-center"
+            className="absolute -top-2 -right-3 min-w-5 h-5 px-1 bg-mustard text-carbon text-xs font-bold rounded-full border-2 border-carbon flex items-center justify-center tabular-nums"
           >
             {totalItems}
           </motion.span>

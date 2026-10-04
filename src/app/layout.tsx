@@ -1,20 +1,20 @@
 import type { Metadata } from 'next';
-import { Inter, Bebas_Neue, JetBrains_Mono } from 'next/font/google';
+import { Archivo, Alfa_Slab_One, JetBrains_Mono } from 'next/font/google';
 import './globals.css';
 import { Toaster } from '@/components/ui/Toaster';
 import MotionProvider from '@/components/MotionProvider';
 
-const inter = Inter({
+const archivo = Archivo({
   subsets: ['latin'],
   display: 'swap',
-  variable: '--font-inter',
+  variable: '--font-archivo',
 });
 
-const bebas = Bebas_Neue({
+const alfa = Alfa_Slab_One({
   weight: '400',
   subsets: ['latin'],
   display: 'swap',
-  variable: '--font-bebas',
+  variable: '--font-alfa',
 });
 
 const jetbrains = JetBrains_Mono({
@@ -36,7 +36,7 @@ export default function RootLayout({
   return (
     <html
       lang="es"
-      className={`${inter.variable} ${bebas.variable} ${jetbrains.variable}`}
+      className={`${archivo.variable} ${alfa.variable} ${jetbrains.variable}`}
     >
       <body>
         <MotionProvider>{children}</MotionProvider>

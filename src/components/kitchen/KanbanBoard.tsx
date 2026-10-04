@@ -155,20 +155,15 @@ export default function KanbanBoard() {
   const waitingCount = getOrdersByStatus('WAITING_PAYMENT').length;
 
   return (
-    <div
-      className="h-screen page-dark flex flex-col"
-      style={{
-        backgroundImage: 'radial-gradient(ellipse at 50% 0%, rgba(232,93,4,0.06) 0%, transparent 60%)',
-      }}
-    >
-      <header className="relative bg-card/80 backdrop-blur-xl px-4 sm:px-6 py-3 flex items-center justify-between gap-3 border-b border-white/6">
+    <div className="h-screen bg-cream flex flex-col">
+      <header className="relative bg-burger px-4 sm:px-6 py-3 flex items-center justify-between gap-3 border-b-2 border-carbon">
         <div className="flex items-center gap-3 min-w-0">
-          <div className="w-10 h-10 shrink-0 rounded-xl bg-gradient-to-br from-burger to-mustard flex items-center justify-center shadow-lg">
-            <ChefHat className="w-5 h-5 text-white" />
+          <div className="w-10 h-10 shrink-0 rounded-xl bg-mustard border-2 border-carbon flex items-center justify-center">
+            <ChefHat className="w-5 h-5 text-carbon" />
           </div>
           <div className="min-w-0">
-            <h1 className="display text-xl text-white leading-none">COCINA</h1>
-            <p className="text-[11px] text-white/40 uppercase tracking-widest mt-0.5">
+            <h1 className="display text-xl text-cream sign leading-none">COCINA</h1>
+            <p className="text-[11px] text-cream/75 uppercase tracking-widest mt-0.5">
               Panel de Producción
             </p>
           </div>
@@ -176,7 +171,7 @@ export default function KanbanBoard() {
             <motion.span
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              className="hidden sm:flex bg-status-waiting/15 text-purple-300 text-xs font-bold px-3 py-1 rounded-full border border-status-waiting/30 items-center gap-1.5 shrink-0"
+              className="hidden sm:flex bg-cream text-status-waiting text-xs font-bold px-3 py-1 rounded-full border-2 border-carbon items-center gap-1.5 shrink-0"
             >
               <span className="w-1.5 h-1.5 rounded-full bg-status-waiting animate-pulse" />
               {waitingCount} pendientes de pago
@@ -186,17 +181,17 @@ export default function KanbanBoard() {
 
         <div className="flex items-center gap-2 shrink-0">
           <Button
-            variant={showStock ? 'primary' : 'outline'}
+            variant="outline"
             size="sm"
             onClick={() => setShowStock(!showStock)}
-            className={showStock ? '' : 'text-white/80'}
+            className={`border-carbon ${showStock ? 'bg-mustard text-carbon' : 'bg-cream text-carbon hover:bg-mustard/70'}`}
           >
             <Package className="w-4 h-4" />
             <span className="hidden sm:inline">Stock</span>
           </Button>
           <div
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold ${
-              connected ? 'bg-mint/10 text-mint' : 'bg-rose/10 text-rose'
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold border-2 border-carbon ${
+              connected ? 'bg-cream text-mint-ink' : 'bg-cream text-rose'
             }`}
           >
             {connected ? <Wifi className="w-3 h-3" /> : <WifiOff className="w-3 h-3" />}
@@ -215,8 +210,8 @@ export default function KanbanBoard() {
             animate={{ y: 0, opacity: 1, scale: 1 }}
             exit={{ y: -60, opacity: 0, scale: 0.9 }}
             transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-            className={`absolute top-16 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 px-6 py-3 rounded-2xl shadow-pop text-sm font-bold text-white ${
-              alert.type === 'new' ? 'bg-card border border-status-waiting/40' : 'bg-gradient-to-r from-mint to-mint-dark'
+            className={`absolute top-16 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 px-6 py-3 rounded-2xl shadow-pop border-2 border-carbon text-sm font-bold ${
+              alert.type === 'new' ? 'bg-card text-carbon' : 'bg-mint text-cream'
             }`}
             role="status"
           >
@@ -227,7 +222,7 @@ export default function KanbanBoard() {
       </AnimatePresence>
 
       {loadError && !loading && (
-        <div className="mx-4 mt-4 flex items-center justify-between gap-3 bg-rose/10 border border-rose/30 text-rose px-4 py-3 rounded-xl text-sm font-semibold">
+        <div className="mx-4 mt-4 flex items-center justify-between gap-3 bg-rose/10 border-2 border-rose/40 text-rose px-4 py-3 rounded-xl text-sm font-semibold">
           <span className="flex items-center gap-2">
             <AlertTriangle className="w-4 h-4" />
             No pudimos cargar los pedidos

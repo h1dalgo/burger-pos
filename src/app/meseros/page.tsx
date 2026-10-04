@@ -115,11 +115,11 @@ function stopAlertLoop() {
 }
 
 const statusConfig: Record<string, { label: string; color: string; bg: string; border: string }> = {
-  empty: { label: 'Libre', color: 'text-white/45', bg: 'bg-white/4', border: 'border-white/10' },
-  ordered: { label: 'Esperando Confirmación', color: 'text-purple-300', bg: 'bg-status-waiting/10', border: 'border-status-waiting/30' },
-  pending: { label: 'Pendiente', color: 'text-status-pending', bg: 'bg-status-pending/10', border: 'border-status-pending/30' },
-  preparing: { label: 'Preparando', color: 'text-status-preparing', bg: 'bg-status-preparing/10', border: 'border-status-preparing/30' },
-  ready: { label: 'Listo', color: 'text-mint', bg: 'bg-mint/10', border: 'border-mint/30' },
+  empty: { label: 'Libre', color: 'text-carbon/55', bg: 'bg-carbon/[0.04]', border: 'border-carbon/20' },
+  ordered: { label: 'Esperando Confirmación', color: 'text-status-waiting', bg: 'bg-status-waiting/10', border: 'border-status-waiting/40' },
+  pending: { label: 'Pendiente', color: 'text-status-pending', bg: 'bg-status-pending/10', border: 'border-status-pending/40' },
+  preparing: { label: 'Preparando', color: 'text-status-preparing', bg: 'bg-status-preparing/10', border: 'border-status-preparing/40' },
+  ready: { label: 'Listo', color: 'text-mint-ink', bg: 'bg-mint/10', border: 'border-mint/40' },
 };
 
 const ALERT_LABELS: Record<string, string> = {
@@ -341,7 +341,7 @@ export default function WaiterPage() {
   const cartTotal = cart.reduce((sum, item) => sum + calcItemPrice(item) * item.quantity, 0);
 
   return (
-    <div className="min-h-screen page-dark">
+    <div className="min-h-screen bg-cream">
       <AnimatePresence>
         {pendingAlerts.length > 0 &&
           (() => {
@@ -355,10 +355,8 @@ export default function WaiterPage() {
                 animate={{ y: 0, opacity: 1 }}
                 exit={{ y: -80, opacity: 0 }}
                 transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-                className={`fixed top-4 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-6 py-3 rounded-2xl shadow-pop text-sm font-bold text-white cursor-pointer ${
-                  isReady
-                    ? 'bg-gradient-to-r from-mint to-mint-dark'
-                    : 'bg-gradient-to-r from-burger to-mustard'
+                className={`fixed top-4 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-6 py-3 rounded-2xl shadow-pop border-2 border-carbon text-sm font-bold cursor-pointer ${
+                  isReady ? 'bg-mint text-cream' : 'bg-mustard text-carbon'
                 }`}
               >
                 {isReady ? (
@@ -369,25 +367,25 @@ export default function WaiterPage() {
                   <DollarSign className="w-5 h-5 animate-pulse" />
                 )}
                 Mesa {alert.tableNumber} — {ALERT_LABELS[alert.type]}
-                <span className="ml-2 text-white/80 text-xs">Toca para abrir</span>
+                <span className="ml-2 opacity-80 text-xs">Toca para abrir</span>
               </motion.button>
             );
           })()}
       </AnimatePresence>
 
-      <header className="bg-card/80 backdrop-blur-xl px-4 py-3 flex items-center justify-between border-b border-white/6 sticky top-0 z-20">
+      <header className="bg-burger px-4 py-3 flex items-center justify-between border-b-2 border-carbon sticky top-0 z-20">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-burger to-mustard flex items-center justify-center shadow-lg">
-            <ChefHat className="w-5 h-5 text-white" />
+          <div className="w-9 h-9 rounded-xl bg-mustard border-2 border-carbon flex items-center justify-center">
+            <ChefHat className="w-5 h-5 text-carbon" />
           </div>
           <div>
-            <h1 className="display text-xl text-white leading-none">MESERO</h1>
-            <p className="text-[10px] text-white/40 uppercase tracking-widest mt-0.5">Piso de servicio</p>
+            <h1 className="display text-xl text-cream sign leading-none">MESERO</h1>
+            <p className="text-[10px] text-cream/75 uppercase tracking-widest mt-0.5">Piso de servicio</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
           {activeCalls.length > 0 && (
-            <div className="flex items-center gap-1.5 bg-rose/10 text-rose text-xs font-bold px-3 py-1.5 rounded-full border border-rose/30">
+            <div className="flex items-center gap-1.5 bg-cream text-rose text-xs font-bold px-3 py-1.5 rounded-full border-2 border-carbon">
               <span className="w-1.5 h-1.5 rounded-full bg-rose animate-pulse" />
               {activeCalls.length} notificación(es)
             </div>
@@ -404,7 +402,6 @@ export default function WaiterPage() {
           </div>
         ) : tables.length === 0 ? (
           <EmptyState
-            dark
             icon={<Bell className="w-8 h-8" />}
             title="Sin mesas configuradas"
             description="Define el número de mesas en Configuración del panel admin."
@@ -426,11 +423,11 @@ export default function WaiterPage() {
                   }`}
                 >
                   {hasCall && (
-                    <div className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-gradient-to-br from-burger to-mustard flex items-center justify-center shadow-lg z-10">
+                    <div className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-mustard border-2 border-carbon flex items-center justify-center z-10">
                       {calls[0].type === 'CALL_WAITER' ? (
-                        <Bell className="w-3 h-3 text-white animate-pulse" />
+                        <Bell className="w-3 h-3 text-carbon animate-pulse" />
                       ) : (
-                        <DollarSign className="w-3 h-3 text-white animate-pulse" />
+                        <DollarSign className="w-3 h-3 text-carbon animate-pulse" />
                       )}
                     </div>
                   )}
@@ -450,7 +447,7 @@ export default function WaiterPage() {
                         <span
                           key={c.id}
                           className={`block text-[10px] font-bold uppercase ${
-                            c.type === 'CALL_WAITER' ? 'text-orange-300' : 'text-mustard'
+                            c.type === 'CALL_WAITER' ? 'text-burger' : 'text-azul'
                           }`}
                         >
                           {c.type === 'CALL_WAITER' ? 'Llamando' : 'Cuenta'}
@@ -485,15 +482,15 @@ export default function WaiterPage() {
               onClick={(e) => e.stopPropagation()}
               className="absolute bottom-0 left-0 right-0 max-h-[90vh] bg-card rounded-t-3xl overflow-hidden flex flex-col"
             >
-              <div className="sticky top-0 bg-card z-10 px-6 pt-4 pb-3 border-b border-white/8 flex items-center justify-between shrink-0">
+              <div className="sticky top-0 bg-card z-10 px-6 pt-4 pb-3 border-b-2 border-carbon flex items-center justify-between shrink-0">
                 <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-burger to-mustard flex items-center justify-center text-white font-bold text-sm shadow-md">
+                  <div className="w-9 h-9 rounded-xl bg-mustard border-2 border-carbon flex items-center justify-center text-carbon font-bold text-sm">
                     {selectedTable}
                   </div>
                   <div>
-                    <h2 className="font-bold text-white">Mesa {selectedTable}</h2>
+                    <h2 className="font-bold text-carbon">Mesa {selectedTable}</h2>
                     {tableCallsForSelected.length > 0 && (
-                      <p className="text-[11px] text-orange-300 font-semibold">
+                      <p className="text-[11px] text-status-preparing font-semibold">
                         {tableCallsForSelected
                           .map((c) => (c.type === 'CALL_WAITER' ? 'Llamó al mesero' : 'Pide la cuenta'))
                           .join(', ')}
@@ -505,9 +502,9 @@ export default function WaiterPage() {
                   type="button"
                   onClick={() => setShowOrderPanel(false)}
                   aria-label="Cerrar pedido"
-                  className="w-9 h-9 rounded-full bg-white/8 hover:bg-white/15 flex items-center justify-center transition-colors"
+                  className="w-9 h-9 rounded-full bg-carbon/8 hover:bg-carbon/15 flex items-center justify-center transition-colors"
                 >
-                  <X className="w-4 h-4 text-white/70" />
+                  <X className="w-4 h-4 text-carbon/70" />
                 </button>
               </div>
 
@@ -517,7 +514,7 @@ export default function WaiterPage() {
                     value={customerName}
                     onChange={(e) => setCustomerName(e.target.value)}
                     placeholder="Nombre del cliente"
-                    className="field-dark w-full"
+                    className="field w-full"
                   />
                 </div>
 
@@ -539,13 +536,13 @@ export default function WaiterPage() {
                           setCatalogEntrance(false);
                         }}
                         className={`relative px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
-                          activeCategory === cat.id ? 'text-white' : 'text-white/50 hover:text-white'
+                          activeCategory === cat.id ? 'text-cream' : 'text-carbon/60 hover:text-carbon'
                         }`}
                       >
                         {activeCategory === cat.id && (
                           <motion.div
                             layoutId="waiterCat"
-                            className="absolute inset-0 bg-gradient-to-r from-burger to-mustard rounded-full"
+                            className="absolute inset-0 bg-burger rounded-full"
                             transition={{ type: 'spring', stiffness: 400, damping: 30 }}
                           />
                         )}
@@ -558,7 +555,7 @@ export default function WaiterPage() {
                 <div className="px-4 pb-4 grid grid-cols-2 gap-2">
                   {catalogLoading ? (
                     Array.from({ length: 6 }).map((_, i) => (
-                      <div key={i} className="rounded-xl p-3 border border-white/8 bg-card/60 space-y-2">
+                      <div key={i} className="rounded-xl p-3 border-2 border-carbon/10 bg-carbon/5 space-y-2">
                         <Skeleton className="h-16 w-full rounded-lg" />
                         <Skeleton className="h-4 w-3/4" />
                         <Skeleton className="h-4 w-1/3" />
@@ -567,7 +564,6 @@ export default function WaiterPage() {
                   ) : activeProducts.length === 0 ? (
                     <div className="col-span-2 py-8">
                       <EmptyState
-                        dark
                         compact
                         icon={<ShoppingBag className="w-8 h-8" />}
                         title="Sin productos"
@@ -583,14 +579,14 @@ export default function WaiterPage() {
                         transition={catalogEntrance ? { delay: i * 0.02 } : { duration: 0 }}
                         onClick={() => p.isAvailable && setSelectedProduct(p)}
                         disabled={!p.isAvailable}
-                        className={`relative text-left rounded-xl p-3 border transition-[border-color,background-color,opacity] ${
+                        className={`relative text-left rounded-xl p-3 border-2 transition-[border-color,background-color,opacity] ${
                           p.isAvailable
-                            ? 'bg-card/60 border-white/8 hover:border-burger'
-                            : 'bg-card/30 border-white/6 opacity-50'
+                            ? 'bg-cream border-carbon/20 hover:border-burger'
+                            : 'bg-cream border-carbon/10 opacity-50'
                         }`}
                       >
                         {p.imageUrl ? (
-                          <div className="w-full h-16 rounded-lg overflow-hidden bg-black/30 mb-2">
+                          <div className="w-full h-16 rounded-lg overflow-hidden bg-carbon/10 mb-2">
                             <img
                               src={p.imageUrl}
                               alt={p.name}
@@ -601,11 +597,11 @@ export default function WaiterPage() {
                             />
                           </div>
                         ) : (
-                          <div className="w-full h-16 rounded-lg bg-white/4 mb-2 flex items-center justify-center text-white/20">
+                          <div className="w-full h-16 rounded-lg bg-carbon/8 mb-2 flex items-center justify-center text-carbon/40">
                             <ImageOff className="w-5 h-5" />
                           </div>
                         )}
-                        <h3 className="font-semibold text-white text-sm truncate">{p.name}</h3>
+                        <h3 className="font-semibold text-carbon text-sm truncate">{p.name}</h3>
                         <p className="text-burger font-bold text-sm mt-1">{formatPrice(Number(p.basePrice))}</p>
                         {!p.isAvailable && <span className="text-xs font-semibold text-rose">Agotado</span>}
                       </motion.button>
@@ -615,17 +611,17 @@ export default function WaiterPage() {
               </div>
 
               {cart.length > 0 && (
-                <div className="border-t border-white/8 px-6 py-3 shrink-0 bg-card pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
+                <div className="border-t-2 border-carbon px-6 py-3 shrink-0 bg-card pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
-                      <ShoppingBag className="w-4 h-4 text-mustard" />
-                      <span className="text-sm font-bold text-white">{cart.length} artículo(s)</span>
+                      <ShoppingBag className="w-4 h-4 text-burger" />
+                      <span className="text-sm font-bold text-carbon">{cart.length} artículo(s)</span>
                     </div>
-                    <span className="font-bold text-mustard tabular-nums">{formatPrice(cartTotal)}</span>
+                    <span className="bg-mustard border-2 border-carbon rounded-lg px-2 py-0.5 font-bold text-carbon tabular-nums">{formatPrice(cartTotal)}</span>
                   </div>
                   <div className="space-y-1 max-h-24 overflow-y-auto mb-2">
                     {cart.map((item) => (
-                      <div key={item.id} className="flex items-center justify-between gap-2 text-xs text-white/70">
+                      <div key={item.id} className="flex items-center justify-between gap-2 text-xs text-carbon/75">
                         <span className="truncate">
                           {item.quantity}x {item.product.name}
                         </span>
@@ -633,7 +629,7 @@ export default function WaiterPage() {
                           type="button"
                           aria-label={`Quitar ${item.product.name}`}
                           onClick={() => removeItem(item.id)}
-                          className="p-1 rounded hover:bg-white/10 transition-colors"
+                          className="p-1 rounded hover:bg-carbon/10 transition-colors"
                         >
                           <Trash2 className="w-3.5 h-3.5 text-rose" />
                         </button>

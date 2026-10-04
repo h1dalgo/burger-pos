@@ -26,18 +26,18 @@ export default function PaymentSelector({ value, onChange }: Props) {
             role="radio"
             aria-checked={selected}
             onClick={() => onChange(val)}
-            className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 transition-[border-color,background-color,color] ${
+            className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 transition-[border-color,background-color,color,box-shadow,transform] ${
               selected
-                ? 'border-mint bg-mint/10 text-mint-ink'
-                : 'border-carbon/10 bg-white text-carbon hover:border-mint'
+                ? 'border-carbon bg-mint text-cream shadow-card'
+                : 'border-carbon/25 bg-card text-carbon hover:border-carbon'
             }`}
           >
             <Icon className="w-6 h-6" />
-            <span className="text-xs font-semibold">{label}</span>
+            <span className="text-xs font-bold">{label}</span>
             <motion.span
               layoutId={selected ? 'paymentCheck' : undefined}
               transition={{ type: 'spring', stiffness: 500, damping: 35 }}
-              className={`w-3 h-3 rounded-full ${selected ? 'bg-mint' : 'bg-transparent'}`}
+              className={`w-3 h-3 rounded-full ${selected ? 'bg-cream border-2 border-carbon' : 'bg-transparent border-2 border-carbon/25'}`}
             />
           </button>
         );

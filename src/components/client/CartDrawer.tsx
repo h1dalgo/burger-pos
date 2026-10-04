@@ -101,7 +101,7 @@ export default function CartDrawer({ isOpen, onClose }: Props) {
             aria-label="Tu pedido"
             className="absolute bottom-0 left-0 right-0 sm:max-w-lg sm:mx-auto max-h-[85vh] bg-cream rounded-t-3xl overflow-y-auto overscroll-contain flex flex-col"
           >
-            <div className="sticky top-0 z-10 bg-cream px-6 pt-5 pb-3 border-b border-carbon/8 flex items-center justify-between">
+            <div className="sticky top-0 z-10 bg-cream px-6 pt-5 pb-3 border-b-2 border-carbon flex items-center justify-between">
               <div>
                 <h2 className="text-lg font-bold text-carbon">Tu Pedido</h2>
                 <p className="text-xs text-carbon/50">
@@ -111,7 +111,7 @@ export default function CartDrawer({ isOpen, onClose }: Props) {
               <button
                 onClick={onClose}
                 aria-label="Cerrar"
-                className="w-9 h-9 rounded-full bg-white shadow flex items-center justify-center hover:bg-carbon/5 transition-colors"
+                className="w-9 h-9 rounded-full bg-card border-2 border-carbon flex items-center justify-center hover:bg-mustard transition-colors"
               >
                 <X className="w-4.5 h-4.5 text-carbon" />
               </button>
@@ -134,7 +134,7 @@ export default function CartDrawer({ isOpen, onClose }: Props) {
                       initial={{ opacity: 0, x: -20 }}
                       animate={{ opacity: 1, x: 0 }}
                       exit={{ opacity: 0, x: 40 }}
-                      className="bg-white rounded-xl p-3.5 border border-carbon/6"
+                      className="bg-card rounded-xl p-3.5 border-2 border-carbon/20"
                     >
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex-1 min-w-0">
@@ -173,7 +173,7 @@ export default function CartDrawer({ isOpen, onClose }: Props) {
                             onClick={() => updateQuantity(item.id, item.quantity - 1)}
                             disabled={item.quantity <= 1}
                             aria-label="Quitar uno"
-                            className="w-10 h-10 rounded-full bg-carbon/6 flex items-center justify-center disabled:opacity-35 hover:bg-carbon/12 transition-colors"
+                            className="w-10 h-10 rounded-full bg-card border-2 border-carbon/30 flex items-center justify-center disabled:opacity-35 hover:border-carbon transition-colors"
                           >
                             <Minus className="w-4 h-4 text-carbon" />
                           </button>
@@ -183,7 +183,7 @@ export default function CartDrawer({ isOpen, onClose }: Props) {
                           <button
                             onClick={() => updateQuantity(item.id, item.quantity + 1)}
                             aria-label="Agregar uno"
-                            className="w-10 h-10 rounded-full bg-carbon/6 flex items-center justify-center hover:bg-carbon/12 transition-colors"
+                            className="w-10 h-10 rounded-full bg-card border-2 border-carbon/30 flex items-center justify-center hover:border-carbon transition-colors"
                           >
                             <Plus className="w-4 h-4 text-carbon" />
                           </button>
@@ -214,9 +214,9 @@ export default function CartDrawer({ isOpen, onClose }: Props) {
                   />
                 </div>
 
-                <div className="flex items-center justify-between border-t border-carbon/8 pt-3">
+                <div className="flex items-center justify-between border-t-2 border-carbon/15 pt-3">
                   <span className="font-bold text-carbon">Total</span>
-                  <span className="font-bold text-2xl text-burger tabular-nums">
+                  <span className="font-bold text-2xl text-carbon bg-mustard border-2 border-carbon rounded-md px-2.5 py-0.5 tabular-nums">
                     {formatPrice(getTotalAmount())}
                   </span>
                 </div>

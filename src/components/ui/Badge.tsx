@@ -1,6 +1,6 @@
 import { cn } from '@/lib/utils';
 
-type BadgeTone = 'neutral' | 'brand' | 'success' | 'warning' | 'danger' | 'info' | 'dark';
+type BadgeTone = 'neutral' | 'brand' | 'success' | 'warning' | 'danger' | 'info';
 
 const toneClasses: Record<BadgeTone, string> = {
   neutral: 'badge-neutral',
@@ -9,7 +9,6 @@ const toneClasses: Record<BadgeTone, string> = {
   warning: 'badge-warning',
   danger: 'badge-danger',
   info: 'badge-info',
-  dark: 'badge-dark',
 };
 
 interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {

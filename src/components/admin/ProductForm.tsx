@@ -29,8 +29,8 @@ interface Props {
   product?: ProductLike;
 }
 
-const inputClass = 'field field-dark';
-const inputWide = 'field field-dark';
+const inputClass = 'field';
+const inputWide = 'field';
 
 export default function ProductForm({ product }: Props) {
   const router = useRouter();
@@ -190,19 +190,19 @@ export default function ProductForm({ product }: Props) {
     <form onSubmit={handleSubmit} className="space-y-6 max-w-2xl">
       <div className="grid grid-cols-2 gap-4">
         <div className="col-span-2">
-          <label className="block text-sm text-white/50 mb-1">Nombre del Producto *</label>
+          <label className="block text-sm font-semibold text-carbon/75 mb-1">Nombre del Producto *</label>
           <input ref={nameRef} defaultValue={product?.name || ''} className={inputWide} required />
         </div>
         <div className="col-span-2">
-          <label className="block text-sm text-white/50 mb-1">Descripción</label>
+          <label className="block text-sm font-semibold text-carbon/75 mb-1">Descripción</label>
           <textarea ref={descRef} defaultValue={product?.description || ''} className={inputWide} rows={2} />
         </div>
         <div>
-          <label className="block text-sm text-white/50 mb-1">Precio Base *</label>
+          <label className="block text-sm font-semibold text-carbon/75 mb-1">Precio Base *</label>
           <input ref={priceRef} defaultValue={product?.basePrice?.toString() || ''} className={inputWide} required />
         </div>
         <div>
-          <label className="block text-sm text-white/50 mb-1">Categoría *</label>
+          <label className="block text-sm font-semibold text-carbon/75 mb-1">Categoría *</label>
           <select ref={catRef} defaultValue={product?.categoryId || product?.category?.id || ''} className={inputWide} required>
             <option value="">Seleccionar...</option>
             {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
@@ -211,11 +211,11 @@ export default function ProductForm({ product }: Props) {
       </div>
 
       <div>
-        <label className="block text-sm text-white/50 mb-1">Imagen del Producto</label>
-        <input type="file" accept="image/*" onChange={handleImage} className="text-sm text-white/50 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-burger file:text-white file:text-sm file:font-semibold" />
+        <label className="block text-sm font-semibold text-carbon/75 mb-1">Imagen del Producto</label>
+        <input type="file" accept="image/*" onChange={handleImage} className="text-sm text-carbon/60 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-burger file:text-white file:text-sm file:font-semibold" />
         {imagePreview && (
           <div className="mt-2 relative inline-block">
-            <img src={imagePreview} alt="Preview" className="w-24 h-24 object-cover rounded-lg border border-white/12" />
+            <img src={imagePreview} alt="Preview" className="w-24 h-24 object-cover rounded-lg border-2 border-carbon/20" />
             <button type="button" onClick={() => { setImagePreview(''); setImageUrl(''); }} className="absolute -top-2 -right-2 w-5 h-5 rounded-full bg-rose text-white flex items-center justify-center"><X className="w-3 h-3" /></button>
           </div>
         )}
@@ -223,13 +223,13 @@ export default function ProductForm({ product }: Props) {
 
       <div className="flex items-center gap-2">
         <input type="checkbox" id="hasVar" checked={hasVariation} onChange={e => setHasVariation(e.target.checked)} className="accent-burger" />
-        <label htmlFor="hasVar" className="text-sm text-white/70">Tiene variaciones (ej: Carne/Pollo)</label>
+        <label htmlFor="hasVar" className="text-sm text-carbon/75">Tiene variaciones (ej: Carne/Pollo)</label>
       </div>
 
       {hasVariation && (
-        <div className="bg-card rounded-xl p-4 space-y-2">
+        <div className="bg-card border-2 border-carbon/15 rounded-xl p-4 space-y-2">
           <div className="flex items-center justify-between">
-            <span className="text-sm font-semibold text-white/70">Variaciones</span>
+            <span className="text-sm font-bold text-carbon">Variaciones</span>
             <button type="button" onClick={() => { varCounter.current++; setVariationKeys([...variationKeys, varCounter.current]); }} className="text-mint text-xs hover:underline">+ Agregar</button>
           </div>
           {variationKeys.map((k, i) => (
@@ -242,9 +242,9 @@ export default function ProductForm({ product }: Props) {
         </div>
       )}
 
-      <div className="bg-card rounded-xl p-4 space-y-2">
+      <div className="bg-card border-2 border-carbon/15 rounded-xl p-4 space-y-2">
         <div className="flex items-center justify-between">
-          <span className="text-sm font-semibold text-white/70">Ingredientes por defecto</span>
+          <span className="text-sm font-bold text-carbon">Ingredientes por defecto</span>
           <button type="button" onClick={() => { ingCounter.current++; setIngredientKeys([...ingredientKeys, ingCounter.current]); }} className="text-mint text-xs hover:underline">+ Agregar</button>
         </div>
         {ingredientKeys.map((k, i) => (
@@ -255,9 +255,9 @@ export default function ProductForm({ product }: Props) {
         ))}
       </div>
 
-      <div className="bg-card rounded-xl p-4 space-y-2">
+      <div className="bg-card border-2 border-carbon/15 rounded-xl p-4 space-y-2">
         <div className="flex items-center justify-between">
-          <span className="text-sm font-semibold text-white/70">Extras (con costo)</span>
+          <span className="text-sm font-bold text-carbon">Extras (con costo)</span>
           <button type="button" onClick={() => { extraCounter.current++; setExtraKeys([...extraKeys, extraCounter.current]); }} className="text-mint text-xs hover:underline">+ Agregar</button>
         </div>
         {extraKeys.map((k, i) => (
@@ -269,9 +269,9 @@ export default function ProductForm({ product }: Props) {
         ))}
       </div>
 
-      <div className="bg-card rounded-xl p-4 space-y-3">
+      <div className="bg-card border-2 border-carbon/15 rounded-xl p-4 space-y-3">
         <div className="flex items-center justify-between">
-          <span className="text-sm font-semibold text-white/70">Selecciones requeridas</span>
+          <span className="text-sm font-bold text-carbon">Selecciones requeridas</span>
           <button type="button" onClick={() => { selCounter.current++; setSelKeys([...selKeys, selCounter.current]); }} className="text-mint text-xs hover:underline">+ Agregar</button>
         </div>
         {selKeys.map((k, i) => (
@@ -290,7 +290,7 @@ export default function ProductForm({ product }: Props) {
         <Button type="submit" variant="primary" loading={submitting}>
           {isEdit ? 'Actualizar Producto' : 'Crear Producto'}
         </Button>
-        <Button type="button" variant="outline" className="text-white/70" onClick={() => router.push('/admin123/products')}>
+        <Button type="button" variant="outline" onClick={() => router.push('/admin123/products')}>
           Cancelar
         </Button>
       </div>
@@ -309,12 +309,12 @@ function SelectionBlock({ id, initialLabel, initialMax, initialOptions, onRemove
   const optCounter = useRef(initialOptions.length);
 
   return (
-    <div id={id} className="bg-card rounded-lg p-3 space-y-2">
+    <div id={id} className="rounded-lg bg-carbon/5 p-3 space-y-2">
       <div className="flex gap-2 items-center">
         <input data-sel-label defaultValue={initialLabel} placeholder="Ej: Salsas extras" className={`${inputClass} flex-1 min-w-0`} />
-        <div className="flex items-center gap-1 text-xs text-white/50">
+        <div className="flex items-center gap-1 text-xs text-carbon/70">
           <span>Máx:</span>
-          <input data-sel-max defaultValue={initialMax} className="w-12 px-2 py-1 rounded bg-night border border-white/12 text-white text-center" />
+          <input data-sel-max defaultValue={initialMax} className="w-12 px-2 py-1 rounded bg-cream border-2 border-carbon/30 text-carbon text-center" />
         </div>
         <button type="button" onClick={onRemove}><X className="w-4 h-4 text-rose" /></button>
       </div>

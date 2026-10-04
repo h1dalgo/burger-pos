@@ -6,7 +6,6 @@ interface EmptyStateProps {
   title: string;
   description?: string;
   action?: ReactNode;
-  dark?: boolean;
   compact?: boolean;
   className?: string;
 }
@@ -16,7 +15,6 @@ export function EmptyState({
   title,
   description,
   action,
-  dark = false,
   compact = false,
   className,
 }: EmptyStateProps) {
@@ -31,9 +29,8 @@ export function EmptyState({
       {icon && (
         <div
           className={cn(
-            'flex items-center justify-center rounded-2xl',
-            compact ? 'h-10 w-10' : 'h-14 w-14',
-            dark ? 'bg-white/5 text-white/30' : 'bg-carbon/5 text-carbon/30'
+            'flex items-center justify-center rounded-xl border-2 bg-mustard/25 border-carbon/20 text-carbon/60',
+            compact ? 'h-10 w-10' : 'h-14 w-14'
           )}
         >
           {icon}
@@ -41,22 +38,14 @@ export function EmptyState({
       )}
       <p
         className={cn(
-          'font-semibold',
-          compact ? 'text-sm' : 'text-base',
-          dark ? 'text-white/70' : 'text-carbon/80'
+          'font-bold text-carbon',
+          compact ? 'text-sm' : 'text-base'
         )}
       >
         {title}
       </p>
       {description && (
-        <p
-          className={cn(
-            'max-w-xs text-sm',
-            dark ? 'text-white/40' : 'text-carbon/50'
-          )}
-        >
-          {description}
-        </p>
+        <p className="max-w-xs text-sm text-carbon/65">{description}</p>
       )}
       {action && <div className="mt-2">{action}</div>}
     </div>
