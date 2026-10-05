@@ -29,6 +29,12 @@ export default function OrderCard({ order, isNew, pending, onAction }: Props) {
   const PaymentIcon = paymentIcons[order.paymentMethod];
   const meta = getStatusMeta(order.status);
   const totalAmount = Number(order.totalAmount).toFixed(2);
+  const tapAdvance =
+    (order.status === 'PENDING' || order.status === 'IN_PREPARATION') && meta.next !== null;
+
+  const advance = () => {
+    if (!pending && meta.next) onAction(order.id, meta.next);
+  };
 
   return (
     <motion.div
@@ -36,7 +42,27 @@ export default function OrderCard({ order, isNew, pending, onAction }: Props) {
       initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.9, transition: { duration: 0.2 } }}
-      className="bg-card rounded-xl border-2 border-carbon/20 shadow-card hover:shadow-lift transition-shadow p-4 space-y-3"
+      onClick={tapAdvance ? advance : undefined}
+      onKeyDown={
+        tapAdvance
+          ? (e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                advance();
+              }
+            }
+          : undefined
+      }
+      role={tapAdvance ? 'button' : undefined}
+      tabIndex={tapAdvance ? 0 : undefined}
+      aria-label={
+        tapAdvance
+          ? `Orden ${formatDisplayId(order.displayId)} — ${meta.actionLabel}`
+          : undefined
+      }
+      className={`bg-card rounded-xl border-2 border-carbon/20 shadow-card hover:shadow-lift transition-shadow p-4 space-y-3 ${
+        tapAdvance ? 'cursor-pointer select-none' : ''
+      }`}
     >
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
@@ -115,22 +141,38 @@ export default function OrderCard({ order, isNew, pending, onAction }: Props) {
         <span className="bg-mustard border-2 border-carbon rounded-lg px-2 py-0.5 text-lg font-bold text-carbon tabular-nums">${totalAmount}</span>
       </div>
 
-      <button
-        type="button"
-        onClick={() => !pending && onAction(order.id, meta.next || 'DELIVERED')}
-        disabled={pending}
-        aria-busy={pending}
-        className="btn btn-primary w-full h-11 disabled:opacity-60"
-      >
-        {pending ? (
-          <>
-            <Loader2 className="w-4 h-4 animate-spin" />
-            Actualizando...
-          </>
-        ) : (
-          meta.actionLabel
-        )}
-      </button>
+      {tapAdvance ? (
+        <span
+          className={`btn btn-primary w-full h-11 ${pending ? 'opacity-60 pointer-events-none' : ''}`}
+          aria-hidden="true"
+        >
+          {pending ? (
+            <>
+              <Loader2 className="w-4 h-4 animate-spin" />
+              Actualizando...
+            </>
+          ) : (
+            meta.actionLabel
+          )}
+        </span>
+      ) : (
+        <button
+          type="button"
+          onClick={() => !pending && onAction(order.id, meta.next || 'DELIVERED')}
+          disabled={pending}
+          aria-busy={pending}
+          className="btn btn-primary w-full h-11 disabled:opacity-60"
+        >
+          {pending ? (
+            <>
+              <Loader2 className="w-4 h-4 animate-spin" />
+              Actualizando...
+            </>
+          ) : (
+            meta.actionLabel
+          )}
+        </button>
+      )}
     </motion.div>
   );
 }

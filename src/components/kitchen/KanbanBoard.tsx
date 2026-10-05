@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Bell, ChefHat, Wifi, WifiOff, Package, AlertTriangle } from 'lucide-react';
+import { Bell, ChefHat, Wifi, WifiOff, Package, AlertTriangle, Volume2, VolumeX } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import type { Order, StockUpdate } from '@/types';
 import { getSocket } from '@/lib/socket-client';
@@ -14,7 +14,16 @@ import { Button } from '@/components/ui/Button';
 
 let audioCtx: AudioContext | null = null;
 
-function playNotification(type: 'new' | 'ready') {
+function isMuted() {
+  try {
+    return localStorage.getItem('kitchen_muted') === '1';
+  } catch {
+    return false;
+  }
+}
+
+function playNotification(type: 'new' | 'ready' | 'advance') {
+  if (isMuted()) return;
   try {
     if (!audioCtx) {
       audioCtx = new (window.AudioContext ||
@@ -33,7 +42,7 @@ function playNotification(type: 'new' | 'ready') {
       gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.2);
       osc.start(ctx.currentTime);
       osc.stop(ctx.currentTime + 0.2);
-    } else {
+    } else if (type === 'ready') {
       osc.frequency.setValueAtTime(600, ctx.currentTime);
       osc.frequency.setValueAtTime(800, ctx.currentTime + 0.1);
       osc.frequency.setValueAtTime(1000, ctx.currentTime + 0.2);
@@ -41,6 +50,13 @@ function playNotification(type: 'new' | 'ready') {
       gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.4);
       osc.start(ctx.currentTime);
       osc.stop(ctx.currentTime + 0.4);
+    } else {
+      osc.frequency.setValueAtTime(520, ctx.currentTime);
+      osc.frequency.setValueAtTime(680, ctx.currentTime + 0.07);
+      gain.gain.setValueAtTime(0.25, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.14);
+      osc.start(ctx.currentTime);
+      osc.stop(ctx.currentTime + 0.15);
     }
   } catch {}
 }
@@ -54,7 +70,12 @@ export default function KanbanBoard() {
   const [alert, setAlert] = useState<{ message: string; type: 'new' | 'ready' } | null>(null);
   const [newOrderIds, setNewOrderIds] = useState<Set<string>>(new Set());
   const [pendingId, setPendingId] = useState<string | null>(null);
+  const [muted, setMuted] = useState(() => isMuted());
   const applyStockUpdate = useStockStore((s) => s.applyStockUpdate);
+  const ordersRef = useRef(orders);
+  useEffect(() => {
+    ordersRef.current = orders;
+  }, [orders]);
 
   const loadOrders = useCallback(() => {
     fetch('/api/orders')
@@ -120,9 +141,9 @@ export default function KanbanBoard() {
     };
   }, [loadOrders, applyStockUpdate, showAlert]);
 
-  const handleAction = useCallback(
-    async (orderId: string, status: string) => {
-      if (pendingId) return;
+  const sendStatus = useCallback(
+    async (orderId: string, status: string): Promise<boolean> => {
+      if (pendingId) return false;
       setPendingId(orderId);
       try {
         const res = await fetch(`/api/orders/${orderId}`, {
@@ -142,14 +163,106 @@ export default function KanbanBoard() {
           next.delete(orderId);
           return next;
         });
+        return true;
       } catch {
         toast.error('No se pudo actualizar el pedido');
+        return false;
       } finally {
         setPendingId(null);
       }
     },
     [pendingId]
   );
+
+  const showUndoToast = useCallback(
+    (order: Order, from: string, to: string) => {
+      toast.custom(
+        (t) => (
+          <div
+            className="flex items-center gap-4 bg-carbon text-cream border-2 border-carbon rounded-xl px-4 py-3 shadow-pop text-sm font-semibold max-w-md mx-auto"
+            role="status"
+          >
+            <span className="min-w-0 truncate">
+              <span className="display sign-yellow text-base mr-1.5">
+                #{formatDisplayId(order.displayId)}
+              </span>
+              <span className="text-cream/80">→ {getStatusMeta(to).title}</span>
+            </span>
+            <button
+              type="button"
+              onClick={() => {
+                toast.dismiss(t.id);
+                const current = ordersRef.current.find((o) => o.id === order.id);
+                if (current && current.status !== to) {
+                  toast.error('La orden ya cambió');
+                  return;
+                }
+                void sendStatus(order.id, from);
+              }}
+              className="btn btn-solid btn-sm shrink-0"
+            >
+              Deshacer
+            </button>
+          </div>
+        ),
+        { duration: 5000 }
+      );
+    },
+    [sendStatus]
+  );
+
+  const handleAction = useCallback(
+    async (orderId: string, status: string) => {
+      const previous = ordersRef.current.find((o) => o.id === orderId)?.status;
+      const ok = await sendStatus(orderId, status);
+      if (!ok) return;
+      if (status !== 'READY') playNotification('advance');
+      const order = ordersRef.current.find((o) => o.id === orderId);
+      if (order && previous && previous !== status && status !== 'DELIVERED') {
+        showUndoToast(order, previous, status);
+      }
+    },
+    [sendStatus, showUndoToast]
+  );
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.repeat || e.ctrlKey || e.metaKey || e.altKey) return;
+      const el = e.target as HTMLElement | null;
+      if (
+        el &&
+        (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.tagName === 'SELECT' || el.isContentEditable)
+      ) {
+        return;
+      }
+      const key = e.key.toLowerCase();
+      const shortcut =
+        key === 'e'
+          ? ({ from: 'PENDING', to: 'IN_PREPARATION' } as const)
+          : key === 'l'
+            ? ({ from: 'IN_PREPARATION', to: 'READY' } as const)
+            : null;
+      if (!shortcut) return;
+      e.preventDefault();
+      if (pendingId) return;
+      const candidates = ordersRef.current.filter((o) => o.status === shortcut.from);
+      if (candidates.length === 0) return;
+      const oldest = candidates.reduce((a, b) => (a.createdAt <= b.createdAt ? a : b));
+      void handleAction(oldest.id, shortcut.to);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [handleAction, pendingId]);
+
+  const toggleMute = () => {
+    setMuted((m) => {
+      const next = !m;
+      try {
+        localStorage.setItem('kitchen_muted', next ? '1' : '0');
+      } catch {}
+      return next;
+    });
+  };
 
   const getOrdersByStatus = (status: string) => orders.filter((o) => o.status === status);
   const waitingCount = getOrdersByStatus('WAITING_PAYMENT').length;
@@ -177,9 +290,34 @@ export default function KanbanBoard() {
               {waitingCount} pendientes de pago
             </motion.span>
           )}
+          <div className="hidden lg:flex items-center gap-3 text-[11px] text-cream/85 font-semibold ml-1">
+            <span className="flex items-center gap-1.5">
+              <kbd className="bg-cream text-carbon border-2 border-carbon rounded px-1.5 py-0.5 font-bold shadow-[2px_2px_0_#1a1712]">
+                E
+              </kbd>
+              iniciar la más vieja
+            </span>
+            <span className="flex items-center gap-1.5">
+              <kbd className="bg-cream text-carbon border-2 border-carbon rounded px-1.5 py-0.5 font-bold shadow-[2px_2px_0_#1a1712]">
+                L
+              </kbd>
+              marcar listo
+            </span>
+          </div>
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={toggleMute}
+            aria-pressed={muted}
+            title={muted ? 'Activar sonido' : 'Silenciar sonido'}
+            className={`border-carbon ${muted ? 'bg-cream text-rose' : 'bg-cream text-carbon hover:bg-mustard/70'}`}
+          >
+            {muted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
+            <span className="hidden sm:inline">{muted ? 'Sin sonido' : 'Sonido'}</span>
+          </Button>
           <Button
             variant="outline"
             size="sm"
