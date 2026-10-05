@@ -111,6 +111,7 @@ export async function POST(request: NextRequest) {
 
     if (global.io) {
       global.io.to('kitchen').emit('order:new', order);
+      global.io.to('waiter').emit('order:new', order);
       global.io.to('clients').emit('order:created', { displayId: order.displayId });
     }
 

@@ -15,6 +15,7 @@ export default function WelcomeForm() {
   const [name, setName] = useState(customerName);
   const [table, setTable] = useState(tableNumber);
   const [error, setError] = useState('');
+  const [nameError, setNameError] = useState('');
   const [tableError, setTableError] = useState('');
   const [loadingSettings, setLoadingSettings] = useState(true);
   const [businessName, setBusinessName] = useState('BURGER POS');
@@ -38,6 +39,10 @@ export default function WelcomeForm() {
     e.preventDefault();
     if (!name.trim() || !table.trim()) {
       setError('Completa todos los campos');
+      return;
+    }
+    if (/\d/.test(name)) {
+      setNameError('El nombre no puede contener números');
       return;
     }
     const tableNum = Number(table);
@@ -113,11 +118,12 @@ export default function WelcomeForm() {
             autoComplete="name"
             value={name}
             onChange={(e) => {
-              setName(e.target.value);
+              setName(e.target.value.replace(/\d/g, ''));
+              setNameError('');
               setError('');
             }}
             placeholder="Ej: Juan"
-            error={error && !name.trim() ? error : undefined}
+            error={nameError || (error && !name.trim() ? error : undefined)}
           />
 
           <TextField

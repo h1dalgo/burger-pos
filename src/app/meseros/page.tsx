@@ -206,7 +206,9 @@ export default function WaiterPage() {
 
   useEffect(() => {
     const socket = getSocket();
-    socket.emit('join:waiter');
+    const joinRooms = () => socket.emit('join:waiter');
+    joinRooms();
+    socket.on('connect', joinRooms);
 
     const onNewCall = (call: TableCall) => {
       setActiveCalls((prev) => [call, ...prev]);
@@ -233,6 +235,7 @@ export default function WaiterPage() {
     socket.on('order:updated', onOrderUpdated);
 
     return () => {
+      socket.off('connect', joinRooms);
       socket.off('tableCall:new', onNewCall);
       socket.off('tableCall:resolved', onResolvedCall);
       socket.off('order:new', onOrderNew);
@@ -298,6 +301,10 @@ export default function WaiterPage() {
       toast.error('Ingresa el nombre del cliente');
       return;
     }
+    if (/\d/.test(customerName)) {
+      toast.error('El nombre del cliente no puede contener números');
+      return;
+    }
     if (cart.length === 0) return;
     setSubmitting(true);
     try {
@@ -325,8 +332,6 @@ export default function WaiterPage() {
         body: JSON.stringify(payload),
       });
       if (!res.ok) throw new Error('Error');
-      const socket = getSocket();
-      socket.emit('join:kitchen');
       setCart([]);
       toast.success('Pedido enviado a cocina');
       loadTables();
@@ -513,7 +518,7 @@ export default function WaiterPage() {
                 <div className="px-6 pt-4">
                   <input
                     value={customerName}
-                    onChange={(e) => setCustomerName(e.target.value)}
+                    onChange={(e) => setCustomerName(e.target.value.replace(/\d/g, ''))}
                     placeholder="Nombre del cliente"
                     className="field w-full"
                   />
