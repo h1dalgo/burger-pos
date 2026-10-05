@@ -4,22 +4,37 @@ import { motion, AnimatePresence } from 'framer-motion';
 import type { DefaultIngredient, ExtraIngredient } from '@/types';
 import { cn } from '@/lib/utils';
 
-const layerColors: Record<string, string> = {
-  'Pan': 'bg-amber-300',
-  'Carne': 'bg-amber-800',
-  'Pollo': 'bg-yellow-600',
-  'Queso': 'bg-yellow-300',
-  'Tocino': 'bg-red-700',
-  'Tocineta': 'bg-red-700',
-  'Lechuga': 'bg-green-400',
-  'Tomate': 'bg-red-400',
-  'Cebolla': 'bg-purple-300',
-  'Pepinillos': 'bg-green-600',
-  'Champiñones': 'bg-stone-400',
-  'Chorizo': 'bg-red-600',
-  'Huevo': 'bg-yellow-200',
-  'Maíz': 'bg-amber-400',
-};
+interface Paint {
+  color: string;
+  width: string;
+  height: string;
+  rank: number;
+}
+
+const norm = (s: string) => s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+
+function paintFor(name: string): Paint {
+  const n = norm(name);
+  if (/(queso|mozzarella|cheddar|parmesano)/.test(n)) {
+    return { color: 'bg-mustard', width: 'w-36', height: 'h-4', rank: 2 };
+  }
+  if (/(carne|pollo|lomito|chorizo|tocineta|tocino|jamon|huevo|chuleta|patt)/.test(n)) {
+    return { color: 'bg-carbon', width: 'w-32', height: 'h-5', rank: 1 };
+  }
+  if (/(tomate|jitomate|salsa|ketchup|bbq|aderezo|mayonesa|mayo|mostaza|mil islas)/.test(n)) {
+    return { color: 'bg-burger', width: 'w-28', height: 'h-3', rank: 4 };
+  }
+  if (/(lechuga|cebolla|pepinillo|champinon|repollo|espinaca|aceituna|maiz|jitote|pepper)/.test(n)) {
+    return { color: 'bg-mint', width: 'w-32', height: 'h-4', rank: 3 };
+  }
+  return { color: 'bg-card', width: 'w-32', height: 'h-3', rank: 3 };
+}
+
+interface Layer {
+  key: string;
+  name: string;
+  paint: Paint;
+}
 
 interface Props {
   defaultIngredients: DefaultIngredient[];
@@ -28,49 +43,47 @@ interface Props {
 }
 
 export default function BurgerBuilder({ defaultIngredients, removedIngredients, addedExtras }: Props) {
-  const presentIngredients = defaultIngredients.filter(
-    (ing) => !removedIngredients.includes(ing.name)
-  );
+  if (defaultIngredients.length === 0 && addedExtras.length === 0) return null;
+
+  const layers: Layer[] = [
+    ...defaultIngredients
+      .filter((ing) => !removedIngredients.includes(ing.name))
+      .map((ing) => ({ key: `ing-${ing.id}`, name: ing.name, paint: paintFor(ing.name) })),
+    ...addedExtras.map((extra) => ({
+      key: `extra-${extra.id}`,
+      name: `+${extra.name}`,
+      paint: paintFor(extra.name),
+    })),
+  ].sort((a, b) => b.paint.rank - a.paint.rank);
 
   return (
-    <div className="flex flex-col items-center gap-0.5 py-4" aria-hidden="true">
-      <div className="w-32 h-6 bg-amber-300 rounded-t-full" />
+    <div className="flex flex-col items-center gap-[3px] py-4" aria-hidden="true">
+      <div className="relative w-36 h-7 bg-mustard border-2 border-carbon rounded-t-full -rotate-[0.5deg]">
+        <span className="absolute left-4 top-2.5 w-2 h-1 bg-cream rounded-full -rotate-12" />
+        <span className="absolute left-1/2 -translate-x-1/2 top-1.5 w-2 h-1 bg-cream rounded-full rotate-6" />
+        <span className="absolute right-4 top-2.5 w-2 h-1 bg-cream rounded-full rotate-12" />
+      </div>
+
       <AnimatePresence initial={false}>
-        {addedExtras.map((extra) => (
+        {layers.map((layer, i) => (
           <motion.div
-            key={`extra-${extra.id}`}
-            initial={{ scaleY: 0, opacity: 0 }}
-            animate={{ scaleY: 1, opacity: 1 }}
+            key={layer.key}
+            initial={{ scaleY: 0, opacity: 0, rotate: 0 }}
+            animate={{ scaleY: 1, opacity: 1, rotate: i % 2 === 0 ? -0.75 : 0.75 }}
             exit={{ scaleY: 0, opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="w-28 h-3 bg-green-500 rounded-sm"
-            title={`+${extra.name}`}
+            transition={{ duration: 0.18, ease: 'easeOut' }}
+            className={cn(
+              'origin-bottom rounded-sm border-2 border-carbon',
+              layer.paint.color,
+              layer.paint.width,
+              layer.paint.height
+            )}
+            title={layer.name}
           />
         ))}
       </AnimatePresence>
-      <AnimatePresence initial={false}>
-        {presentIngredients.map((ing) => (
-          <motion.div
-            key={ing.id}
-            initial={{ scaleY: 0, opacity: 0 }}
-            animate={{ scaleY: 1, opacity: 1 }}
-            exit={{ scaleY: 0, opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className={cn('w-28 h-3 rounded-sm', layerColors[ing.name] || 'bg-carbon/20')}
-            title={ing.name}
-          />
-        ))}
-      </AnimatePresence>
-      {removedIngredients.length > 0 && (
-        <div className="flex gap-2 mt-2 flex-wrap justify-center">
-          {removedIngredients.map((name) => (
-            <span key={name} className="text-xs text-rose line-through">
-              {name}
-            </span>
-          ))}
-        </div>
-      )}
-      <div className="w-32 h-5 bg-amber-300 rounded-b-full mt-0.5" />
+
+      <div className="w-36 h-5 bg-mustard border-2 border-carbon rounded-b-full mt-0.5 rotate-[0.5deg]" />
     </div>
   );
 }
