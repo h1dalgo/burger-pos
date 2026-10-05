@@ -37,52 +37,54 @@ export async function PATCH(
     const body = await request.json();
     const { name, description, basePrice, categoryId, imageUrl, hasVariation, variations, defaultIngredients, extraIngredients, requiredSelections } = body;
 
-    await prisma.productVariation.deleteMany({ where: { productId: id } });
-    await prisma.defaultIngredient.deleteMany({ where: { productId: id } });
-    await prisma.extraIngredient.deleteMany({ where: { productId: id } });
+    const product = await prisma.$transaction(async (tx) => {
+      await tx.productVariation.deleteMany({ where: { productId: id } });
+      await tx.defaultIngredient.deleteMany({ where: { productId: id } });
+      await tx.extraIngredient.deleteMany({ where: { productId: id } });
 
-    const existingSelections = await prisma.requiredSelection.findMany({ where: { productId: id } });
-    for (const rs of existingSelections) {
-      await prisma.requiredSelectionOption.deleteMany({ where: { requiredSelectionId: rs.id } });
-    }
-    await prisma.requiredSelection.deleteMany({ where: { productId: id } });
+      const existingSelections = await tx.requiredSelection.findMany({ where: { productId: id } });
+      for (const rs of existingSelections) {
+        await tx.requiredSelectionOption.deleteMany({ where: { requiredSelectionId: rs.id } });
+      }
+      await tx.requiredSelection.deleteMany({ where: { productId: id } });
 
-    const product = await prisma.product.update({
-      where: { id },
-      data: {
-        name: name || undefined,
-        description: description ?? undefined,
-        basePrice: basePrice ? parseFloat(basePrice) : undefined,
-        categoryId: categoryId || undefined,
-        imageUrl: imageUrl !== undefined ? (imageUrl || null) : undefined,
-        hasVariation: hasVariation !== undefined ? hasVariation : undefined,
-        variations: variations?.length
-          ? { create: variations.map((v: any) => ({ name: v.name, additionalPrice: parseFloat(v.additionalPrice || 0) })) }
-          : undefined,
-        defaultIngredients: defaultIngredients?.length
-          ? { create: defaultIngredients.map((n: string) => ({ name: n })) }
-          : undefined,
-        extraIngredients: extraIngredients?.length
-          ? { create: extraIngredients.map((e: any) => ({ name: e.name, basePrice: parseFloat(e.basePrice || 1.0) })) }
-          : undefined,
-        requiredSelections: requiredSelections?.length
-          ? {
-              create: requiredSelections.map((rs: any) => ({
-                label: rs.label,
-                maxSelections: rs.maxSelections || 1,
-                options: rs.options?.length
-                  ? { create: rs.options.map((o: any) => ({ name: o.name, additionalPrice: parseFloat(o.additionalPrice || 0) })) }
-                  : undefined,
-              })),
-            }
-          : undefined,
-      },
-      include: {
-        variations: true,
-        defaultIngredients: true,
-        extraIngredients: true,
-        requiredSelections: { include: { options: true } },
-      },
+      return tx.product.update({
+        where: { id },
+        data: {
+          name: name || undefined,
+          description: description ?? undefined,
+          basePrice: basePrice ? parseFloat(basePrice) : undefined,
+          categoryId: categoryId || undefined,
+          imageUrl: imageUrl !== undefined ? (imageUrl || null) : undefined,
+          hasVariation: hasVariation !== undefined ? hasVariation : undefined,
+          variations: variations?.length
+            ? { create: variations.map((v: any) => ({ name: v.name, additionalPrice: parseFloat(v.additionalPrice || 0) })) }
+            : undefined,
+          defaultIngredients: defaultIngredients?.length
+            ? { create: defaultIngredients.map((n: string) => ({ name: n })) }
+            : undefined,
+          extraIngredients: extraIngredients?.length
+            ? { create: extraIngredients.map((e: any) => ({ name: e.name, basePrice: parseFloat(e.basePrice || 1.0) })) }
+            : undefined,
+          requiredSelections: requiredSelections?.length
+            ? {
+                create: requiredSelections.map((rs: any) => ({
+                  label: rs.label,
+                  maxSelections: Number(rs.maxSelections) || 1,
+                  options: rs.options?.length
+                    ? { create: rs.options.map((o: any) => ({ name: o.name, additionalPrice: parseFloat(o.additionalPrice || 0) })) }
+                    : undefined,
+                })),
+              }
+            : undefined,
+        },
+        include: {
+          variations: true,
+          defaultIngredients: true,
+          extraIngredients: true,
+          requiredSelections: { include: { options: true } },
+        },
+      });
     });
 
     return NextResponse.json(product);

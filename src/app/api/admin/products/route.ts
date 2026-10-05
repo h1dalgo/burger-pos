@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
           ? {
               create: requiredSelections.map((rs: any) => ({
                 label: rs.label,
-                maxSelections: rs.maxSelections || 1,
+                maxSelections: Number(rs.maxSelections) || 1,
                 options: rs.options?.length
                   ? { create: rs.options.map((o: any) => ({ name: o.name, additionalPrice: parseFloat(o.additionalPrice || 0) })) }
                   : undefined,

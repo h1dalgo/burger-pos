@@ -116,7 +116,7 @@ export default function ProductForm({ product }: Props) {
   };
 
   const collectSelections = () => {
-    const result: { label: string; maxSelections: string; options: { name: string; additionalPrice: string }[] }[] = [];
+    const result: { label: string; maxSelections: number; options: { name: string; additionalPrice: string }[] }[] = [];
     for (let i = 0; i < selKeys.length; i++) {
       const container = document.getElementById(`selection-${selKeys[i]}`);
       if (!container) continue;
@@ -131,7 +131,7 @@ export default function ProductForm({ product }: Props) {
         const op = (optPrices[j] as HTMLInputElement).value || '0';
         if (on) opts.push({ name: on, additionalPrice: op });
       }
-      result.push({ label, maxSelections: max, options: opts });
+      result.push({ label, maxSelections: Number.parseInt(max, 10) || 1, options: opts });
     }
     return result;
   };
