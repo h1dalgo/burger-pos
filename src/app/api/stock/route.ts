@@ -49,7 +49,7 @@ export async function PATCH(request: NextRequest) {
     }
 
     if (global.io) {
-      global.io.emit('stock:updated', { type, id, isAvailable, ...result });
+      global.io.emit('stock:updated', { type, ...result });
     }
 
     return NextResponse.json({ success: true, data: result });

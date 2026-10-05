@@ -9,6 +9,7 @@ colors:
   burger: "#d9261c"
   burger-deep: "#b01e15"
   mustard: "#ffc72c"
+  mustard-deep: "#f0b400"
   mint: "#1b7a43"
   mint-deep: "#16653a"
   mint-ink: "#0f5132"
@@ -37,6 +38,7 @@ typography:
     fontWeight: 500
     lineHeight: 1.4
 rounded:
+  xs: "4px"
   sm: "8px"
   md: "12px"
   lg: "16px"
@@ -121,7 +123,7 @@ Paleta de esmalte: un rojo de fachada, una mostaza de letrero, un verde de cocin
 - **Rojo Profundo** (burger-deep): hover/press del rojo y sombra roja de segundo tinta sobre superficies rojas.
 
 ### Secondary
-- **Mostaza de Letrero** (mustard): segundo tinta del sistema. Sombras `.sign-yellow`, placas de nav activa, cantidades, selecciones, chips de precio, `::selection`, placas de icono. Es el color que "pinta" sobre rojo y tinta.
+- **Mostaza de Letrero** (mustard): segundo tinta del sistema. Sombras `.sign-yellow`, placas de nav activa, cantidades, selecciones, chips de precio, `::selection`, placas de icono. Es el color que "pinta" sobre rojo y tinta. Su versión profunda (mustard-deep) es solo el hover del botón sólido.
 
 ### Tertiary
 - **Verdes de Cocina** (mint / mint-deep / mint-ink): éxito, estado READY, toasts de llamado, botones de confirmación. `mint-ink` es la versión con contraste de texto.
@@ -181,7 +183,7 @@ Híbrido disciplinado: todas las superficies son planas (pintura) y la profundid
 
 ## Shapes
 
-Lenguaje de placa esmaltada: controles a 8px de radio (`.btn`, `.field`), placas y cards a 12px, paneles/drawers a 16px, chips y badges en píldora completa. Bordes de 2px en tinta sobre placas interactivas; guías de sección neutras a `border-l-2` con alfa de tinta (nunca coloreadas, nunca >1px de color). Sin glass, sin blur de fondo, sin clipping complejo —la geometría es rectangular con esquinas cortadas, como cartón de envase. El botón al activarse se hunde exactamente sobre su sombra (`translate(3px, 3px)`): la silueta no cambia, solo el plano.
+Lenguaje de placa esmaltada: controles a 8px de radio (`.btn`, `.field`), placas y cards a 12px, paneles/drawers a 16px, chips y badges en píldora completa; los grips diminutos (thumb de scrollbar) usan el paso xs de 4px. Bordes de 2px en tinta sobre placas interactivas; guías de sección neutras a `border-l-2` con alfa de tinta (nunca coloreadas, nunca >1px de color). Sin glass, sin blur de fondo, sin clipping complejo —la geometría es rectangular con esquinas cortadas, como cartón de envase. El botón al activarse se hunde exactamente sobre su sombra (`translate(3px, 3px)`): la silueta no cambia, solo el plano.
 
 ## Components
 

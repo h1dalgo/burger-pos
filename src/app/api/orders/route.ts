@@ -37,6 +37,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
+    const validPaymentMethods = ['CASH', 'MOBILE_PAYMENT', 'CARD'];
+    if (!validPaymentMethods.includes(paymentMethod)) {
+      return NextResponse.json({ error: 'Invalid payment method' }, { status: 400 });
+    }
+
+    const validStatuses = ['WAITING_PAYMENT', 'PENDING', 'IN_PREPARATION', 'READY', 'DELIVERED'];
+    if (status !== undefined && !validStatuses.includes(status)) {
+      return NextResponse.json({ error: 'Invalid status' }, { status: 400 });
+    }
+
     let totalAmount = 0;
     const orderItems = items.map((item: any) => {
       let unitPrice = Number(item.basePrice);
@@ -67,9 +77,9 @@ export async function POST(request: NextRequest) {
           : undefined,
         selections: item.selections
           ? {
-              create: Object.entries(item.selections).flatMap(([, options]) =>
+              create: Object.entries(item.selections).flatMap(([selectionId, options]) =>
                 (options as string[]).map((optionName: string) => ({
-                  selectionLabel: item.selectionLabels?.[optionName] || 'Selección',
+                  selectionLabel: item.selectionLabels?.[selectionId] || 'Selección',
                   selectedOptionName: optionName,
                 }))
               ),

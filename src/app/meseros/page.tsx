@@ -315,6 +315,7 @@ export default function WaiterPage() {
           removedIngredients: item.removedIngredients,
           addedExtras: item.addedExtras,
           selections: item.selections,
+          selectionLabels: item.selectionLabels,
           note: item.note,
         })),
       };

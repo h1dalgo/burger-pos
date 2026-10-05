@@ -65,6 +65,7 @@ export default function WaiterProductModal({ product, onClose, onAdd }: Props) {
       removedIngredients: removed,
       addedExtras: extras,
       selections,
+      selectionLabels: Object.fromEntries(product.requiredSelections.map((rs) => [rs.id, rs.label])),
       note,
     });
   };

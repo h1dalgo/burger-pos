@@ -78,6 +78,7 @@ export default function ProductModal({ product, onClose }: Props) {
       removedIngredients,
       addedExtras,
       selections,
+      selectionLabels: Object.fromEntries(product.requiredSelections.map((rs) => [rs.id, rs.label])),
     });
 
     toast.success(`${product.name} agregado al pedido`);

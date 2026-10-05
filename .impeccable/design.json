@@ -22,6 +22,12 @@
         "canonical": "#ffc72c",
         "tonalRamp": ["#3d2f00", "#5f4900", "#8a6a00", "#b48c00", "#d9a600", "#ffc72c", "#ffd763", "#ffe9a1"]
       },
+      "mustard-deep": {
+        "role": "secondary",
+        "displayName": "Mostaza Profunda",
+        "canonical": "#f0b400",
+        "tonalRamp": ["#3d2f00", "#5f4900", "#8a6a00", "#b48c00", "#d9a600", "#f0b400", "#ffc72c", "#ffd763"]
+      },
       "mint": {
         "role": "tertiary",
         "displayName": "Verde de Cocina",

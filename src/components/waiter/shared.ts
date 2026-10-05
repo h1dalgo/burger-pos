@@ -50,6 +50,7 @@ export interface CartItem {
   removedIngredients: string[];
   addedExtras: ExtraIngredient[];
   selections: Record<string, string[]>;
+  selectionLabels?: Record<string, string>;
   note: string;
 }
 

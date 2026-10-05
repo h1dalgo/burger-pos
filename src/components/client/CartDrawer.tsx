@@ -55,6 +55,7 @@ export default function CartDrawer({ isOpen, onClose }: Props) {
           removedIngredients: item.removedIngredients,
           addedExtras: item.addedExtras,
           selections: item.selections,
+          selectionLabels: item.selectionLabels,
         })),
       };
 
