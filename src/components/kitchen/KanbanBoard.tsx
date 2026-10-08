@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Bell, ChefHat, Wifi, WifiOff, Package, AlertTriangle, Volume2, VolumeX } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import type { Order, StockUpdate } from '@/types';
-import { getSocket } from '@/lib/socket-client';
+import { getSocket, joinRoom } from '@/lib/socket-client';
 import { useStockStore } from '@/store/stock-store';
 import { BOARD_STATUSES, getStatusMeta, formatDisplayId } from '@/lib/order-status';
 import KanbanColumn from './KanbanColumn';
@@ -99,12 +99,9 @@ export default function KanbanBoard() {
   useEffect(() => {
     loadOrders();
     const socket = getSocket();
-    socket.emit('join:kitchen');
+    joinRoom('kitchen');
 
-    const onConnect = () => {
-      setConnected(true);
-      socket.emit('join:kitchen');
-    };
+    const onConnect = () => setConnected(true);
     const onDisconnect = () => setConnected(false);
     const onNew = (order: Order) => {
       setOrders((prev) => [order, ...prev]);

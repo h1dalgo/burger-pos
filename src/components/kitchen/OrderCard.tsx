@@ -84,6 +84,11 @@ export default function OrderCard({ order, isNew, pending, onAction }: Props) {
             <span className="flex items-center gap-1.5 shrink-0">
               <Table2 className="w-3.5 h-3.5 text-carbon/45" /> Mesa {order.tableNumber}
             </span>
+            {order.waiter && (
+              <span className="flex items-center gap-1.5 text-xs font-semibold px-2 py-0.5 rounded-md bg-mint/10 border border-mint/40 text-mint-ink shrink-0">
+                <User className="w-3.5 h-3.5" /> {order.waiter}
+              </span>
+            )}
           </div>
         </div>
         <div className="flex flex-col items-end gap-2 shrink-0">

@@ -14,15 +14,17 @@ import {
   CheckCircle2,
   ImageOff,
   Loader2,
+  UserRound,
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { formatPrice } from '@/lib/utils';
-import { getSocket } from '@/lib/socket-client';
+import { getSocket, joinRoom } from '@/lib/socket-client';
 import type { Category, Product, CartItem, TableData, TableCall } from '@/components/waiter/shared';
 import { calcItemPrice } from '@/components/waiter/shared';
 import WaiterProductModal from '@/components/waiter/WaiterProductModal';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { Button } from '@/components/ui/Button';
 
 const ALERT_PATTERNS: Record<string, { notes: Array<{ f: number; t: number; d: number }>; duration: number; volume: number }> = {
   CALL_WAITER: {
@@ -135,7 +137,12 @@ export default function WaiterPage() {
   const [activeCalls, setActiveCalls] = useState<TableCall[]>([]);
   const [selectedTable, setSelectedTable] = useState<string | null>(null);
   const [showOrderPanel, setShowOrderPanel] = useState(false);
-  const [pendingAlerts, setPendingAlerts] = useState<Array<{ type: 'CALL_WAITER' | 'REQUEST_BILL' | 'READY'; tableNumber: string }>>([]);
+  const [pendingAlerts, setPendingAlerts] = useState<Array<{ type: 'CALL_WAITER' | 'REQUEST_BILL' | 'READY'; tableNumber: string; waiter?: string | null }>>([]);
+  const [liveOrders, setLiveOrders] = useState<Array<{ id: string; displayId: number; tableNumber: string; status: string; waiter: string | null }>>([]);
+  const [waiterName, setWaiterName] = useState('');
+  const [waiterDraft, setWaiterDraft] = useState('');
+  const [connected, setConnected] = useState(true);
+  const [tipPct, setTipPct] = useState(0);
 
   const [categories, setCategories] = useState<Category[]>([]);
   const [catalogLoading, setCatalogLoading] = useState(true);
@@ -151,7 +158,26 @@ export default function WaiterPage() {
       .then((r) => r.json())
       .then((data) => setTableCount(data.tableCount ?? 10))
       .catch(() => {});
+    const savedWaiter = localStorage.getItem('waiter_name');
+    if (savedWaiter) {
+      const t = setTimeout(() => setWaiterName(savedWaiter), 0);
+      return () => clearTimeout(t);
+    }
   }, []);
+
+  const enterService = () => {
+    const clean = waiterDraft.trim().replace(/\d/g, '');
+    if (!clean) return;
+    localStorage.setItem('waiter_name', clean);
+    setWaiterName(clean);
+    setWaiterDraft('');
+    toast.success(`${clean}, ¡en servicio!`);
+  };
+
+  const leaveService = () => {
+    localStorage.removeItem('waiter_name');
+    setWaiterName('');
+  };
 
   useEffect(() => {
     fetch('/api/products')
@@ -176,6 +202,17 @@ export default function WaiterPage() {
       )
       .then(([orders, calls]) => {
         if (Array.isArray(orders)) {
+          setLiveOrders(
+            orders.map(
+              (o: { id: string; displayId: number; tableNumber: string; status: string; waiter?: string | null }) => ({
+                id: o.id,
+                displayId: o.displayId,
+                tableNumber: o.tableNumber,
+                status: o.status,
+                waiter: o.waiter ?? null,
+              })
+            )
+          );
           const tableMap = new Map<string, TableData['status']>();
           for (const o of orders) {
             const tn = o.tableNumber;
@@ -206,9 +243,10 @@ export default function WaiterPage() {
 
   useEffect(() => {
     const socket = getSocket();
-    const joinRooms = () => socket.emit('join:waiter');
-    joinRooms();
-    socket.on('connect', joinRooms);
+    joinRoom('waiter');
+
+    const onConnect = () => setConnected(true);
+    const onDisconnect = () => setConnected(false);
 
     const onNewCall = (call: TableCall) => {
       setActiveCalls((prev) => [call, ...prev]);
@@ -221,21 +259,29 @@ export default function WaiterPage() {
       loadTables();
     };
     const onOrderNew = () => loadTables();
-    const onOrderUpdated = (order: { status: string; tableNumber: string }) => {
+    const onOrderUpdated = (order: { status: string; tableNumber: string; waiter?: string | null }) => {
       if (order?.status === 'READY') {
-        setPendingAlerts((prev) => [...prev, { type: 'READY', tableNumber: order.tableNumber }]);
-        startAlertLoop('READY');
+        setPendingAlerts((prev) => [...prev, { type: 'READY', tableNumber: order.tableNumber, waiter: order.waiter ?? null }]);
+        const myName = localStorage.getItem('waiter_name') || '';
+        if (!order.waiter || order.waiter === myName) {
+          startAlertLoop('READY');
+        }
       }
       loadTables();
     };
 
+    socket.on('connect', onConnect);
+    socket.on('disconnect', onDisconnect);
+    socket.on('connect_error', onDisconnect);
     socket.on('tableCall:new', onNewCall);
     socket.on('tableCall:resolved', onResolvedCall);
     socket.on('order:new', onOrderNew);
     socket.on('order:updated', onOrderUpdated);
 
     return () => {
-      socket.off('connect', joinRooms);
+      socket.off('connect', onConnect);
+      socket.off('disconnect', onDisconnect);
+      socket.off('connect_error', onDisconnect);
       socket.off('tableCall:new', onNewCall);
       socket.off('tableCall:resolved', onResolvedCall);
       socket.off('order:new', onOrderNew);
@@ -275,6 +321,59 @@ export default function WaiterPage() {
     }
   };
 
+  const patchStatus = async (orderId: string, status: string) => {
+    const res = await fetch(`/api/orders/${orderId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status }),
+    });
+    if (!res.ok) throw new Error('patch failed');
+    return res.json();
+  };
+
+  const deliverOrder = async (orderId: string, tableNum: string, displayId: number) => {
+    try {
+      await patchStatus(orderId, 'DELIVERED');
+      acknowledgeAlerts(tableNum);
+      loadTables();
+      toast.custom(
+        (t) => (
+          <div className="bg-carbon text-cream border-2 border-carbon rounded-xl shadow-pop px-4 py-3 flex items-center gap-4 text-sm font-bold max-w-sm">
+            <span className="flex-1">Mesa {tableNum} — pedido entregado</span>
+            <button
+              type="button"
+              onClick={async () => {
+                toast.dismiss(t.id);
+                try {
+                  const res = await fetch(`/api/orders?displayId=${displayId}`);
+                  const current = res.ok ? await res.json() : null;
+                  if (current && current.status === 'DELIVERED') {
+                    await patchStatus(current.id, 'READY');
+                    loadTables();
+                    toast.success('Entrega desecha');
+                  } else {
+                    toast('La orden ya cambió');
+                  }
+                } catch {
+                  toast.error('No se pudo deshacer');
+                }
+              }}
+              className="btn btn-solid btn-sm shrink-0"
+            >
+              Deshacer
+            </button>
+          </div>
+        ),
+        { duration: 5000 }
+      );
+    } catch {
+      toast.error('No se pudo marcar como entregado');
+    }
+  };
+
+  const readyOrderFor = (tableNum: string | null) =>
+    tableNum ? liveOrders.find((o) => o.tableNumber === tableNum && o.status === 'READY') || null : null;
+
   const handleTableClick = (tableNum: string) => {
     const calls = activeCalls.filter((c) => c.tableNumber === tableNum);
     if (calls.length > 0) {
@@ -313,6 +412,8 @@ export default function WaiterPage() {
         tableNumber: selectedTable,
         paymentMethod: 'CASH',
         status: 'PENDING',
+        waiter: waiterName || null,
+        tip: Math.round(cartTotal * tipPct) / 100,
         items: cart.map((item) => ({
           productId: item.product.id,
           productName: item.product.name,
@@ -344,7 +445,41 @@ export default function WaiterPage() {
 
   const activeProducts = categories.find((c) => c.id === activeCategory)?.products || [];
   const tableCallsForSelected = activeCalls.filter((c) => c.tableNumber === selectedTable);
+
+  if (!waiterName) {
+    return (
+      <div className="min-h-screen bg-cream flex items-center justify-center p-4">
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="card p-8 w-full max-w-sm text-center relative overflow-hidden"
+        >
+          <div className="absolute top-0 inset-x-0 h-1.5 bg-burger" />
+          <div className="w-16 h-16 rounded-full bg-mustard border-2 border-carbon flex items-center justify-center mx-auto mb-4 shadow-card">
+            <UserRound className="w-8 h-8 text-carbon" />
+          </div>
+          <h1 className="display text-2xl text-carbon sign-yellow">¿Quién está en servicio?</h1>
+          <p className="text-sm text-carbon/60 mt-2">Tus pedidos y alertas se asocian a tu nombre.</p>
+          <input
+            value={waiterDraft}
+            onChange={(e) => setWaiterDraft(e.target.value.replace(/\d/g, ''))}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') enterService();
+            }}
+            placeholder="Tu nombre"
+            aria-label="Nombre del mesero"
+            className="field w-full mt-5"
+          />
+          <Button onClick={enterService} fullWidth size="lg" className="mt-4">
+            Entrar al piso
+          </Button>
+        </motion.div>
+      </div>
+    );
+  }
   const cartTotal = cart.reduce((sum, item) => sum + calcItemPrice(item) * item.quantity, 0);
+  const tipAmount = Math.round(cartTotal * tipPct) / 100;
+  const readyOrder = readyOrderFor(selectedTable);
 
   return (
     <div className="min-h-screen bg-cream">
@@ -353,28 +488,50 @@ export default function WaiterPage() {
           (() => {
             const alert = pendingAlerts[pendingAlerts.length - 1];
             const isReady = alert.type === 'READY';
+            const readyOrder = isReady
+              ? liveOrders.find((o) => o.tableNumber === alert.tableNumber && o.status === 'READY')
+              : undefined;
             return (
-              <motion.button
+              <motion.div
                 key={alert.tableNumber + alert.type + pendingAlerts.length}
-                onClick={() => acknowledgeAlerts(alert.tableNumber)}
+                role="alert"
                 initial={{ y: -80, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 exit={{ y: -80, opacity: 0 }}
                 transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-                className={`fixed top-4 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-6 py-3 rounded-2xl shadow-pop border-2 border-carbon text-sm font-bold cursor-pointer ${
+                className={`fixed top-4 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-4 py-3 rounded-2xl shadow-pop border-2 border-carbon text-sm font-bold ${
                   isReady ? 'bg-mint text-cream' : 'bg-mustard text-carbon'
                 }`}
               >
-                {isReady ? (
-                  <CheckCircle2 className="w-5 h-5 animate-pulse" />
-                ) : alert.type === 'CALL_WAITER' ? (
-                  <BellRing className="w-5 h-5 animate-pulse" />
-                ) : (
-                  <DollarSign className="w-5 h-5 animate-pulse" />
+                <button
+                  type="button"
+                  onClick={() => acknowledgeAlerts(alert.tableNumber)}
+                  aria-label={`Abrir mesa ${alert.tableNumber}`}
+                  className="flex items-center gap-3 flex-1 text-left min-w-0"
+                >
+                  {isReady ? (
+                    <CheckCircle2 className="w-5 h-5 animate-pulse shrink-0" />
+                  ) : alert.type === 'CALL_WAITER' ? (
+                    <BellRing className="w-5 h-5 animate-pulse shrink-0" />
+                  ) : (
+                    <DollarSign className="w-5 h-5 animate-pulse shrink-0" />
+                  )}
+                  <span className="truncate">
+                    Mesa {alert.tableNumber} — {ALERT_LABELS[alert.type]}
+                    {alert.waiter ? ` · ${alert.waiter}` : ''}
+                  </span>
+                  <span className="opacity-80 text-xs hidden sm:inline shrink-0">Toca para abrir</span>
+                </button>
+                {isReady && readyOrder && (
+                  <button
+                    type="button"
+                    onClick={() => deliverOrder(readyOrder.id, alert.tableNumber, readyOrder.displayId)}
+                    className="px-3 py-1.5 rounded-lg bg-cream text-carbon border-2 border-carbon text-xs font-bold hover:bg-mustard transition-colors shrink-0"
+                  >
+                    Entregado
+                  </button>
                 )}
-                Mesa {alert.tableNumber} — {ALERT_LABELS[alert.type]}
-                <span className="ml-2 opacity-80 text-xs">Toca para abrir</span>
-              </motion.button>
+              </motion.div>
             );
           })()}
       </AnimatePresence>
@@ -390,6 +547,22 @@ export default function WaiterPage() {
           </div>
         </div>
         <div className="flex items-center gap-2">
+          <div
+            className={`flex items-center gap-1.5 text-[10px] font-bold uppercase px-2.5 py-1.5 rounded-full border-2 border-carbon ${connected ? 'bg-cream text-mint-ink' : 'bg-cream text-rose'}`}
+          >
+            <span className={`w-1.5 h-1.5 rounded-full ${connected ? 'bg-mint' : 'bg-rose'} ${connected ? '' : 'animate-pulse'}`} />
+            {connected ? 'En línea' : 'Sin conexión'}
+          </div>
+          <button
+            type="button"
+            onClick={leaveService}
+            title="Cambiar mesero"
+            aria-label={`Mesero en servicio: ${waiterName}. Toca para cambiar`}
+            className="flex items-center gap-1.5 bg-cream/20 hover:bg-cream/35 text-cream text-xs font-bold px-2.5 py-1.5 rounded-full border-2 border-cream/40 transition-colors"
+          >
+            <UserRound className="w-3.5 h-3.5" />
+            <span className="max-w-24 truncate">{waiterName}</span>
+          </button>
           {activeCalls.length > 0 && (
             <div className="flex items-center gap-1.5 bg-cream text-rose text-xs font-bold px-3 py-1.5 rounded-full border-2 border-carbon">
               <span className="w-1.5 h-1.5 rounded-full bg-rose animate-pulse" />
@@ -514,6 +687,22 @@ export default function WaiterPage() {
                 </button>
               </div>
 
+              {selectedTable && readyOrder && (
+                <div className="bg-mint text-cream border-b-2 border-carbon px-6 py-2.5 flex items-center justify-between gap-3 shrink-0">
+                  <span className="text-sm font-bold flex items-center gap-2 min-w-0">
+                    <CheckCircle2 className="w-4 h-4 shrink-0" />
+                    <span className="truncate">Pedido listo para entregar</span>
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => deliverOrder(readyOrder.id, selectedTable, readyOrder.displayId)}
+                    className="px-3 py-1.5 rounded-lg bg-cream text-carbon border-2 border-carbon text-xs font-bold hover:bg-mustard transition-colors shrink-0"
+                  >
+                    Marcar entregado
+                  </button>
+                </div>
+              )}
+
               <div className="flex-1 overflow-y-auto">
                 <div className="px-6 pt-4">
                   <input
@@ -623,7 +812,33 @@ export default function WaiterPage() {
                       <ShoppingBag className="w-4 h-4 text-burger" />
                       <span className="text-sm font-bold text-carbon">{cart.length} artículo(s)</span>
                     </div>
-                    <span className="bg-mustard border-2 border-carbon rounded-lg px-2 py-0.5 font-bold text-carbon tabular-nums">{formatPrice(cartTotal)}</span>
+                    <div className="text-right">
+                      <span className="bg-mustard border-2 border-carbon rounded-lg px-2 py-0.5 font-bold text-carbon tabular-nums">{formatPrice(cartTotal + tipAmount)}</span>
+                      {tipAmount > 0 && (
+                        <p className="text-[10px] font-bold text-mint-ink mt-0.5">Incluye propina {formatPrice(tipAmount)}</p>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-bold text-carbon/70">Propina</span>
+                    <div className="flex gap-1" role="radiogroup" aria-label="Propina">
+                      {[0, 10, 15, 20].map((pct) => (
+                        <button
+                          key={pct}
+                          type="button"
+                          role="radio"
+                          aria-checked={tipPct === pct}
+                          onClick={() => setTipPct(pct)}
+                          className={`px-2.5 py-1 rounded-lg border-2 text-xs font-bold transition-colors ${
+                            tipPct === pct
+                              ? 'bg-mint text-cream border-carbon'
+                              : 'bg-card text-carbon/70 border-carbon/25 hover:border-carbon'
+                          }`}
+                        >
+                          {pct}%
+                        </button>
+                      ))}
+                    </div>
                   </div>
                   <div className="space-y-1 max-h-24 overflow-y-auto mb-2">
                     {cart.map((item) => (
