@@ -7,7 +7,7 @@ import { ArrowLeft, AlertTriangle, UtensilsCrossed } from 'lucide-react';
 import { useSessionStore } from '@/store/session-store';
 import { useStockStore } from '@/store/stock-store';
 import { useCartStore } from '@/store/cart-store';
-import { getSocket } from '@/lib/socket-client';
+import { getSocket, joinRoom } from '@/lib/socket-client';
 import type { Category, Product, StockUpdate } from '@/types';
 import CategoryNav from '@/components/client/CategoryNav';
 import ProductCard from '@/components/client/ProductCard';
@@ -78,7 +78,7 @@ export default function MenuPage() {
 
   useEffect(() => {
     const socket = getSocket();
-    socket.emit('join:clients');
+    joinRoom('clients');
     const onStock = (update: StockUpdate) => applyStockUpdate(update);
     socket.on('stock:updated', onStock);
     return () => {

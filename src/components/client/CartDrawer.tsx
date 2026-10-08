@@ -21,6 +21,10 @@ export default function CartDrawer({ isOpen, onClose }: Props) {
   const getItemPrice = useCartStore((s) => s.getItemPrice);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [tipPct, setTipPct] = useState(0);
+
+  const subtotal = getTotalAmount();
+  const tipAmount = Math.round(subtotal * tipPct) / 100;
 
   useEffect(() => {
     if (!isOpen) return;
@@ -46,6 +50,7 @@ export default function CartDrawer({ isOpen, onClose }: Props) {
         customerName,
         tableNumber,
         paymentMethod,
+        tip: tipAmount,
         items: items.map((item) => ({
           productId: item.product.id,
           productName: item.product.name,
@@ -69,8 +74,8 @@ export default function CartDrawer({ isOpen, onClose }: Props) {
 
       const order = await res.json();
 
-      const socket = (await import('@/lib/socket-client')).getSocket();
-      socket.emit('join:clients');
+      const { joinRoom } = await import('@/lib/socket-client');
+      joinRoom('clients');
 
       clearCart();
       router.push(`/success?orderId=${order.displayId}`);
@@ -215,10 +220,47 @@ export default function CartDrawer({ isOpen, onClose }: Props) {
                   />
                 </div>
 
+                <div className="pt-1">
+                  <p className="text-sm font-semibold text-carbon mb-2">Propina (opcional)</p>
+                  <div className="grid grid-cols-4 gap-2" role="radiogroup" aria-label="Propina">
+                    {[0, 10, 15, 20].map((pct) => {
+                      const selected = tipPct === pct;
+                      return (
+                        <button
+                          key={pct}
+                          type="button"
+                          role="radio"
+                          aria-checked={selected}
+                          onClick={() => setTipPct(pct)}
+                          className={`py-2.5 rounded-xl border-2 transition-[border-color,background-color,color,box-shadow] ${
+                            selected
+                              ? 'border-carbon bg-mint text-cream shadow-card'
+                              : 'border-carbon/25 bg-card text-carbon hover:border-carbon'
+                          }`}
+                        >
+                          <span className="block text-sm font-bold leading-tight">{pct}%</span>
+                          {pct > 0 && (
+                            <span className="block text-[10px] font-semibold opacity-80 tabular-nums">
+                              {formatPrice(Math.round(subtotal * pct) / 100)}
+                            </span>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
                 <div className="flex items-center justify-between border-t-2 border-carbon/15 pt-3">
-                  <span className="font-bold text-carbon">Total</span>
+                  <div>
+                    <span className="font-bold text-carbon">Total</span>
+                    {tipAmount > 0 && (
+                      <span className="block text-[11px] font-semibold text-mint-ink">
+                        Incluye propina de {formatPrice(tipAmount)}
+                      </span>
+                    )}
+                  </div>
                   <span className="font-bold text-2xl text-carbon bg-mustard border-2 border-carbon rounded-md px-2.5 py-0.5 tabular-nums">
-                    {formatPrice(getTotalAmount())}
+                    {formatPrice(subtotal + tipAmount)}
                   </span>
                 </div>
 

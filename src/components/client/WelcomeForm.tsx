@@ -35,6 +35,14 @@ export default function WelcomeForm() {
       .finally(() => setLoadingSettings(false));
   }, []);
 
+  useEffect(() => {
+    const mesa = new URLSearchParams(window.location.search).get('mesa');
+    if (mesa && /^\d{1,3}$/.test(mesa)) {
+      const t = setTimeout(() => setTable(mesa), 0);
+      return () => clearTimeout(t);
+    }
+  }, []);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim() || !table.trim()) {
