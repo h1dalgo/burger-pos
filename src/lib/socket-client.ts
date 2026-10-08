@@ -3,6 +3,12 @@
 import { io, Socket } from 'socket.io-client';
 
 let socketInstance: Socket | null = null;
+const joinedRooms = new Set<string>();
+
+export function joinRoom(room: string) {
+  joinedRooms.add(room);
+  getSocket().emit(`join:${room}`);
+}
 
 export function getSocket(): Socket {
   if (!socketInstance) {
@@ -19,11 +25,9 @@ export function getSocket(): Socket {
     });
 
     socketInstance.on('connect', () => {
-      console.log('[socket] connected');
-    });
-
-    socketInstance.on('disconnect', (reason) => {
-      console.log('[socket] disconnected:', reason);
+      for (const room of joinedRooms) {
+        socketInstance?.emit(`join:${room}`);
+      }
     });
 
     socketInstance.on('connect_error', (err) => {

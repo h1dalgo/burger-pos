@@ -3,8 +3,30 @@ import { prisma } from '@/lib/prisma';
 
 export const runtime = 'nodejs';
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
+    const displayIdParam = request.nextUrl.searchParams.get('displayId');
+    if (displayIdParam) {
+      const displayId = Number(displayIdParam);
+      if (!Number.isInteger(displayId)) {
+        return NextResponse.json({ error: 'Invalid displayId' }, { status: 400 });
+      }
+      const order = await prisma.order.findFirst({
+        where: { displayId },
+        include: {
+          items: {
+            include: {
+              variation: true,
+              removedIngredients: true,
+              addedExtras: true,
+              selections: true,
+            },
+          },
+        },
+      });
+      return NextResponse.json(order);
+    }
+
     const orders = await prisma.order.findMany({
       where: {
         status: { not: 'DELIVERED' },
@@ -31,7 +53,7 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { customerName, tableNumber, paymentMethod, items, status } = body;
+    const { customerName, tableNumber, paymentMethod, items, status, tip, waiter } = body;
 
     if (!customerName || !tableNumber || !paymentMethod || !items?.length) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
@@ -46,6 +68,16 @@ export async function POST(request: NextRequest) {
     if (status !== undefined && !validStatuses.includes(status)) {
       return NextResponse.json({ error: 'Invalid status' }, { status: 400 });
     }
+
+    const tipAmount = Number(tip) || 0;
+    if (!Number.isFinite(tipAmount) || tipAmount < 0 || tipAmount > 1000) {
+      return NextResponse.json({ error: 'Invalid tip' }, { status: 400 });
+    }
+
+    const waiterName =
+      typeof waiter === 'string' && waiter.trim() && waiter.trim().length <= 40
+        ? waiter.trim()
+        : null;
 
     let totalAmount = 0;
     const orderItems = items.map((item: any) => {
@@ -94,6 +126,8 @@ export async function POST(request: NextRequest) {
         tableNumber,
         paymentMethod,
         totalAmount,
+        tip: tipAmount,
+        waiter: waiterName,
         status: status || 'WAITING_PAYMENT',
         items: { create: orderItems },
       },

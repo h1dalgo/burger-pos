@@ -117,6 +117,8 @@ model Order {
   status        OrderStatus   @default(PENDING)
   paymentMethod PaymentMethod @map("payment_method")
   totalAmount   Decimal       @map("total_amount") @db.Decimal(10, 2)
+  tip           Decimal       @default(0) @db.Decimal(10, 2)
+  waiter        String?
   createdAt     DateTime      @default(now()) @map("created_at")
   updatedAt     DateTime      @updatedAt @map("updated_at")
 

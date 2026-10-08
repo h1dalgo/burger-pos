@@ -80,6 +80,8 @@ export interface Order {
   status: OrderStatus;
   paymentMethod: PaymentMethod;
   totalAmount: number;
+  tip?: number;
+  waiter?: string | null;
   createdAt: string;
   updatedAt: string;
   items: OrderItem[];

@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   if (pathname === '/admin' || pathname.startsWith('/admin/')) {
@@ -16,9 +16,17 @@ export function middleware(request: NextRequest) {
     }
   }
 
+  if (pathname.startsWith('/api/admin') && pathname !== '/api/admin/login') {
+    const adminPin = process.env.ADMIN_PIN || '1234';
+    const adminAuth = request.cookies.get('admin_auth')?.value;
+    if (adminAuth !== adminPin && adminAuth !== adminPin + ':true') {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+  }
+
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: ['/admin/:path*', '/admin123/:path*'],
+  matcher: ['/admin/:path*', '/admin123/:path*', '/api/admin/:path*'],
 };
