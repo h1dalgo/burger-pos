@@ -13,6 +13,8 @@ import {
   UserRound,
   Menu,
   X,
+  QrCode,
+  Receipt,
 } from 'lucide-react';
 import { useAdminStore } from '@/store/admin-store';
 
@@ -25,6 +27,8 @@ export default function AdminSidebar() {
   const links = [
     { href: '/admin123', label: 'Dashboard', icon: LayoutDashboard },
     { href: '/admin123/products', label: 'Productos', icon: ShoppingBag },
+    { href: '/admin123/report', label: 'Corte de Caja', icon: Receipt },
+    { href: '/admin123/qr', label: 'Códigos QR', icon: QrCode },
     { href: '/admin123/settings', label: 'Configuración', icon: SettingsIcon },
   ];
 
@@ -102,11 +106,11 @@ export default function AdminSidebar() {
 
   return (
     <>
-      <aside className="hidden md:flex w-64 shrink-0 min-h-screen bg-burger text-cream flex-col border-r-2 border-carbon sticky top-0 h-screen">
+      <aside className="hidden md:flex w-64 shrink-0 min-h-screen bg-burger text-cream flex-col border-r-2 border-carbon sticky top-0 h-screen print:hidden">
         {navContent}
       </aside>
 
-      <header className="md:hidden sticky top-0 z-40 flex items-center justify-between px-4 py-3 bg-burger border-b-2 border-carbon">
+      <header className="md:hidden sticky top-0 z-40 flex items-center justify-between px-4 py-3 bg-burger border-b-2 border-carbon print:hidden">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-lg bg-mustard border-2 border-carbon flex items-center justify-center">
             <Menu className="w-4 h-4 text-carbon" />
