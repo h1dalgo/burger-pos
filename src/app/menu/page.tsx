@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { AnimatePresence } from 'framer-motion';
-import { ArrowLeft, AlertTriangle, UtensilsCrossed } from 'lucide-react';
+import { ArrowLeft, AlertTriangle, UtensilsCrossed, Receipt } from 'lucide-react';
 import { useSessionStore } from '@/store/session-store';
 import { useStockStore } from '@/store/stock-store';
 import { useCartStore } from '@/store/cart-store';
@@ -20,7 +20,7 @@ import { Button } from '@/components/ui/Button';
 
 export default function MenuPage() {
   const router = useRouter();
-  const { customerName, tableNumber } = useSessionStore();
+  const { customerName, tableNumber, lastOrderId } = useSessionStore();
   const { isProductAvailable, applyStockUpdate, initializeFromProducts } = useStockStore();
   const cartItems = useCartStore((s) => s.items);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -109,6 +109,15 @@ export default function MenuPage() {
               </span>
               <p className="display text-xl text-cream sign truncate">¡Hola, {customerName}!</p>
             </div>
+            {lastOrderId && (
+              <button
+                onClick={() => router.push(`/success?orderId=${lastOrderId}`)}
+                className="ml-auto shrink-0 flex items-center gap-1.5 bg-cream text-carbon border-2 border-carbon rounded-full px-3 py-1.5 text-xs font-bold hover:bg-mustard transition-colors shadow-card tabular-nums"
+              >
+                <Receipt className="w-3.5 h-3.5" />
+                Mi pedido #{String(lastOrderId).padStart(4, '0')}
+              </button>
+            )}
           </header>
 
           {!loading && !error && categories.length > 0 && (

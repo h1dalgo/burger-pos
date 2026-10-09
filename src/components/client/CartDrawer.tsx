@@ -44,7 +44,8 @@ export default function CartDrawer({ isOpen, onClose }: Props) {
     setSubmitting(true);
 
     try {
-      const { customerName, tableNumber } = (await import('@/store/session-store')).useSessionStore.getState();
+      const session = (await import('@/store/session-store')).useSessionStore;
+      const { customerName, tableNumber } = session.getState();
 
       const payload = {
         customerName,
@@ -74,6 +75,7 @@ export default function CartDrawer({ isOpen, onClose }: Props) {
 
       const order = await res.json();
 
+      session.getState().setLastOrderId(String(order.displayId));
       const { joinRoom } = await import('@/lib/socket-client');
       joinRoom('clients');
 
