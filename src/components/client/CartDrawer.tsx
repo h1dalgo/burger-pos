@@ -78,7 +78,10 @@ export default function CartDrawer({ isOpen, onClose, onRequireTable }: Props) {
         body: JSON.stringify(payload),
       });
 
-      if (!res.ok) throw new Error('Error al crear pedido');
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        throw new Error(data?.error || 'Error al enviar el pedido');
+      }
 
       const order = await res.json();
 
@@ -88,8 +91,8 @@ export default function CartDrawer({ isOpen, onClose, onRequireTable }: Props) {
 
       clearCart();
       router.push(`/success?orderId=${order.displayId}`);
-    } catch {
-      setError('Error al enviar el pedido. Intenta de nuevo.');
+    } catch (err) {
+      setError(err instanceof Error && err.message ? err.message : 'Error al enviar el pedido. Intenta de nuevo.');
     } finally {
       setSubmitting(false);
     }

@@ -432,12 +432,15 @@ export default function WaiterPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
-      if (!res.ok) throw new Error('Error');
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        throw new Error(data?.error || 'Error al enviar el pedido');
+      }
       setCart([]);
       toast.success('Pedido enviado a cocina');
       loadTables();
-    } catch {
-      toast.error('Error al enviar el pedido');
+    } catch (err) {
+      toast.error(err instanceof Error && err.message ? err.message : 'Error al enviar el pedido');
     } finally {
       setSubmitting(false);
     }

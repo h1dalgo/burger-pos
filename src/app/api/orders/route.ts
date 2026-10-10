@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import type { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 
 export const runtime = 'nodejs';
@@ -55,7 +56,13 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { customerName, tableNumber, paymentMethod, items, status, tip, waiter } = body;
 
-    if (!customerName || !tableNumber || !paymentMethod || !items?.length) {
+    if (typeof customerName !== 'string' || !customerName.trim() || customerName.trim().length > 80) {
+      return NextResponse.json({ error: 'Nombre inválido' }, { status: 400 });
+    }
+    if (typeof tableNumber !== 'string' || !tableNumber.trim() || tableNumber.trim().length > 10) {
+      return NextResponse.json({ error: 'Mesa inválida' }, { status: 400 });
+    }
+    if (!paymentMethod || !Array.isArray(items) || items.length === 0) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
@@ -79,34 +86,78 @@ export async function POST(request: NextRequest) {
         ? waiter.trim()
         : null;
 
+    const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    const productIds = [...new Set(items.map((item: { productId?: unknown }) => item?.productId).filter(Boolean))] as string[];
+    const validIds = productIds.filter((id) => typeof id === 'string' && UUID_RE.test(id));
+    const dbProducts = validIds.length
+      ? await prisma.product.findMany({
+          where: { id: { in: validIds } },
+          include: { variations: true, extraIngredients: true },
+        })
+      : [];
+    const productById = new Map(dbProducts.map((p) => [p.id, p]));
+
     let totalAmount = 0;
-    const orderItems = items.map((item: any) => {
-      let unitPrice = Number(item.basePrice);
-      if (item.variation) unitPrice += Number(item.variation.additionalPrice);
-      if (item.addedExtras) {
-        for (const extra of item.addedExtras) {
-          unitPrice += Number(extra.basePrice);
-        }
+    const orderItems: Prisma.OrderItemUncheckedCreateWithoutOrderInput[] = [];
+    for (const item of items) {
+      const product = item?.productId ? productById.get(item.productId) : undefined;
+      if (!product) {
+        return NextResponse.json({ error: 'Producto no encontrado' }, { status: 400 });
       }
-      const subtotal = unitPrice * item.quantity;
+      if (!product.isAvailable) {
+        return NextResponse.json({ error: `${product.name} ya no está disponible` }, { status: 400 });
+      }
+      const qty = Number(item.quantity);
+      if (!Number.isInteger(qty) || qty < 1 || qty > 99) {
+        return NextResponse.json({ error: `Cantidad inválida para ${product.name}` }, { status: 400 });
+      }
+
+      let unitPrice = Number(product.basePrice);
+      let variationRel: Prisma.OrderItemVariationUncheckedCreateNestedOneWithoutOrderItemInput | undefined;
+      if (item.variation) {
+        const v = product.variations.find((x) => x.id === item.variation?.id);
+        if (!v) {
+          return NextResponse.json({ error: `Variación inválida para ${product.name}` }, { status: 400 });
+        }
+        if (!v.isAvailable) {
+          return NextResponse.json({ error: `${product.name} (${v.name}) ya no está disponible` }, { status: 400 });
+        }
+        unitPrice += Number(v.additionalPrice);
+        variationRel = { create: { variationName: v.name, additionalPrice: v.additionalPrice } };
+      }
+
+      let extrasRel: Prisma.OrderItemAddedExtraUncheckedCreateNestedManyWithoutOrderItemInput | undefined;
+      if (Array.isArray(item.addedExtras) && item.addedExtras.length > 0) {
+        const resolved: Prisma.OrderItemAddedExtraCreateWithoutOrderItemInput[] = [];
+        for (const extra of item.addedExtras) {
+          const e = product.extraIngredients.find((x) => x.id === extra?.id);
+          if (!e) {
+            return NextResponse.json({ error: `Extra inválido para ${product.name}` }, { status: 400 });
+          }
+          if (!e.isAvailable) {
+            return NextResponse.json({ error: `${e.name} ya no está disponible` }, { status: 400 });
+          }
+          unitPrice += Number(e.basePrice);
+          resolved.push({ extraName: e.name, price: e.basePrice });
+        }
+        extrasRel = { create: resolved };
+      }
+
+      const subtotal = unitPrice * qty;
       totalAmount += subtotal;
 
-      return {
-        productId: item.productId,
-        productName: item.productName,
-        quantity: item.quantity,
+      orderItems.push({
+        productId: product.id,
+        productName: product.name,
+        quantity: qty,
         unitPrice,
         subtotal,
-        note: item.note || null,
-        variation: item.variation
-          ? { create: { variationName: item.variation.name, additionalPrice: item.variation.additionalPrice } }
-          : undefined,
+        note: typeof item.note === 'string' ? item.note.slice(0, 300) : null,
+        variation: variationRel,
         removedIngredients: item.removedIngredients?.length
           ? { create: item.removedIngredients.map((name: string) => ({ ingredientName: name })) }
           : undefined,
-        addedExtras: item.addedExtras?.length
-          ? { create: item.addedExtras.map((extra: any) => ({ extraName: extra.name, price: extra.basePrice })) }
-          : undefined,
+        addedExtras: extrasRel,
         selections: item.selections
           ? {
               create: Object.entries(item.selections).flatMap(([selectionId, options]) =>
@@ -117,13 +168,13 @@ export async function POST(request: NextRequest) {
               ),
             }
           : undefined,
-      };
-    });
+      });
+    }
 
     const order = await prisma.order.create({
       data: {
-        customerName,
-        tableNumber,
+        customerName: customerName.trim(),
+        tableNumber: tableNumber.trim(),
         paymentMethod,
         totalAmount,
         tip: tipAmount,
