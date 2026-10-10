@@ -11,13 +11,11 @@ import { Skeleton } from '@/components/ui/Skeleton';
 
 export default function WelcomeForm() {
   const router = useRouter();
-  const { customerName, tableNumber, setCustomerName, setTableNumber } = useSessionStore();
+  const { customerName, setCustomerName, setTableNumber } = useSessionStore();
   const sessionHydrated = useSessionHydrated();
   const [name, setName] = useState(customerName);
-  const [table, setTable] = useState(tableNumber);
   const [error, setError] = useState('');
   const [nameError, setNameError] = useState('');
-  const [tableError, setTableError] = useState('');
   const [loadingSettings, setLoadingSettings] = useState(true);
   const [businessName, setBusinessName] = useState('BURGER POS');
   const [businessLogo, setBusinessLogo] = useState('');
@@ -37,40 +35,31 @@ export default function WelcomeForm() {
   }, []);
 
   useEffect(() => {
+    if (!sessionHydrated || tableCount < 1) return;
     const mesa = new URLSearchParams(window.location.search).get('mesa');
-    if (mesa && /^\d{1,3}$/.test(mesa)) {
-      const t = setTimeout(() => setTable(mesa), 0);
-      return () => clearTimeout(t);
-    }
-  }, []);
+    if (!mesa || !/^\d{1,3}$/.test(mesa)) return;
+    const num = Number(mesa);
+    if (num < 1 || num > tableCount) return;
+    setTableNumber(mesa);
+  }, [sessionHydrated, tableCount, setTableNumber]);
 
   useEffect(() => {
     if (!sessionHydrated) return;
-    const t = setTimeout(() => {
-      setName((n) => n || customerName);
-      setTable((x) => x || tableNumber);
-    }, 0);
+    const t = setTimeout(() => setName((n) => n || customerName), 0);
     return () => clearTimeout(t);
-  }, [sessionHydrated, customerName, tableNumber]);
+  }, [sessionHydrated, customerName]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim() || !table.trim()) {
-      setError('Completa todos los campos');
+    if (!name.trim()) {
+      setError('Escribe tu nombre');
       return;
     }
     if (/\d/.test(name)) {
       setNameError('El nombre no puede contener números');
       return;
     }
-    const tableNum = Number(table);
-    if (tableCount > 0 && (!Number.isInteger(tableNum) || tableNum < 1 || tableNum > tableCount)) {
-      setTableError(`Las mesas disponibles son de la 1 a la ${tableCount}`);
-      return;
-    }
-    setTableError('');
     setCustomerName(name.trim());
-    setTableNumber(table.trim());
     router.push('/menu');
   };
 
@@ -142,22 +131,6 @@ export default function WelcomeForm() {
             }}
             placeholder="Ej: Juan"
             error={nameError || (error && !name.trim() ? error : undefined)}
-          />
-
-          <TextField
-            label="Número de Mesa"
-            type="number"
-            inputMode="numeric"
-            min={1}
-            value={table}
-            onChange={(e) => {
-              setTable(e.target.value);
-              setError('');
-              setTableError('');
-            }}
-            placeholder="Ej: 5"
-            error={tableError || (error && !table.trim() ? error : undefined)}
-            className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
           />
 
           <Button type="submit" fullWidth size="lg">

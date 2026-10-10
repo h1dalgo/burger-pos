@@ -13,9 +13,10 @@ import PaymentSelector from './PaymentSelector';
 interface Props {
   isOpen: boolean;
   onClose: () => void;
+  onRequireTable?: () => void;
 }
 
-export default function CartDrawer({ isOpen, onClose }: Props) {
+export default function CartDrawer({ isOpen, onClose, onRequireTable }: Props) {
   const router = useRouter();
   const { items, removeItem, updateQuantity, paymentMethod, setPaymentMethod, getTotalAmount, clearCart } = useCartStore();
   const getItemPrice = useCartStore((s) => s.getItemPrice);
@@ -46,6 +47,12 @@ export default function CartDrawer({ isOpen, onClose }: Props) {
     try {
       const session = (await import('@/store/session-store')).useSessionStore;
       const { customerName, tableNumber } = session.getState();
+
+      if (!tableNumber) {
+        onClose();
+        onRequireTable?.();
+        return;
+      }
 
       const payload = {
         customerName,

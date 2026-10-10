@@ -3,7 +3,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { AnimatePresence } from 'framer-motion';
-import { ArrowLeft, AlertTriangle, UtensilsCrossed, Receipt } from 'lucide-react';
+import { ArrowLeft, AlertTriangle, UtensilsCrossed, Receipt, Table2 } from 'lucide-react';
+import { toast } from 'react-hot-toast';
 import { useSessionStore, useSessionHydrated } from '@/store/session-store';
 import { useStockStore } from '@/store/stock-store';
 import { useCartStore } from '@/store/cart-store';
@@ -14,13 +15,14 @@ import ProductCard from '@/components/client/ProductCard';
 import ProductModal from '@/components/client/ProductModal';
 import CartFloatingButton from '@/components/client/CartFloatingButton';
 import CartDrawer from '@/components/client/CartDrawer';
+import TablePickerSheet from '@/components/client/TablePickerSheet';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Button } from '@/components/ui/Button';
 
 export default function MenuPage() {
   const router = useRouter();
-  const { customerName, tableNumber, lastOrderId } = useSessionStore();
+  const { customerName, tableNumber, lastOrderId, setTableNumber } = useSessionStore();
   const sessionHydrated = useSessionHydrated();
   const { isProductAvailable, applyStockUpdate, initializeFromProducts } = useStockStore();
   const cartItems = useCartStore((s) => s.items);
@@ -28,17 +30,49 @@ export default function MenuPage() {
   const [activeCategory, setActiveCategory] = useState<string>('');
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [cartOpen, setCartOpen] = useState(false);
+  const [tablePickerOpen, setTablePickerOpen] = useState(false);
+  const [tableCount, setTableCount] = useState(10);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [firstLoad, setFirstLoad] = useState(true);
 
   useEffect(() => {
     if (!sessionHydrated) return;
-    if (!customerName || !tableNumber) {
+    if (!customerName) {
       router.push('/');
       return;
     }
-  }, [sessionHydrated, customerName, tableNumber, router]);
+  }, [sessionHydrated, customerName, router]);
+
+  useEffect(() => {
+    fetch('/api/settings')
+      .then((r) => r.json())
+      .then((d) => {
+        if (typeof d?.tableCount === 'number' && d.tableCount > 0) setTableCount(d.tableCount);
+      })
+      .catch(() => {});
+  }, []);
+
+  const handleTableSelect = async (table: string) => {
+    const prev = tableNumber;
+    setTableNumber(table);
+    setTablePickerOpen(false);
+    if (prev === table || !lastOrderId) return;
+    try {
+      const res = await fetch(`/api/orders?displayId=${lastOrderId}`);
+      if (!res.ok) return;
+      const order = await res.json();
+      if (!order || order.status === 'DELIVERED') return;
+      const patch = await fetch(`/api/orders/${order.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tableNumber: table }),
+      });
+      if (patch.ok) toast.success(`Tu pedido se movió a la mesa ${table}`);
+    } catch {
+      // el cambio de mesa en la sesión sí se aplicó; el pedido quedó en su mesa anterior
+    }
+  };
 
   const fetchMenu = useCallback(() => {
     fetch('/api/products')
@@ -106,9 +140,14 @@ export default function MenuPage() {
               <ArrowLeft className="w-5 h-5" />
             </button>
             <div className="min-w-0 flex items-center gap-2.5">
-              <span className="shrink-0 text-[11px] font-bold uppercase bg-mustard text-carbon border-2 border-carbon rounded-full px-2.5 py-1 tabular-nums">
-                Mesa {tableNumber}
-              </span>
+              <button
+                onClick={() => setTablePickerOpen(true)}
+                aria-label={tableNumber ? `Mesa ${tableNumber}. Toca para cambiar de mesa` : 'Elige tu mesa'}
+                className="shrink-0 flex items-center gap-1.5 text-[11px] font-bold uppercase bg-mustard text-carbon border-2 border-carbon rounded-full px-2.5 py-1 hover:bg-cream transition-colors"
+              >
+                <Table2 className="w-3.5 h-3.5" />
+                {tableNumber ? `Mesa ${tableNumber}` : 'Elige mesa'}
+              </button>
               <p className="display text-xl text-cream sign truncate">¡Hola, {customerName}!</p>
             </div>
             {lastOrderId && (
@@ -219,7 +258,22 @@ export default function MenuPage() {
         )}
       </AnimatePresence>
 
-      <CartDrawer isOpen={cartOpen} onClose={() => setCartOpen(false)} />
+      <AnimatePresence>
+        {tablePickerOpen && (
+          <TablePickerSheet
+            onClose={() => setTablePickerOpen(false)}
+            tableCount={tableCount}
+            current={tableNumber}
+            onSelect={handleTableSelect}
+          />
+        )}
+      </AnimatePresence>
+
+      <CartDrawer
+        isOpen={cartOpen}
+        onClose={() => setCartOpen(false)}
+        onRequireTable={() => setTablePickerOpen(true)}
+      />
     </div>
   );
 }

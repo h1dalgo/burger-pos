@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import type { OrderStatus } from '@/types';
 
 export const runtime = 'nodejs';
 
@@ -10,20 +11,32 @@ export async function PATCH(
   const { id } = await params;
   try {
     const body = await request.json();
-    const { status } = body;
+    const { status, tableNumber } = body;
 
-    if (!status) {
-      return NextResponse.json({ error: 'Status is required' }, { status: 400 });
+    if (status === undefined && tableNumber === undefined) {
+      return NextResponse.json({ error: 'Status or tableNumber is required' }, { status: 400 });
     }
 
-    const validStatuses = ['WAITING_PAYMENT', 'PENDING', 'IN_PREPARATION', 'READY', 'DELIVERED'];
-    if (!validStatuses.includes(status)) {
-      return NextResponse.json({ error: 'Invalid status' }, { status: 400 });
+    const data: { status?: OrderStatus; tableNumber?: string } = {};
+
+    if (status !== undefined) {
+      const validStatuses: string[] = ['WAITING_PAYMENT', 'PENDING', 'IN_PREPARATION', 'READY', 'DELIVERED'];
+      if (!validStatuses.includes(status)) {
+        return NextResponse.json({ error: 'Invalid status' }, { status: 400 });
+      }
+      data.status = status as OrderStatus;
+    }
+
+    if (tableNumber !== undefined) {
+      if (typeof tableNumber !== 'string' || !tableNumber.trim() || tableNumber.trim().length > 10) {
+        return NextResponse.json({ error: 'Invalid tableNumber' }, { status: 400 });
+      }
+      data.tableNumber = tableNumber.trim();
     }
 
     const order = await prisma.order.update({
       where: { id },
-      data: { status },
+      data,
       include: {
         items: {
           include: {
@@ -37,7 +50,7 @@ export async function PATCH(
     });
 
     if (global.io) {
-      if (status === 'DELIVERED') {
+      if (data.status === 'DELIVERED') {
         global.io.to('kitchen').emit('order:archived', id);
       } else {
         global.io.to('kitchen').emit('order:updated', order);
