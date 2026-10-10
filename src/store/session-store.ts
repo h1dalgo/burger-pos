@@ -1,3 +1,4 @@
+import { useSyncExternalStore } from 'react';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
@@ -25,3 +26,11 @@ export const useSessionStore = create<SessionState>()(
     { name: 'burger-session' }
   )
 );
+
+export function useSessionHydrated() {
+  return useSyncExternalStore(
+    (onChange) => useSessionStore.persist?.onFinishHydration(onChange) ?? (() => {}),
+    () => useSessionStore.persist?.hasHydrated() ?? false,
+    () => false
+  );
+}

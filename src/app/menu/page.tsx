@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { AnimatePresence } from 'framer-motion';
 import { ArrowLeft, AlertTriangle, UtensilsCrossed, Receipt } from 'lucide-react';
-import { useSessionStore } from '@/store/session-store';
+import { useSessionStore, useSessionHydrated } from '@/store/session-store';
 import { useStockStore } from '@/store/stock-store';
 import { useCartStore } from '@/store/cart-store';
 import { getSocket, joinRoom } from '@/lib/socket-client';
@@ -21,6 +21,7 @@ import { Button } from '@/components/ui/Button';
 export default function MenuPage() {
   const router = useRouter();
   const { customerName, tableNumber, lastOrderId } = useSessionStore();
+  const sessionHydrated = useSessionHydrated();
   const { isProductAvailable, applyStockUpdate, initializeFromProducts } = useStockStore();
   const cartItems = useCartStore((s) => s.items);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -32,11 +33,12 @@ export default function MenuPage() {
   const [firstLoad, setFirstLoad] = useState(true);
 
   useEffect(() => {
+    if (!sessionHydrated) return;
     if (!customerName || !tableNumber) {
       router.push('/');
       return;
     }
-  }, [customerName, tableNumber, router]);
+  }, [sessionHydrated, customerName, tableNumber, router]);
 
   const fetchMenu = useCallback(() => {
     fetch('/api/products')

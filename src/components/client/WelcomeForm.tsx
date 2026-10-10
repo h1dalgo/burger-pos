@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { useSessionStore } from '@/store/session-store';
+import { useSessionStore, useSessionHydrated } from '@/store/session-store';
 import { UtensilsCrossed } from 'lucide-react';
 import { TextField } from '@/components/ui/TextField';
 import { Button } from '@/components/ui/Button';
@@ -12,6 +12,7 @@ import { Skeleton } from '@/components/ui/Skeleton';
 export default function WelcomeForm() {
   const router = useRouter();
   const { customerName, tableNumber, setCustomerName, setTableNumber } = useSessionStore();
+  const sessionHydrated = useSessionHydrated();
   const [name, setName] = useState(customerName);
   const [table, setTable] = useState(tableNumber);
   const [error, setError] = useState('');
@@ -42,6 +43,15 @@ export default function WelcomeForm() {
       return () => clearTimeout(t);
     }
   }, []);
+
+  useEffect(() => {
+    if (!sessionHydrated) return;
+    const t = setTimeout(() => {
+      setName((n) => n || customerName);
+      setTable((x) => x || tableNumber);
+    }, 0);
+    return () => clearTimeout(t);
+  }, [sessionHydrated, customerName, tableNumber]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
