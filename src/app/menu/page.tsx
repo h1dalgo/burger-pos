@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { AnimatePresence } from 'framer-motion';
-import { ArrowLeft, AlertTriangle, UtensilsCrossed, Receipt, Table2 } from 'lucide-react';
+import { ArrowLeft, AlertTriangle, UtensilsCrossed, Receipt, Table2, Bell } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { useSessionStore, useSessionHydrated } from '@/store/session-store';
 import { useStockStore } from '@/store/stock-store';
@@ -16,6 +16,7 @@ import ProductModal from '@/components/client/ProductModal';
 import CartFloatingButton from '@/components/client/CartFloatingButton';
 import CartDrawer from '@/components/client/CartDrawer';
 import TablePickerSheet from '@/components/client/TablePickerSheet';
+import ServiceSheet from '@/components/client/ServiceSheet';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Button } from '@/components/ui/Button';
@@ -31,6 +32,7 @@ export default function MenuPage() {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [cartOpen, setCartOpen] = useState(false);
   const [tablePickerOpen, setTablePickerOpen] = useState(false);
+  const [serviceOpen, setServiceOpen] = useState(false);
   const [tableCount, setTableCount] = useState(10);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -150,15 +152,24 @@ export default function MenuPage() {
               </button>
               <p className="display text-xl text-cream sign truncate">¡Hola, {customerName}!</p>
             </div>
-            {lastOrderId && (
+            <div className="ml-auto flex items-center gap-2 shrink-0">
               <button
-                onClick={() => router.push(`/success?orderId=${lastOrderId}`)}
-                className="ml-auto shrink-0 flex items-center gap-1.5 bg-cream text-carbon border-2 border-carbon rounded-full px-3 py-1.5 text-xs font-bold hover:bg-mustard transition-colors shadow-card tabular-nums"
+                onClick={() => setServiceOpen(true)}
+                aria-label="Llamar al mesero o pedir cuenta"
+                className="w-9 h-9 rounded-full bg-cream border-2 border-carbon flex items-center justify-center text-carbon hover:bg-mustard transition-colors"
               >
-                <Receipt className="w-3.5 h-3.5" />
-                Mi pedido #{String(lastOrderId).padStart(4, '0')}
+                <Bell className="w-4.5 h-4.5" />
               </button>
-            )}
+              {lastOrderId && (
+                <button
+                  onClick={() => router.push(`/success?orderId=${lastOrderId}`)}
+                  className="flex items-center gap-1.5 bg-cream text-carbon border-2 border-carbon rounded-full px-3 py-1.5 text-xs font-bold hover:bg-mustard transition-colors shadow-card tabular-nums"
+                >
+                  <Receipt className="w-3.5 h-3.5" />
+                  Mi pedido #{String(lastOrderId).padStart(4, '0')}
+                </button>
+              )}
+            </div>
           </header>
 
           {!loading && !error && categories.length > 0 && (
@@ -265,6 +276,15 @@ export default function MenuPage() {
             tableCount={tableCount}
             current={tableNumber}
             onSelect={handleTableSelect}
+          />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {serviceOpen && (
+          <ServiceSheet
+            onClose={() => setServiceOpen(false)}
+            onPickTable={() => setTablePickerOpen(true)}
           />
         )}
       </AnimatePresence>
