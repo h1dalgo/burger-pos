@@ -67,6 +67,7 @@ export interface CartItem {
   addedExtras: ExtraIngredient[];
   selections: Record<string, string[]>;
   selectionLabels?: Record<string, string>;
+  note?: string | null;
 }
 
 export type OrderStatus = 'WAITING_PAYMENT' | 'PENDING' | 'IN_PREPARATION' | 'READY' | 'DELIVERED';

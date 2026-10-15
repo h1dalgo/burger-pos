@@ -28,6 +28,7 @@ export default function ProductModal({ product, onClose }: Props) {
   const [addedExtras, setAddedExtras] = useState<ExtraIngredient[]>([]);
   const [selections, setSelections] = useState<Record<string, string[]>>({});
   const [quantity, setQuantity] = useState(1);
+  const [note, setNote] = useState('');
   const [error, setError] = useState('');
   const [imageFailed, setImageFailed] = useState(false);
   const closeRef = useRef<HTMLButtonElement>(null);
@@ -79,11 +80,12 @@ export default function ProductModal({ product, onClose }: Props) {
       addedExtras,
       selections,
       selectionLabels: Object.fromEntries(product.requiredSelections.map((rs) => [rs.id, rs.label])),
+      note,
     });
 
     toast.success(`${product.name} agregado al pedido`);
     onClose();
-  }, [product, selectedVariation, quantity, removedIngredients, addedExtras, selections, addItem, onClose]);
+  }, [product, selectedVariation, quantity, removedIngredients, addedExtras, selections, note, addItem, onClose]);
 
   const previewItem = {
     id: 'preview',
@@ -269,6 +271,21 @@ export default function ProductModal({ product, onClose }: Props) {
               </div>
             </div>
           )}
+
+          <div className="mt-4">
+            <label htmlFor="item-note" className="text-sm font-semibold text-carbon mb-2 block">
+              Nota para la cocina:
+            </label>
+            <textarea
+              id="item-note"
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              placeholder="Ej: Sin cebolla extra, bien tostado..."
+              rows={2}
+              maxLength={300}
+              className="field field-textarea w-full"
+            />
+          </div>
 
           <div className="mt-6 flex items-center justify-between">
             <div className="flex items-center gap-3">

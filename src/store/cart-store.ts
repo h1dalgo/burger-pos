@@ -13,6 +13,7 @@ interface CartState {
     addedExtras: ExtraIngredient[];
     selections: Record<string, string[]>;
     selectionLabels?: Record<string, string>;
+    note?: string | null;
   }) => void;
   removeItem: (itemId: string) => void;
   updateQuantity: (itemId: string, quantity: number) => void;
@@ -27,18 +28,7 @@ export const useCartStore = create<CartState>()((set, get) => ({
   items: [],
   paymentMethod: 'CASH',
 
-  addItem: ({ product, variation, quantity, removedIngredients, addedExtras, selections, selectionLabels }) => {
-    const itemPrice = get().getItemPrice({
-      id: '',
-      product,
-      variation,
-      quantity: 1,
-      removedIngredients,
-      addedExtras,
-      selections,
-      selectionLabels,
-    });
-
+  addItem: ({ product, variation, quantity, removedIngredients, addedExtras, selections, selectionLabels, note }) => {
     set((state) => ({
       items: [
         ...state.items,
@@ -51,6 +41,7 @@ export const useCartStore = create<CartState>()((set, get) => ({
           addedExtras,
           selections,
           selectionLabels,
+          note: note?.trim() ? note.trim().slice(0, 300) : null,
         },
       ],
     }));

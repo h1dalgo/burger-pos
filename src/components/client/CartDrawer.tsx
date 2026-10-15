@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Trash2, Minus, Plus, ShoppingBag } from 'lucide-react';
+import { X, Trash2, Minus, Plus, ShoppingBag, StickyNote } from 'lucide-react';
 import { useCartStore } from '@/store/cart-store';
 import { formatPrice } from '@/lib/utils';
 import { Button } from '@/components/ui/Button';
@@ -69,6 +69,7 @@ export default function CartDrawer({ isOpen, onClose, onRequireTable }: Props) {
           addedExtras: item.addedExtras,
           selections: item.selections,
           selectionLabels: item.selectionLabels,
+          note: item.note ?? null,
         })),
       };
 
@@ -174,6 +175,12 @@ export default function CartDrawer({ isOpen, onClose, onRequireTable }: Props) {
                                 {opt}
                               </p>
                             ))
+                          )}
+                          {item.note && (
+                            <p className="flex items-start gap-1.5 text-xs text-status-preparing italic">
+                              <StickyNote className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+                              {item.note}
+                            </p>
                           )}
                         </div>
                         <button
