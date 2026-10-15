@@ -141,17 +141,14 @@ export default function MenuPage() {
             >
               <ArrowLeft className="w-5 h-5" />
             </button>
-            <div className="min-w-0 flex items-center gap-2.5">
-              <button
-                onClick={() => setTablePickerOpen(true)}
-                aria-label={tableNumber ? `Mesa ${tableNumber}. Toca para cambiar de mesa` : 'Elige tu mesa'}
-                className="shrink-0 flex items-center gap-1.5 text-[11px] font-bold uppercase bg-mustard text-carbon border-2 border-carbon rounded-full px-2.5 py-1 hover:bg-cream transition-colors"
-              >
-                <Table2 className="w-3.5 h-3.5" />
-                {tableNumber ? `Mesa ${tableNumber}` : 'Elige mesa'}
-              </button>
-              <p className="display text-xl text-cream sign truncate">¡Hola, {customerName}!</p>
-            </div>
+            <button
+              onClick={() => setTablePickerOpen(true)}
+              aria-label={tableNumber ? `Mesa ${tableNumber}. Toca para cambiar de mesa` : 'Elige tu mesa'}
+              className="shrink-0 flex items-center gap-1.5 text-[11px] font-bold uppercase bg-mustard text-carbon border-2 border-carbon rounded-full px-2.5 py-1 hover:bg-cream transition-colors"
+            >
+              <Table2 className="w-3.5 h-3.5" />
+              {tableNumber ? `Mesa ${tableNumber}` : 'Elige mesa'}
+            </button>
             <div className="ml-auto flex items-center gap-2 shrink-0">
               <button
                 onClick={() => setServiceOpen(true)}
@@ -186,6 +183,11 @@ export default function MenuPage() {
       </div>
 
       <div className="max-w-5xl mx-auto px-4 py-4">
+        {customerName && (
+          <p className="display text-xl text-carbon sign-yellow mb-3">
+            ¡Hola, {customerName}!
+          </p>
+        )}
         {loading && (
           <div className="grid gap-3 sm:grid-cols-2">
             {Array.from({ length: 6 }).map((_, i) => (
