@@ -115,7 +115,7 @@ export default function ProductModal({ product, onClose }: Props) {
         exit={{ y: '100%', opacity: 0 }}
         transition={{ type: 'spring', damping: 25, stiffness: 300 }}
         onClick={(e) => e.stopPropagation()}
-        className="relative w-full sm:max-w-lg max-h-[90vh] bg-cream rounded-t-3xl sm:rounded-3xl overflow-y-auto overscroll-contain"
+        className="relative w-full sm:max-w-lg max-h-[calc(100%_-_8rem)] bg-cream rounded-t-3xl sm:rounded-3xl overflow-y-auto overscroll-contain"
       >
         {hasImage && (
           <div className="h-44 sm:h-52 overflow-hidden bg-carbon/5">

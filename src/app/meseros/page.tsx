@@ -662,7 +662,7 @@ export default function WaiterPage() {
               exit={{ y: '100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 300 }}
               onClick={(e) => e.stopPropagation()}
-              className="absolute bottom-0 left-0 right-0 max-h-[90vh] bg-card rounded-t-3xl overflow-hidden flex flex-col"
+              className="absolute bottom-0 left-0 right-0 max-h-[calc(100%_-_8rem)] bg-card rounded-t-3xl overflow-hidden flex flex-col"
             >
               <div className="sticky top-0 bg-card z-10 px-6 pt-4 pb-3 border-b-2 border-carbon flex items-center justify-between shrink-0">
                 <div className="flex items-center gap-3">
