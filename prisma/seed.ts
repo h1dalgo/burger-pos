@@ -12,6 +12,34 @@ async function main() {
     console.log('Default settings created.');
   }
 
+  // Fotos de Cloudinary: se rellenan solo donde imageUrl falte (nunca se pisa
+  // una foto subida desde el panel de admin). Los public_id usan los UUID de
+  // una BD anterior, así que el vínculo es por nombre de producto.
+  const CLOUD = 'https://res.cloudinary.com/d5uayasf/image/upload';
+  const BURGER = `${CLOUD}/v1785945931/burger-pos/product-be0cfdd7-7c98-4bfd-86b6-bec782fe04c3.jpg`;
+  const CLOUD_IMAGES: Record<string, string> = {
+    'Alitas Chill': `${CLOUD}/v1785945923/burger-pos/product-26d05aff-081b-43b1-8bef-791632deb565.jpg`,
+    'Cheese Burger': BURGER,
+    'Chicken Buffalo': BURGER,
+    'Clásica': BURGER,
+    'Cesar Burger': BURGER,
+    'Parrillera': BURGER,
+    'Portobello': BURGER,
+    'Bacon Cheese': BURGER,
+    'Callejera': BURGER,
+    'Refresco 1.5LT': `${CLOUD}/v1785945929/burger-pos/product-b392b51d-e0bf-49eb-b9be-0eb585c2edd6.png`,
+    'Jarra Nestea de Durazno': `${CLOUD}/v1785945930/burger-pos/product-84f71a43-9eeb-42f2-8b65-66a37c043bef.jpg`,
+    'Jarra de Jugo': `${CLOUD}/v1785945933/burger-pos/product-e241ee9e-2b89-4f44-a9d6-bbb79a3c74da.jpg`,
+    'Paletas': `${CLOUD}/v1785945932/burger-pos/product-ee268c85-d5da-4ac2-aa57-3ce02b50fea7.jpg`,
+  };
+  for (const [name, imageUrl] of Object.entries(CLOUD_IMAGES)) {
+    const filled = await prisma.product.updateMany({
+      where: { name, imageUrl: null },
+      data: { imageUrl },
+    });
+    if (filled.count > 0) console.log(`Image restored: ${name}`);
+  }
+
   const existingCount = await prisma.category.count();
   if (existingCount > 0) {
     console.log(`Database already has ${existingCount} categories, skipping seed.`);
