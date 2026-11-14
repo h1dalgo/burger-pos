@@ -1,14 +1,23 @@
 'use client';
 
 import { useEffect, useMemo, useRef } from 'react';
-import { motion, AnimatePresence, useAnimationControls, useReducedMotion } from 'framer-motion';
+import dynamic from 'next/dynamic';
+import { motion, useAnimationControls, useReducedMotion } from 'framer-motion';
 import type { DefaultIngredient, ExtraIngredient } from '@/types';
 
 /**
- * Objeto 3D del modal de producto: hamburguesa por capas (bebidas, entradas y
- * postres tienen su propia pieza). Geometría de cilindros con caras planas y
- * tinta de 2px — misma materia del mundo "Rótulo de Esquina".
+ * Objeto 3D del modal de producto. La hamburguesa es un modelo WebGL real
+ * (Three.js, ver ./burger3d) que se puede girar y anima cada ingrediente que
+ * entra o sale. Bebidas, entradas y postres mantienen su pieza de cilindros
+ * planos con tinta de 2px — misma materia del mundo "Rótulo de Esquina".
  */
+
+const BURGER_HEIGHT = 240;
+
+const Burger3D = dynamic(() => import('./burger3d/Burger3D'), {
+  ssr: false,
+  loading: () => <div style={{ height: BURGER_HEIGHT }} />,
+});
 
 export type FoodVariant = 'burger' | 'drink' | 'starter' | 'dessert';
 
@@ -21,61 +30,6 @@ export function variantFromCategory(name?: string): FoodVariant {
   if (/(entrada|combo|appetizer|compartir|alitas|snack)/.test(n)) return 'starter';
   if (/(postre|dessert|dulce|helado|paleta|brownie)/.test(n)) return 'dessert';
   return 'burger';
-}
-
-/* ------------------------------------------------------------------ */
-/* Capas de la hamburguesa                                            */
-/* ------------------------------------------------------------------ */
-
-type Tone = 'bun' | 'cheese' | 'meat' | 'sauce' | 'veggie' | 'plain';
-
-interface ToneSpec {
-  top: string;
-  side: string;
-  w: number;
-  t: number;
-  e: number;
-  rank: number;
-}
-
-const TONES: Record<Tone, ToneSpec> = {
-  bun: { top: '#ffc72c', side: '#f0b400', w: 152, t: 15, e: 40, rank: 0 },
-  cheese: { top: '#ffc72c', side: '#f0b400', w: 146, t: 11, e: 34, rank: 2 },
-  meat: { top: '#211c15', side: '#1a1712', w: 138, t: 17, e: 34, rank: 1 },
-  sauce: { top: '#d9261c', side: '#b01e15', w: 132, t: 8, e: 32, rank: 4 },
-  veggie: { top: '#1b7a43', side: '#16653a', w: 146, t: 11, e: 36, rank: 3 },
-  plain: { top: '#fffdf6', side: '#fdf6e3', w: 134, t: 9, e: 32, rank: 3 },
-};
-
-/** Huella distinta por capa consecutiva: dos ingredientes del mismo tono no se funden en una sola losa. */
-const WIDTH_STEP = [-7, 0, 7] as const;
-
-function toneFor(name: string): Tone {
-  const n = norm(name);
-  if (/(queso|mozzarella|cheddar|parmesano)/.test(n)) return 'cheese';
-  if (/(carne|pollo|lomito|chorizo|tocineta|tocino|jamon|huevo|chuleta|patt)/.test(n)) return 'meat';
-  if (/(tomate|jitomate|salsa|ketchup|bbq|aderezo|mayonesa|mayo|mostaza|mil islas)/.test(n)) return 'sauce';
-  if (/(lechuga|cebolla|pepinillo|champinon|repollo|espinaca|aceituna|maiz|jitote|pepper)/.test(n)) return 'veggie';
-  return 'plain';
-}
-
-interface StackLayer {
-  key: string;
-  name: string;
-  tone: Tone;
-}
-
-function buildLayers(
-  defaults: DefaultIngredient[],
-  removed: string[],
-  extras: ExtraIngredient[]
-): StackLayer[] {
-  return [
-    ...defaults
-      .filter((d) => !removed.includes(d.name))
-      .map((d) => ({ key: `ing-${d.id}`, name: d.name, tone: toneFor(d.name) })),
-    ...extras.map((e) => ({ key: `ext-${e.id}`, name: `+${e.name}`, tone: toneFor(e.name) })),
-  ].sort((a, b) => TONES[b.tone].rank - TONES[a.tone].rank);
 }
 
 /* ------------------------------------------------------------------ */
@@ -122,88 +76,6 @@ function Cyl({ w, t, e, top, side, z, radius, face, children, title }: CylProps)
         />
         {face}
       </div>
-    </div>
-  );
-}
-
-/* ------------------------------------------------------------------ */
-/* Hamburguesa                                                        */
-/* ------------------------------------------------------------------ */
-
-function BurgerStack({ layers }: { layers: StackLayer[] }) {
-  const bun = TONES.bun;
-  return (
-    <div className="relative flex flex-col items-center">
-      <Cyl
-        w={bun.w}
-        t={bun.t}
-        e={54}
-        top={bun.top}
-        side={bun.side}
-        z={60}
-        title="Pan superior"
-        face={
-          <>
-            <span
-              className="absolute rounded-full bg-cream"
-              style={{ width: 9, height: 6, left: '22%', top: '36%', transform: 'rotate(-16deg)' }}
-            />
-            <span
-              className="absolute rounded-full bg-cream"
-              style={{ width: 9, height: 6, left: '42%', top: '24%', transform: 'rotate(6deg)' }}
-            />
-            <span
-              className="absolute rounded-full bg-cream"
-              style={{ width: 9, height: 6, left: '61%', top: '34%', transform: 'rotate(18deg)' }}
-            />
-            <span
-              className="absolute rounded-full bg-cream"
-              style={{ width: 9, height: 6, left: '31%', top: '55%', transform: 'rotate(-8deg)' }}
-            />
-            <span
-              className="absolute rounded-full bg-cream"
-              style={{ width: 9, height: 6, left: '54%', top: '57%', transform: 'rotate(12deg)' }}
-            />
-          </>
-        }
-      />
-
-      <AnimatePresence initial={false}>
-        {layers.map((l, i) => {
-          const s = TONES[l.tone];
-          return (
-            <motion.div
-              key={l.key}
-              initial={{ scaleY: 0, y: -48, opacity: 0 }}
-              animate={{ scaleY: 1, y: 0, opacity: 1 }}
-              exit={{ scaleY: 0.25, y: -30, opacity: 0 }}
-              transition={{ type: 'spring', stiffness: 480, damping: 21, mass: 0.65 }}
-              style={{ zIndex: 50 - i * 5, transformOrigin: 'bottom center' }}
-              title={l.name}
-            >
-              <Cyl
-                w={Math.min(150, Math.max(124, s.w + WIDTH_STEP[i % 3]))}
-                t={s.t}
-                e={s.e}
-                top={s.top}
-                side={s.side}
-                z={1}
-              />
-            </motion.div>
-          );
-        })}
-      </AnimatePresence>
-
-      <Cyl
-        w={bun.w}
-        t={14}
-        e={36}
-        top={bun.top}
-        side={bun.side}
-        z={10}
-        radius="0 0 50% 50% / 0 0 16px 16px"
-        title="Pan inferior"
-      />
     </div>
   );
 }
@@ -385,6 +257,8 @@ interface Props {
   quantity: number;
   celebrateSeq: number;
   celebrating?: boolean;
+  /** Variación y opciones elegidas (ej. "Pollo Crispy", "150gr de Carne"): cambian la proteína en 3D. */
+  choiceLabels?: string[];
 }
 
 export default function ProductVisual3D({
@@ -395,20 +269,28 @@ export default function ProductVisual3D({
   quantity,
   celebrateSeq,
   celebrating = false,
+  choiceLabels = [],
 }: Props) {
   const reduced = useReducedMotion();
   const idle = useAnimationControls();
   const pulse = useAnimationControls();
   const prevQty = useRef(quantity);
+  const isBurger = variant === 'burger';
 
-  const layers = useMemo(
-    () => buildLayers(defaultIngredients, removedIngredients, addedExtras),
-    [defaultIngredients, removedIngredients, addedExtras]
+  const choicesKey = choiceLabels.join('|');
+  const burgerIngredients = useMemo(
+    () => [
+      ...(choicesKey ? choicesKey.split('|') : []),
+      ...defaultIngredients.filter((d) => !removedIngredients.includes(d.name)).map((d) => d.name),
+      ...addedExtras.map((e) => e.name),
+    ],
+    [choicesKey, defaultIngredients, removedIngredients, addedExtras]
   );
 
-  /* Flotación reposo (se detiene con la pestaña oculta o reduced-motion) */
+  /* Flotación reposo (se detiene con la pestaña oculta o reduced-motion).
+     La hamburguesa 3D ya gira sola, así que no flota. */
   useEffect(() => {
-    if (reduced) return;
+    if (reduced || isBurger) return;
     const loop = () =>
       idle.start({
         y: [0, -5, 0],
@@ -425,7 +307,7 @@ export default function ProductVisual3D({
       document.removeEventListener('visibilitychange', onVis);
       idle.stop();
     };
-  }, [reduced, idle]);
+  }, [reduced, idle, isBurger]);
 
   /* Pop al cambiar la cantidad (sube: brinco; baja: se hunde) */
   useEffect(() => {
@@ -458,22 +340,30 @@ export default function ProductVisual3D({
 
   return (
     <div
-      className="relative flex min-h-[196px] w-full flex-col items-center justify-end pt-2 pb-3"
+      className={`relative flex w-full flex-col items-center justify-end ${
+        isBurger ? 'pt-1 pb-1' : 'min-h-[196px] pt-2 pb-3'
+      }`}
       aria-hidden="true"
     >
-      <motion.div animate={idle} className="relative" style={{ transformOrigin: 'bottom center' }}>
+      <motion.div
+        animate={idle}
+        className={`relative ${isBurger ? 'w-full' : ''}`}
+        style={{ transformOrigin: 'bottom center' }}
+      >
         <motion.div
           animate={pulse}
-          className="flex flex-col items-center"
+          className={`flex flex-col items-center ${isBurger ? 'w-full' : ''}`}
           style={{ transformOrigin: 'bottom center' }}
         >
-          {variant === 'burger' && <BurgerStack layers={layers} />}
+          {isBurger && <Burger3D ingredients={burgerIngredients} height={BURGER_HEIGHT} />}
           {variant === 'drink' && <DrinkCup />}
           {variant === 'starter' && <FryBasket />}
           {variant === 'dessert' && <Popsicle />}
-          <div
-            className={`h-4 w-44 rounded-full bg-carbon/10 ${variant === 'dessert' ? 'mt-6' : '-mt-2'}`}
-          />
+          {!isBurger && (
+            <div
+              className={`h-4 w-44 rounded-full bg-carbon/10 ${variant === 'dessert' ? 'mt-6' : '-mt-2'}`}
+            />
+          )}
         </motion.div>
 
         {/* Contador de unidades */}
@@ -482,7 +372,7 @@ export default function ProductVisual3D({
           initial={{ scale: 0.5, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ type: 'spring', stiffness: 520, damping: 17 }}
-          className="absolute -top-6 -left-14 rounded-full border-2 border-carbon bg-mustard px-2.5 py-1 text-xs font-bold tabular-nums text-carbon shadow-card"
+          className={`absolute ${isBurger ? 'top-1 left-1' : '-top-6 -left-14'} rounded-full border-2 border-carbon bg-mustard px-2.5 py-1 text-xs font-bold tabular-nums text-carbon shadow-card`}
           style={{ minWidth: 44, textAlign: 'center' }}
         >
           ×{quantity}

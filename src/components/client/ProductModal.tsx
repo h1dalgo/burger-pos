@@ -176,6 +176,10 @@ export default function ProductModal({ product, categoryName, onClose }: Props) 
             quantity={quantity}
             celebrateSeq={celebrateSeq}
             celebrating={celebrating}
+            choiceLabels={[
+              ...(selectedVariation ? [selectedVariation.name] : []),
+              ...Object.values(selections).flat(),
+            ]}
           />
 
           {product.hasVariation && (
