@@ -9,14 +9,15 @@ import { formatPrice } from '@/lib/utils';
 import { useCartStore } from '@/store/cart-store';
 import { useStockStore } from '@/store/stock-store';
 import { Button } from '@/components/ui/Button';
-import BurgerBuilder from './BurgerBuilder';
+import ProductVisual3D, { variantFromCategory } from './ProductVisual3D';
 
 interface Props {
   product: Product;
+  categoryName?: string;
   onClose: () => void;
 }
 
-export default function ProductModal({ product, onClose }: Props) {
+export default function ProductModal({ product, categoryName, onClose }: Props) {
   const addItem = useCartStore((s) => s.addItem);
   const getItemPrice = useCartStore((s) => s.getItemPrice);
   const isVariationAvailable = useStockStore((s) => s.isVariationAvailable);
@@ -31,7 +32,18 @@ export default function ProductModal({ product, onClose }: Props) {
   const [note, setNote] = useState('');
   const [error, setError] = useState('');
   const [imageFailed, setImageFailed] = useState(false);
+  const [celebrateSeq, setCelebrateSeq] = useState(0);
+  const [celebrating, setCelebrating] = useState(false);
   const closeRef = useRef<HTMLButtonElement>(null);
+  const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const variant = variantFromCategory(categoryName);
+
+  useEffect(() => {
+    return () => {
+      if (closeTimer.current) clearTimeout(closeTimer.current);
+    };
+  }, []);
 
   useEffect(() => {
     closeRef.current?.focus();
@@ -59,6 +71,7 @@ export default function ProductModal({ product, onClose }: Props) {
   };
 
   const handleAddToCart = useCallback(() => {
+    if (celebrating) return;
     if (product.hasVariation && !selectedVariation) {
       setError('Selecciona una opción obligatoria');
       return;
@@ -84,8 +97,13 @@ export default function ProductModal({ product, onClose }: Props) {
     });
 
     toast.success(`${product.name} agregado al pedido`);
-    onClose();
-  }, [product, selectedVariation, quantity, removedIngredients, addedExtras, selections, note, addItem, onClose]);
+    setCelebrating(true);
+    setCelebrateSeq((s) => s + 1);
+    closeTimer.current = setTimeout(() => {
+      setCelebrating(false);
+      onClose();
+    }, 700);
+  }, [celebrating, product, selectedVariation, quantity, removedIngredients, addedExtras, selections, note, addItem, onClose]);
 
   const previewItem = {
     id: 'preview',
@@ -150,10 +168,14 @@ export default function ProductModal({ product, onClose }: Props) {
         </div>
 
         <div className="px-6 pb-6" style={{ paddingBottom: 'calc(1.5rem + env(safe-area-inset-bottom))' }}>
-          <BurgerBuilder
+          <ProductVisual3D
+            variant={variant}
             defaultIngredients={product.defaultIngredients}
             removedIngredients={removedIngredients}
             addedExtras={addedExtras}
+            quantity={quantity}
+            celebrateSeq={celebrateSeq}
+            celebrating={celebrating}
           />
 
           {product.hasVariation && (
@@ -322,9 +344,9 @@ export default function ProductModal({ product, onClose }: Props) {
           )}
 
           <div className="mt-4">
-            <Button onClick={handleAddToCart} fullWidth size="lg">
+            <Button onClick={handleAddToCart} fullWidth size="lg" disabled={celebrating}>
               <span className="flex w-full items-center justify-between">
-                <span>Agregar al Pedido</span>
+                <span>{celebrating ? '¡Agregado!' : 'Agregar al Pedido'}</span>
                 <span className="tabular-nums">{formatPrice(previewPrice * quantity)}</span>
               </span>
             </Button>

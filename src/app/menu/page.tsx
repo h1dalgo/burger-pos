@@ -266,6 +266,9 @@ export default function MenuPage() {
           <ProductModal
             key={selectedProduct.id}
             product={selectedProduct}
+            categoryName={
+              categories.find((c) => c.id === selectedProduct.categoryId)?.name
+            }
             onClose={() => setSelectedProduct(null)}
           />
         )}
