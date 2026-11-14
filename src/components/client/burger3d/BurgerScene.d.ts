@@ -22,7 +22,8 @@ export interface BurgerSceneOptions {
   onLayerClick?: ((label: string, kind: LayerKind) => void) | null;
   /** Mapeo propio de nombre → capa (se consulta antes del mapeo por defecto). */
   classify?: ((name: string) => LayerInfo | null) | null;
-  maxPixelRatio?: number;
+  /** 'auto' (por defecto) detecta el dispositivo: high / medium / low. */
+  quality?: 'auto' | 'high' | 'medium' | 'low';
 }
 
 export declare function classifyIngredient(name: string): LayerInfo | null;
@@ -32,6 +33,7 @@ export declare class BurgerScene {
   constructor(container: HTMLElement, options?: BurgerSceneOptions);
   setIngredients(names: string[], options?: { animate?: boolean }): void;
   setAutoRotate(on: boolean): void;
+  readonly quality: 'high' | 'medium' | 'low';
   dispose(): void;
 }
 

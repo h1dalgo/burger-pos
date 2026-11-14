@@ -170,6 +170,8 @@ export default function ProductModal({ product, categoryName, onClose }: Props) 
         <div className="px-6 pb-6" style={{ paddingBottom: 'calc(1.5rem + env(safe-area-inset-bottom))' }}>
           <ProductVisual3D
             variant={variant}
+            productName={product.name}
+            description={product.description}
             defaultIngredients={product.defaultIngredients}
             removedIngredients={removedIngredients}
             addedExtras={addedExtras}
