@@ -16,9 +16,9 @@ async function main() {
   // una foto subida desde el panel de admin). Los public_id usan los UUID de
   // una BD anterior, así que el vínculo es por nombre de producto.
   const CLOUD = 'https://res.cloudinary.com/d5uayasf/image/upload';
-  const BURGER = `${CLOUD}/v1785945931/burger-pos/product-be0cfdd7-7c98-4bfd-86b6-bec782fe04c3.jpg`;
+  const BURGER = `${CLOUD}/v1785945923/burger-pos/product-26d05aff-081b-43b1-8bef-791632deb565.jpg`;
   const CLOUD_IMAGES: Record<string, string> = {
-    'Alitas Chill': `${CLOUD}/v1785945923/burger-pos/product-26d05aff-081b-43b1-8bef-791632deb565.jpg`,
+    'Alitas Chill': `${CLOUD}/v1785945931/burger-pos/product-be0cfdd7-7c98-4bfd-86b6-bec782fe04c3.jpg`,
     'Cheese Burger': BURGER,
     'Chicken Buffalo': BURGER,
     'Clásica': BURGER,
