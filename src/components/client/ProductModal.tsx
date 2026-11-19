@@ -408,7 +408,7 @@ export default function ProductModal({ product, categoryName, onClose }: Props) 
             <Button onClick={handleAddToCart} size="lg" disabled={celebrating} className="flex-1 min-w-0">
               <span className="flex w-full items-center justify-between gap-3">
                 <span className="truncate">
-                  {celebrating ? '¡Agregado!' : missingChoice ? `Elige: ${missingChoice}` : 'Agregar al pedido'}
+                  {celebrating ? '¡Agregado!' : missingChoice ? choicePrompt(missingChoice) : 'Agregar al pedido'}
                 </span>
                 <AnimatedPrice value={previewPrice * quantity} className="shrink-0" />
               </span>
@@ -418,6 +418,11 @@ export default function ProductModal({ product, categoryName, onClose }: Props) 
       </motion.div>
     </motion.div>
   );
+}
+
+/** "Elige el sabor" se muestra tal cual; "Salsas extras" → "Elige: Salsas extras". */
+function choicePrompt(label: string) {
+  return /^(elige|selecciona|escoge)/i.test(label.trim()) ? label : `Elige: ${label}`;
 }
 
 /** Etiqueta para grupos de opciones obligatorios aún sin elegir. */

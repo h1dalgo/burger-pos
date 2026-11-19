@@ -4,18 +4,14 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { useSessionStore, useSessionHydrated } from '@/store/session-store';
-import { UtensilsCrossed } from 'lucide-react';
-import { TextField } from '@/components/ui/TextField';
+import { UtensilsCrossed, Table2, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Skeleton } from '@/components/ui/Skeleton';
 
 export default function WelcomeForm() {
   const router = useRouter();
-  const { customerName, setCustomerName, setTableNumber } = useSessionStore();
+  const { customerName, tableNumber, setTableNumber } = useSessionStore();
   const sessionHydrated = useSessionHydrated();
-  const [name, setName] = useState(customerName);
-  const [error, setError] = useState('');
-  const [nameError, setNameError] = useState('');
   const [loadingSettings, setLoadingSettings] = useState(true);
   const [businessName, setBusinessName] = useState('BURGER POS');
   const [businessLogo, setBusinessLogo] = useState('');
@@ -43,25 +39,10 @@ export default function WelcomeForm() {
     setTableNumber(mesa);
   }, [sessionHydrated, tableCount, setTableNumber]);
 
+  // El nombre se pide al enviar el pedido: aquí solo se entra al menú.
   useEffect(() => {
-    if (!sessionHydrated) return;
-    const t = setTimeout(() => setName((n) => n || customerName), 0);
-    return () => clearTimeout(t);
-  }, [sessionHydrated, customerName]);
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!name.trim()) {
-      setError('Escribe tu nombre');
-      return;
-    }
-    if (/\d/.test(name)) {
-      setNameError('El nombre no puede contener números');
-      return;
-    }
-    setCustomerName(name.trim());
-    router.push('/menu');
-  };
+    router.prefetch('/menu');
+  }, [router]);
 
   return (
     <div className="min-h-screen bg-cream flex items-center justify-center p-4">
@@ -111,32 +92,30 @@ export default function WelcomeForm() {
           Hace tu pedido directo desde tu mesa
         </motion.p>
 
-        <motion.form
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.5 }}
-          onSubmit={handleSubmit}
           className="space-y-4"
-          noValidate
         >
-          <TextField
-            label="Tu Nombre"
-            type="text"
-            autoComplete="name"
-            value={name}
-            onChange={(e) => {
-              setName(e.target.value.replace(/\d/g, ''));
-              setNameError('');
-              setError('');
-            }}
-            placeholder="Ej: Juan"
-            error={nameError || (error && !name.trim() ? error : undefined)}
-          />
-
-          <Button type="submit" fullWidth size="lg">
-            Ver Menú
+          {sessionHydrated && (tableNumber || customerName) && (
+            <div className="flex flex-wrap items-center justify-center gap-2 text-sm font-semibold text-carbon/75">
+              {customerName && <span>¡Hola de nuevo, {customerName}!</span>}
+              {tableNumber && (
+                <span className="inline-flex items-center gap-1.5 rounded-full border-2 border-carbon bg-mustard px-2.5 py-0.5 text-xs font-bold uppercase text-carbon">
+                  <Table2 className="h-3.5 w-3.5" />
+                  Mesa {tableNumber}
+                </span>
+              )}
+            </div>
+          )}
+          <Button fullWidth size="lg" onClick={() => router.push('/menu')}>
+            <span className="flex items-center justify-center gap-2">
+              Ver menú
+              <ArrowRight className="h-5 w-5" />
+            </span>
           </Button>
-        </motion.form>
+        </motion.div>
       </motion.div>
     </div>
   );

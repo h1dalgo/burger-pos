@@ -1,11 +1,11 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { AnimatePresence } from 'framer-motion';
-import { ArrowLeft, AlertTriangle, UtensilsCrossed, Receipt, Table2, Bell } from 'lucide-react';
+import { AlertTriangle, UtensilsCrossed, Receipt, Table2, Bell } from 'lucide-react';
 import { toast } from 'react-hot-toast';
-import { useSessionStore, useSessionHydrated } from '@/store/session-store';
+import { useSessionStore } from '@/store/session-store';
 import { useStockStore } from '@/store/stock-store';
 import { useCartStore } from '@/store/cart-store';
 import { getSocket, joinRoom } from '@/lib/socket-client';
@@ -24,7 +24,6 @@ import { Button } from '@/components/ui/Button';
 export default function MenuPage() {
   const router = useRouter();
   const { customerName, tableNumber, lastOrderId, setTableNumber } = useSessionStore();
-  const sessionHydrated = useSessionHydrated();
   const { isProductAvailable, applyStockUpdate, initializeFromProducts } = useStockStore();
   const cartItems = useCartStore((s) => s.items);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -36,15 +35,51 @@ export default function MenuPage() {
   const [tableCount, setTableCount] = useState(10);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [firstLoad, setFirstLoad] = useState(true);
+  const headerRef = useRef<HTMLDivElement>(null);
+  const sectionRefs = useRef<Record<string, HTMLElement | null>>({});
+  const scrollLockUntil = useRef(0);
 
+  // Menú continuo: la categoría activa sigue al scroll (como en las apps de delivery).
   useEffect(() => {
-    if (!sessionHydrated) return;
-    if (!customerName) {
-      router.push('/');
-      return;
-    }
-  }, [sessionHydrated, customerName, router]);
+    if (!categories.length) return;
+    let raf = 0;
+    const update = () => {
+      raf = 0;
+      if (Date.now() < scrollLockUntil.current) return;
+      // una sección se activa cuando su título entra al cuarto superior de la pantalla
+      const offset = (headerRef.current?.offsetHeight ?? 110) + Math.min(160, window.innerHeight * 0.25);
+      let current = categories[0].id;
+      for (const c of categories) {
+        const el = sectionRefs.current[c.id];
+        if (el && el.getBoundingClientRect().top - offset <= 0) current = c.id;
+      }
+      // al llegar al final de la página se marca la última categoría
+      if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 4) {
+        const visible = categories.filter((c) => sectionRefs.current[c.id]);
+        if (visible.length) current = visible[visible.length - 1].id;
+      }
+      setActiveCategory((prev) => (prev === current ? prev : current));
+    };
+    const onScroll = () => {
+      if (!raf) raf = requestAnimationFrame(update);
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    update();
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      cancelAnimationFrame(raf);
+    };
+  }, [categories]);
+
+  const scrollToCategory = (id: string) => {
+    const el = sectionRefs.current[id];
+    setActiveCategory(id);
+    if (!el) return;
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const top = el.getBoundingClientRect().top + window.scrollY - (headerRef.current?.offsetHeight ?? 110) - 12;
+    scrollLockUntil.current = Date.now() + (reduce ? 50 : 900);
+    window.scrollTo({ top, behavior: reduce ? 'auto' : 'smooth' });
+  };
 
   useEffect(() => {
     fetch('/api/settings')
@@ -124,23 +159,20 @@ export default function MenuPage() {
     };
   }, [applyStockUpdate]);
 
-  const activeCategoryData = categories.find((c) => c.id === activeCategory);
-  const activeProducts = activeCategoryData?.products.filter((p) => isProductAvailable(p.id)) || [];
-  const unavailableInCategory = activeCategoryData?.products.filter((p) => !isProductAvailable(p.id)) || [];
-  const isEmptyCategory = !loading && !error && !!activeCategoryData && activeProducts.length === 0 && unavailableInCategory.length === 0;
+  const sections = categories
+    .map((c) => ({
+      ...c,
+      // disponibles primero; los agotados quedan al final de su categoría
+      products: [...c.products].sort((a, b) => Number(isProductAvailable(b.id)) - Number(isProductAvailable(a.id))),
+    }))
+    .filter((c) => c.products.length > 0);
+  const isEmptyMenu = !loading && !error && categories.length > 0 && sections.length === 0;
 
   return (
     <div className="min-h-screen bg-cream pb-28">
-      <div className="sticky top-0 z-30 bg-burger border-b-2 border-carbon">
+      <div ref={headerRef} className="sticky top-0 z-30 bg-burger border-b-2 border-carbon">
         <div className="max-w-5xl mx-auto">
           <header className="px-4 py-3 flex items-center gap-3">
-            <button
-              onClick={() => router.push('/')}
-              aria-label="Volver al inicio"
-              className="w-9 h-9 -ml-1.5 rounded-full bg-cream border-2 border-carbon flex items-center justify-center text-carbon hover:bg-mustard transition-colors"
-            >
-              <ArrowLeft className="w-5 h-5" />
-            </button>
             <button
               onClick={() => setTablePickerOpen(true)}
               aria-label={tableNumber ? `Mesa ${tableNumber}. Toca para cambiar de mesa` : 'Elige tu mesa'}
@@ -173,21 +205,16 @@ export default function MenuPage() {
             <CategoryNav
               categories={categories}
               activeId={activeCategory}
-              onSelect={(id) => {
-                setActiveCategory(id);
-                setFirstLoad(false);
-              }}
+              onSelect={scrollToCategory}
             />
           )}
         </div>
       </div>
 
       <div className="max-w-5xl mx-auto px-4 py-4">
-        {customerName && (
-          <p className="display text-xl text-carbon sign-yellow mb-3">
-            ¡Hola, {customerName}!
-          </p>
-        )}
+        <p className="display text-xl text-carbon sign-yellow mb-3">
+          {customerName ? `¡Hola, ${customerName}!` : '¿Qué se te antoja hoy?'}
+        </p>
         {loading && (
           <div className="grid gap-3 sm:grid-cols-2">
             {Array.from({ length: 6 }).map((_, i) => (
@@ -209,50 +236,42 @@ export default function MenuPage() {
           />
         )}
 
-        {!loading && !error && isEmptyCategory && (
+        {isEmptyMenu && (
           <EmptyState
             icon={<UtensilsCrossed className="w-7 h-7" />}
-            title="Sin productos aquí"
-            description="Prueba con otra categoría"
+            title="El menú está vacío"
+            description="Vuelve a intentarlo en un momento"
           />
         )}
 
-        {!loading && !error && (activeProducts.length > 0 || unavailableInCategory.length > 0) && (
-          <div className="space-y-3">
-            <div className="grid gap-3 sm:grid-cols-2">
-              {activeProducts.map((product, i) => (
-                <ProductCard
-                  key={product.id}
-                  product={product}
-                  isAvailable={isProductAvailable(product.id)}
-                  onSelect={setSelectedProduct}
-                  index={i}
-                  entrance={firstLoad}
-                />
-              ))}
-            </div>
-
-            {unavailableInCategory.length > 0 && (
-              <div className="pt-2">
-                <span className="badge badge-neutral mb-3">
-                  No disponibles
-                </span>
-                <div className="grid gap-3 sm:grid-cols-2">
-                  {unavailableInCategory.map((product, i) => (
-                    <ProductCard
-                      key={product.id}
-                      product={product}
-                      isAvailable={false}
-                      onSelect={setSelectedProduct}
-                      index={i}
-                      entrance={firstLoad}
-                    />
-                  ))}
-                </div>
+        {!loading &&
+          !error &&
+          sections.map((cat, ci) => (
+            <section
+              key={cat.id}
+              ref={(el) => {
+                sectionRefs.current[cat.id] = el;
+              }}
+              aria-labelledby={`cat-title-${cat.id}`}
+              className={ci > 0 ? 'pt-7' : ''}
+            >
+              <h2 id={`cat-title-${cat.id}`} className="display text-lg text-carbon mb-3">
+                {cat.name}
+              </h2>
+              <div className="grid gap-3 sm:grid-cols-2">
+                {cat.products.map((product, i) => (
+                  <ProductCard
+                    key={product.id}
+                    product={product}
+                    isAvailable={isProductAvailable(product.id)}
+                    onSelect={setSelectedProduct}
+                    index={i}
+                    entrance={ci === 0}
+                  />
+                ))}
               </div>
-            )}
-          </div>
-        )}
+            </section>
+          ))}
       </div>
 
       <AnimatePresence>

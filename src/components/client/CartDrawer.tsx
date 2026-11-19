@@ -7,6 +7,8 @@ import { X, Trash2, Minus, Plus, ShoppingBag, StickyNote } from 'lucide-react';
 import { useCartStore } from '@/store/cart-store';
 import { formatPrice } from '@/lib/utils';
 import { Button } from '@/components/ui/Button';
+import { TextField } from '@/components/ui/TextField';
+import { useSessionStore } from '@/store/session-store';
 import { EmptyState } from '@/components/ui/EmptyState';
 import PaymentSelector from './PaymentSelector';
 
@@ -23,6 +25,11 @@ export default function CartDrawer({ isOpen, onClose, onRequireTable }: Props) {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [tipPct, setTipPct] = useState(0);
+  const savedName = useSessionStore((s) => s.customerName);
+  const setCustomerName = useSessionStore((s) => s.setCustomerName);
+  const [name, setName] = useState<string | null>(null); // null = usar el guardado
+  const [nameError, setNameError] = useState('');
+  const nameValue = name ?? savedName;
 
   const subtotal = getTotalAmount();
   const tipAmount = Math.round(subtotal * tipPct) / 100;
@@ -37,6 +44,16 @@ export default function CartDrawer({ isOpen, onClose, onRequireTable }: Props) {
   }, [isOpen, onClose]);
 
   const handleSubmit = async () => {
+    const cleanName = nameValue.trim();
+    if (!cleanName) {
+      setNameError('Escribe tu nombre para que te llamemos');
+      return;
+    }
+    if (/\d/.test(cleanName)) {
+      setNameError('El nombre no puede contener números');
+      return;
+    }
+    setCustomerName(cleanName);
     if (!paymentMethod) {
       setError('Selecciona un método de pago');
       return;
@@ -46,7 +63,8 @@ export default function CartDrawer({ isOpen, onClose, onRequireTable }: Props) {
 
     try {
       const session = (await import('@/store/session-store')).useSessionStore;
-      const { customerName, tableNumber } = session.getState();
+      const { tableNumber } = session.getState();
+      const customerName = cleanName;
 
       if (!tableNumber) {
         onClose();
@@ -229,6 +247,22 @@ export default function CartDrawer({ isOpen, onClose, onRequireTable }: Props) {
                 style={{ paddingBottom: 'calc(1.5rem + env(safe-area-inset-bottom))' }}
               >
                 <div className="pt-4">
+                  <TextField
+                    label="Tu nombre"
+                    type="text"
+                    autoComplete="given-name"
+                    value={nameValue}
+                    onChange={(e) => {
+                      setName(e.target.value.replace(/\d/g, ''));
+                      setNameError('');
+                    }}
+                    placeholder="Ej: Juan"
+                    maxLength={40}
+                    error={nameError || undefined}
+                  />
+                </div>
+
+                <div>
                   <p className="text-sm font-semibold text-carbon mb-2">Método de Pago</p>
                   <PaymentSelector
                     value={paymentMethod}

@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { Beef, CupSoda, CakeSlice, Popcorn, UtensilsCrossed } from 'lucide-react';
 
@@ -17,14 +18,28 @@ interface Props {
 }
 
 export default function CategoryNav({ categories, activeId, onSelect }: Props) {
+  const navRef = useRef<HTMLElement>(null);
+
+  // Mantiene visible la categoría activa cuando cambia con el scroll del menú.
+  useEffect(() => {
+    const nav = navRef.current;
+    const btn = nav?.querySelector<HTMLElement>(`[data-cat="${activeId}"]`);
+    if (!nav || !btn) return;
+    const left = btn.offsetLeft - nav.clientWidth / 2 + btn.clientWidth / 2;
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    nav.scrollTo({ left: Math.max(0, left), behavior: reduce ? 'auto' : 'smooth' });
+  }, [activeId]);
+
   return (
     <nav
+      ref={navRef}
       aria-label="Categorías"
       className="flex overflow-x-auto scrollbar-none gap-2 px-4 pb-3"
     >
       {categories.map((cat) => (
         <button
           key={cat.id}
+          data-cat={cat.id}
           onClick={() => onSelect(cat.id)}
           aria-pressed={activeId === cat.id}
           className={`relative flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-bold uppercase whitespace-nowrap transition-[color,background-color,border-color,box-shadow] border-2 ${
