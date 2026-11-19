@@ -9,7 +9,8 @@ import { useSessionStore } from '@/store/session-store';
 import { useStockStore } from '@/store/stock-store';
 import { useCartStore } from '@/store/cart-store';
 import { getSocket, joinRoom } from '@/lib/socket-client';
-import type { Category, Product, StockUpdate } from '@/types';
+import type { Category, Product, StockUpdate, CartItem } from '@/types';
+import { variantFromCategory } from '@/components/client/ProductVisual3D';
 import CategoryNav from '@/components/client/CategoryNav';
 import ProductCard from '@/components/client/ProductCard';
 import ProductModal from '@/components/client/ProductModal';
@@ -29,6 +30,7 @@ export default function MenuPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [activeCategory, setActiveCategory] = useState<string>('');
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [editingItem, setEditingItem] = useState<CartItem | null>(null);
   const [cartOpen, setCartOpen] = useState(false);
   const [tablePickerOpen, setTablePickerOpen] = useState(false);
   const [serviceOpen, setServiceOpen] = useState(false);
@@ -167,6 +169,12 @@ export default function MenuPage() {
     }))
     .filter((c) => c.products.length > 0);
   const isEmptyMenu = !loading && !error && categories.length > 0 && sections.length === 0;
+  // "¿Le agregas algo?" en el carrito: bebidas y postres disponibles
+  const suggestions = categories
+    .filter((c) => ['drink', 'dessert'].includes(variantFromCategory(c.name)))
+    .flatMap((c) => c.products)
+    .filter((p) => isProductAvailable(p.id));
+  const categoryNameOf = (p: Product) => categories.find((c) => c.id === p.categoryId)?.name;
 
   return (
     <div className="min-h-screen bg-cream pb-28">
@@ -285,10 +293,32 @@ export default function MenuPage() {
           <ProductModal
             key={selectedProduct.id}
             product={selectedProduct}
-            categoryName={
-              categories.find((c) => c.id === selectedProduct.categoryId)?.name
-            }
+            categoryName={categoryNameOf(selectedProduct)}
+            stacked={cartOpen}
             onClose={() => setSelectedProduct(null)}
+          />
+        )}
+      </AnimatePresence>
+
+      <CartDrawer
+        isOpen={cartOpen}
+        onClose={() => setCartOpen(false)}
+        onRequireTable={() => setTablePickerOpen(true)}
+        onEditItem={setEditingItem}
+        onOpenProduct={setSelectedProduct}
+        suggestions={suggestions}
+      />
+
+      {/* Editar un producto desde el carrito (encima del carrito) */}
+      <AnimatePresence>
+        {editingItem && (
+          <ProductModal
+            key={`edit-${editingItem.id}`}
+            product={editingItem.product}
+            categoryName={categoryNameOf(editingItem.product)}
+            editItem={editingItem}
+            stacked
+            onClose={() => setEditingItem(null)}
           />
         )}
       </AnimatePresence>
@@ -313,11 +343,6 @@ export default function MenuPage() {
         )}
       </AnimatePresence>
 
-      <CartDrawer
-        isOpen={cartOpen}
-        onClose={() => setCartOpen(false)}
-        onRequireTable={() => setTablePickerOpen(true)}
-      />
     </div>
   );
 }

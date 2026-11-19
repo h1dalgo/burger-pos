@@ -22,8 +22,7 @@ interface Props {
 export const canQuickAdd = (p: Product) => !p.hasVariation && p.requiredSelections.length === 0;
 
 export default function ProductCard({ product, isAvailable, onSelect, index, entrance = true }: Props) {
-  const addItem = useCartStore((s) => s.addItem);
-  const updateQuantity = useCartStore((s) => s.updateQuantity);
+  const addSimple = useCartStore((s) => s.addSimple);
   const [imageFailed, setImageFailed] = useState(false);
   const [justAdded, setJustAdded] = useState(false);
   const thumbRef = useRef<HTMLDivElement>(null);
@@ -38,20 +37,7 @@ export default function ProductCard({ product, isAvailable, onSelect, index, ent
       onSelect(product); // tiene opciones obligatorias: se eligen en el modal
       return;
     }
-    // Si ya hay uno igual (sin cambios ni nota) se suma a esa línea en vez de crear otra
-    const same = useCartStore
-      .getState()
-      .items.find(
-        (it) =>
-          it.product.id === product.id &&
-          !it.variation &&
-          !it.removedIngredients.length &&
-          !it.addedExtras.length &&
-          !Object.values(it.selections).some((v) => v.length) &&
-          !it.note
-      );
-    if (same) updateQuantity(same.id, same.quantity + 1);
-    else addItem({ product, variation: null, quantity: 1, removedIngredients: [], addedExtras: [], selections: {}, selectionLabels: {}, note: null });
+    addSimple(product); // si ya hay uno igual, suma a esa línea
     flyToCart(hasImage ? imageUrl : null, thumbRef.current?.getBoundingClientRect());
     toast.success(`${product.name} agregado al pedido`);
     setJustAdded(true);

@@ -4,7 +4,7 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import { motion, useDragControls, type PanInfo } from 'framer-motion';
 import { X, Minus, Plus, Check } from 'lucide-react';
 import { toast } from 'react-hot-toast';
-import type { Product, ProductVariation, ExtraIngredient } from '@/types';
+import type { Product, ProductVariation, ExtraIngredient, CartItem } from '@/types';
 import { formatPrice } from '@/lib/utils';
 import { useCartStore } from '@/store/cart-store';
 import { useStockStore } from '@/store/stock-store';
@@ -17,21 +17,26 @@ interface Props {
   product: Product;
   categoryName?: string;
   onClose: () => void;
+  /** Si viene, el modal edita ese producto del carrito en vez de agregar uno nuevo. */
+  editItem?: CartItem | null;
+  /** Se muestra encima de otra hoja (ej. el carrito). */
+  stacked?: boolean;
 }
 
-export default function ProductModal({ product, categoryName, onClose }: Props) {
+export default function ProductModal({ product, categoryName, onClose, editItem = null, stacked = false }: Props) {
   const addItem = useCartStore((s) => s.addItem);
+  const replaceItem = useCartStore((s) => s.replaceItem);
   const getItemPrice = useCartStore((s) => s.getItemPrice);
   const isVariationAvailable = useStockStore((s) => s.isVariationAvailable);
   const isOptionAvailable = useStockStore((s) => s.isOptionAvailable);
   const isExtraAvailable = useStockStore((s) => s.isExtraAvailable);
 
-  const [selectedVariation, setSelectedVariation] = useState<ProductVariation | null>(null);
-  const [removedIngredients, setRemovedIngredients] = useState<string[]>([]);
-  const [addedExtras, setAddedExtras] = useState<ExtraIngredient[]>([]);
-  const [selections, setSelections] = useState<Record<string, string[]>>({});
-  const [quantity, setQuantity] = useState(1);
-  const [note, setNote] = useState('');
+  const [selectedVariation, setSelectedVariation] = useState<ProductVariation | null>(editItem?.variation ?? null);
+  const [removedIngredients, setRemovedIngredients] = useState<string[]>(editItem?.removedIngredients ?? []);
+  const [addedExtras, setAddedExtras] = useState<ExtraIngredient[]>(editItem?.addedExtras ?? []);
+  const [selections, setSelections] = useState<Record<string, string[]>>(editItem?.selections ?? {});
+  const [quantity, setQuantity] = useState(editItem?.quantity ?? 1);
+  const [note, setNote] = useState(editItem?.note ?? '');
   const [error, setError] = useState('');
   const [celebrateSeq, setCelebrateSeq] = useState(0);
   const [celebrating, setCelebrating] = useState(false);
@@ -122,7 +127,7 @@ export default function ProductModal({ product, categoryName, onClose }: Props) 
     }
     setError('');
 
-    addItem({
+    const params = {
       product,
       variation: selectedVariation,
       quantity,
@@ -131,7 +136,20 @@ export default function ProductModal({ product, categoryName, onClose }: Props) 
       selections,
       selectionLabels: Object.fromEntries(product.requiredSelections.map((rs) => [rs.id, rs.label])),
       note,
-    });
+    };
+
+    if (editItem) {
+      replaceItem(editItem.id, params);
+      toast.success('Cambios guardados');
+      setCelebrating(true);
+      closeTimer.current = setTimeout(() => {
+        setCelebrating(false);
+        onClose();
+      }, 250);
+      return;
+    }
+
+    addItem(params);
 
     // El producto "vuela" desde el visor 3D hasta el botón del carrito.
     flyToCart(snapshotRef.current?.() ?? null, heroRef.current?.getBoundingClientRect());
@@ -142,7 +160,7 @@ export default function ProductModal({ product, categoryName, onClose }: Props) 
       setCelebrating(false);
       onClose();
     }, 700);
-  }, [celebrating, product, selectedVariation, quantity, removedIngredients, addedExtras, selections, note, addItem, onClose]);
+  }, [celebrating, product, selectedVariation, quantity, removedIngredients, addedExtras, selections, note, addItem, replaceItem, editItem, onClose]);
 
   const previewItem = {
     id: 'preview',
@@ -164,7 +182,7 @@ export default function ProductModal({ product, categoryName, onClose }: Props) 
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50"
+      className={`fixed inset-0 ${stacked ? 'z-[60]' : 'z-50'} flex items-end sm:items-center justify-center bg-black/50`}
       onClick={onClose}
       role="dialog"
       aria-modal="true"
@@ -408,7 +426,15 @@ export default function ProductModal({ product, categoryName, onClose }: Props) 
             <Button onClick={handleAddToCart} size="lg" disabled={celebrating} className="flex-1 min-w-0">
               <span className="flex w-full items-center justify-between gap-3">
                 <span className="truncate">
-                  {celebrating ? '¡Agregado!' : missingChoice ? choicePrompt(missingChoice) : 'Agregar al pedido'}
+                  {celebrating
+                    ? editItem
+                      ? '¡Guardado!'
+                      : '¡Agregado!'
+                    : missingChoice
+                      ? choicePrompt(missingChoice)
+                      : editItem
+                        ? 'Guardar cambios'
+                        : 'Agregar al pedido'}
                 </span>
                 <AnimatedPrice value={previewPrice * quantity} className="shrink-0" />
               </span>
