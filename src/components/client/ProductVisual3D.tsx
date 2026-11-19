@@ -49,6 +49,10 @@ interface Props {
   height?: number;
   /** Recibe una función que devuelve un PNG del 3D (para "volar al carrito"). */
   snapshotRef?: MutableRefObject<(() => string | null) | null>;
+  /** Ingrediente a resaltar en la hamburguesa (chip bajo el mouse). */
+  highlight?: string | null;
+  /** Tocar un ingrediente en la hamburguesa 3D (para quitarlo). */
+  onIngredientTap?: (name: string) => void;
 }
 
 export default function ProductVisual3D({
@@ -64,6 +68,8 @@ export default function ProductVisual3D({
   choiceLabels = [],
   height = 280,
   snapshotRef,
+  highlight = null,
+  onIngredientTap,
 }: Props) {
   const reduced = useReducedMotion();
   const pulse = useAnimationControls();
@@ -149,7 +155,14 @@ export default function ProductVisual3D({
       >
       <motion.div animate={pulse} className="h-full w-full" style={{ transformOrigin: 'center 70%' }}>
         {variant === 'burger' ? (
-          <Burger3D ingredients={burgerIngredients} height={height} onReady={onReady} snapshotRef={snapshotRef} />
+          <Burger3D
+            ingredients={burgerIngredients}
+            height={height}
+            onReady={onReady}
+            snapshotRef={snapshotRef}
+            highlight={highlight}
+            onLayerClick={onIngredientTap}
+          />
         ) : (
           <Item3D
             variant={variant}

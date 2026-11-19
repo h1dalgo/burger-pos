@@ -34,6 +34,8 @@ export declare function normalizeName(name: string): string;
 export declare class BurgerScene {
   constructor(container: HTMLElement, options?: BurgerSceneOptions);
   setIngredients(names: string[], options?: { animate?: boolean }): void;
+  /** Resalta un ingrediente por nombre (null para quitar el resaltado). */
+  setHighlight(label: string | null): void;
   setAutoRotate(on: boolean): void;
   /** PNG del cuadro actual (null si aún no está listo). */
   snapshot(): string | null;

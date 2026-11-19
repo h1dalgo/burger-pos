@@ -16,9 +16,11 @@ export interface Burger3DProps {
   onReady?: () => void;
   /** Recibe una función que devuelve un PNG del cuadro actual. */
   snapshotRef?: MutableRefObject<(() => string | null) | null>;
+  /** Nombre del ingrediente a resaltar (ej. el chip bajo el mouse). */
+  highlight?: string | null;
 }
 
-export default function Burger3D({ ingredients, height = 280, className, autoRotate = true, onLayerClick, onReady, snapshotRef }: Burger3DProps) {
+export default function Burger3D({ ingredients, height = 280, className, autoRotate = true, onLayerClick, onReady, snapshotRef, highlight = null }: Burger3DProps) {
   const ref = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<BurgerScene | null>(null);
   const clickRef = useRef(onLayerClick);
@@ -57,6 +59,10 @@ export default function Burger3D({ ingredients, height = 280, className, autoRot
   useEffect(() => {
     sceneRef.current?.setAutoRotate(autoRotate);
   }, [autoRotate]);
+
+  useEffect(() => {
+    sceneRef.current?.setHighlight(highlight);
+  }, [highlight]);
 
   return <div ref={ref} className={className} style={{ width: '100%', height, position: 'relative' }} role="img" aria-label="Hamburguesa 3D" />;
 }

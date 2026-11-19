@@ -251,6 +251,25 @@ function buildPitcher(q, glass) {
     ice.add(m);
   }
   group.add(ice);
+  // chorro que cae al rellenar con un sabor nuevo
+  const streamMat = food({ color: '#f0913f', bumpScale: 0, roughness: 0.1, clearcoat: 0.8, env: 1 });
+  streamMat.opacity = streamMat.userData.baseOpacity = 0.9;
+  const sg = new THREE.CylinderGeometry(0.045, 0.06, 1, 14, 8, true);
+  sg.translate(0, -0.5, 0);
+  const spos = sg.attributes.position;
+  for (let i = 0; i < spos.count; i++) {
+    const w = 1 + 0.14 * Math.sin(spos.getY(i) * 31);
+    spos.setX(i, spos.getX(i) * w);
+    spos.setZ(i, spos.getZ(i) * w);
+  }
+  sg.computeVertexNormals();
+  const stream = mesh(sg, streamMat);
+  stream.name = 'stream';
+  stream.visible = false;
+  stream.castShadow = false;
+  stream.renderOrder = 1;
+  stream.position.y = H + 0.7;
+  group.add(stream);
   return group;
 }
 
@@ -602,6 +621,9 @@ class DrinkModel extends Model {
       this.liquid = this.group.getObjectByName('liquid');
       this.surface = this.group.getObjectByName('surface');
       this.ice = this.group.getObjectByName('ice');
+      this.stream = this.group.getObjectByName('stream');
+      this.streamOp = sp(0);
+      this.pouring = false;
       this.fill = sp(0.02);
       this.fillTarget = 1;
       this.tiltX = sp(0);
@@ -653,7 +675,9 @@ class DrinkModel extends Model {
       this.targetColor.set(this.pending);
       this.pending = null;
       this.fillTarget = 1;
+      this.pouring = true;
     }
+    if (this.pouring && this.fill.x > 0.96) this.pouring = false;
     a = spring(this.fill, this.fillTarget, 26, 9, dt) || a;
     a = spring(this.tiltX, 0, 60, 4, dt) || a;
     a = spring(this.tiltZ, 0, 60, 4, dt) || a;
@@ -669,6 +693,18 @@ class DrinkModel extends Model {
     this.surface.rotation.set(this.tiltX.x * 0.12, 0, this.tiltZ.x * 0.12);
     this.ice.position.y = 0.105 + level - 0.07 + Math.sin(now * 1.6) * 0.008;
     this.ice.rotation.y = Math.sin(now * 0.4) * 0.15;
+    // chorro: aparece mientras se rellena y "se corta" al terminar
+    a = spring(this.streamOp, this.pouring ? 1 : 0, 220, 26, dt) || a;
+    const so = this.streamOp.x;
+    this.stream.visible = so > 0.02;
+    if (this.stream.visible) {
+      const len = Math.max(0.01, this.H + 0.7 - (0.105 + level));
+      this.stream.scale.set(so, len, so);
+      this.stream.position.x = Math.sin(now * 11) * 0.012;
+      this.stream.material.color.copy(this.color);
+      if (this.pouring) this.tiltZ.v += Math.sin(now * 23) * 0.06; // ondas en la superficie
+      a = true;
+    }
     return a;
   }
 }

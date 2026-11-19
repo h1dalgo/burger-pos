@@ -488,7 +488,7 @@ export function food(p = {}) {
 }
 
 export const TIERS = {
-  high: { name: 'high', dpr: 2, minDpr: 1, seg: 112, detail: 1, sesame: 64, shadow: 1024, aa: true },
+  high: { name: 'high', dpr: 2, minDpr: 1, seg: 112, detail: 1, sesame: 64, shadow: 2048, aa: true },
   medium: { name: 'medium', dpr: 1.5, minDpr: 1, seg: 80, detail: 0.75, sesame: 50, shadow: 1024, aa: false },
   low: { name: 'low', dpr: 1.25, minDpr: 0.8, seg: 56, detail: 0.55, sesame: 36, shadow: 0, aa: false },
 };
@@ -558,6 +558,29 @@ export function studioEnvironment(renderer) {
     m.lookAt(0, 0.5, 0);
     scene.add(m);
   };
+  // softbox cenital grande con caída suave (luz de estudio de fotografía de comida)
+  const grad = document.createElement('canvas');
+  grad.width = grad.height = 128;
+  const gg = grad.getContext('2d');
+  const rg = gg.createRadialGradient(64, 64, 6, 64, 64, 64);
+  rg.addColorStop(0, '#ffffff');
+  rg.addColorStop(0.55, 'rgba(255,255,255,0.55)');
+  rg.addColorStop(1, 'rgba(255,255,255,0)');
+  gg.fillStyle = rg;
+  gg.fillRect(0, 0, 128, 128);
+  const gradTex = new THREE.CanvasTexture(grad);
+  const top = new THREE.Mesh(
+    new THREE.PlaneGeometry(12, 12),
+    new THREE.MeshBasicMaterial({ map: gradTex, color: new THREE.Color('#fff4e2').multiplyScalar(4.5), transparent: true, side: THREE.DoubleSide })
+  );
+  top.position.set(0, 8.5, 1);
+  top.rotation.x = Math.PI / 2;
+  scene.add(top);
+  // rebote cálido de la mesa
+  const floor = new THREE.Mesh(new THREE.PlaneGeometry(20, 20), new THREE.MeshBasicMaterial({ color: new THREE.Color('#7a4a26').multiplyScalar(0.55), side: THREE.DoubleSide }));
+  floor.position.y = -0.6;
+  floor.rotation.x = -Math.PI / 2;
+  scene.add(floor);
   panel(6, 4, '#fff1dc', 7, -3, 6.5, 4); // softbox principal (arriba, adelante-izquierda)
   panel(9, 1.6, '#ffe2b8', 4, 5, 2.2, -4.5); // tira de contraluz cálida
   panel(4, 4, '#dfe9ff', 1.4, -7, 1, -2); // relleno frío
@@ -569,6 +592,7 @@ export function studioEnvironment(renderer) {
     o.geometry?.dispose();
     o.material?.dispose();
   });
+  gradTex.dispose();
   return rt;
 }
 
@@ -657,7 +681,7 @@ export class Stage {
     r.toneMapping = THREE.ACESFilmicToneMapping;
     r.toneMappingExposure = 1.1;
     r.shadowMap.enabled = this.q.shadow > 0;
-    r.shadowMap.type = THREE.PCFSoftShadowMap;
+    r.shadowMap.type = THREE.PCFShadowMap; // admite radio de desenfoque → sombras más suaves
     r.shadowMap.autoUpdate = false; // solo se recalcula cuando algo se mueve
     r.setClearColor(0x000000, 0);
     const cv = r.domElement;
@@ -676,7 +700,8 @@ export class Stage {
       Object.assign(key.shadow.camera, { left: -2.6, right: 2.6, top: 2.6, bottom: -2.6, near: 1, far: 16 });
       key.shadow.bias = -0.0004;
       key.shadow.normalBias = 0.02;
-      key.shadow.radius = 3;
+      key.shadow.radius = 5;
+      key.shadow.blurSamples = 12;
     }
     scene.add(key, key.target);
     const rim = new THREE.DirectionalLight(0xffd9a8, 0.9);

@@ -112,7 +112,7 @@ function pattyLike(ctx, { radius = 1.15, height = 0.3, amp = 1, colors, rough = 
     [[R * 0.83, 0], [R * 0.93, H * 0.08], [R * 0.985, H * 0.3], [R, H * 0.5], [R * 0.98, H * 0.73], [R * 0.93, H * 0.92], [R * 0.85, H]],
     32 * q.detail
   );
-  const g = latheGeo(joinProfiles(flatLine(0, R * 0.83, 0, 12 * q.detail), side, flatLine(R * 0.85, 0, H, 12 * q.detail)), q.seg * 1.1);
+  const g = latheGeo(joinProfiles(flatLine(0, R * 0.83, 0, 12 * q.detail), side, flatLine(R * 0.85, 0, H, (chicken ? 12 : 30) * q.detail)), q.seg * 1.1);
   const dfn = chicken
     ? (v) => fbm(v.x * 3, v.y * 3, v.z * 3, s, 3) * 0.05 * amp + fbm(v.x * 11, v.y * 11, v.z * 11, s + 4, 2) * 0.03 * amp
     : (v) => fbm(v.x * 2.2, v.y * 2.2, v.z * 2.2, s, 3) * 0.035 * amp + fbm(v.x * 9, v.y * 9, v.z * 9, s + 4, 2) * 0.018 * amp;
@@ -124,6 +124,12 @@ function pattyLike(ctx, { radius = 1.15, height = 0.3, amp = 1, colors, rough = 
     const ch = smooth(0.1, 0.45, fbm(v.x * 10, v.y * 10, v.z * 10, s + 6, 2));
     c.lerp(charC, ch * (chicken ? 0.5 : 0.75));
     if (Math.abs(n.y) > 0.7) c.multiplyScalar(chicken ? 0.95 : 0.82);
+    if (!chicken && n.y > 0.7) {
+      // marcas de parrilla: líneas diagonales quemadas, interrumpidas por el ruido
+      const u = v.x * 0.88 + v.z * 0.47;
+      const line = smooth(0.84, 0.97, Math.abs(Math.sin(u * 7.2))) * smooth(-0.35, 0.15, fbm(v.x * 5, 0, v.z * 5, s + 11, 2));
+      c.multiplyScalar(1 - 0.72 * line);
+    }
     c.multiplyScalar(lerp(0.7, 1, smooth(0.0, 0.06, v.y))); // oclusión al apoyar
   });
   return mesh(g, food({ map: 'meat', bump: 'meat', bumpScale: chicken ? 5 : 4, roughness: rough, clearcoat: coat, clearcoatRoughness: 0.45 }));
@@ -157,19 +163,38 @@ function buildCheese(ctx, variant) {
   }
   g.computeVertexNormals();
   const white = variant === 'white';
-  const m = mesh(
-    g,
-    food({
-      color: white ? '#f0d48a' : '#f39a14',
-      bumpScale: 0.25,
-      roughness: white ? 0.5 : 0.36,
-      clearcoat: 0.35,
-      clearcoatRoughness: 0.35,
-      env: 0.7,
-    })
-  );
-  m.rotation.y = Math.PI / 4 + (ctx.rand() - 0.5) * 0.6;
-  return m;
+  const mat = food({
+    color: white ? '#f0d48a' : '#f39a14',
+    bumpScale: 0.25,
+    roughness: white ? 0.5 : 0.36,
+    clearcoat: 0.35,
+    clearcoatRoughness: 0.35,
+    env: 0.7,
+  });
+  const group = new THREE.Group();
+  group.add(mesh(g, mat));
+  // gotas de queso derretido colgando de las esquinas
+  const corners = [[1, 1], [1, -1], [-1, 1], [-1, -1]].map(() => ({ best: -Infinity, x: 0, y: 0, z: 0 }));
+  [[1, 1], [1, -1], [-1, 1], [-1, -1]].forEach(([sx, sz], k) => {
+    for (let i = 0; i < p.count; i++) {
+      const dot = p.getX(i) * sx + p.getZ(i) * sz - p.getY(i) * 0.01;
+      if (dot > corners[k].best) corners[k] = { best: dot, x: p.getX(i), y: p.getY(i), z: p.getZ(i) };
+    }
+  });
+  const dripGeo = new THREE.SphereGeometry(1, 12, 10);
+  corners.forEach((cn, k) => {
+    if (k > 1 && ctx.rand() < 0.4) return; // 2 a 4 gotas
+    const len = 0.07 + ctx.rand() * 0.09;
+    const neck = mesh(dripGeo, mat);
+    neck.scale.set(0.04, len, 0.035);
+    neck.position.set(cn.x * 0.985, cn.y - len * 0.75, cn.z * 0.985);
+    const bulb = mesh(dripGeo, mat);
+    bulb.scale.set(0.05, 0.055, 0.045);
+    bulb.position.set(cn.x * 0.985, cn.y - len * 1.55, cn.z * 0.985);
+    group.add(neck, bulb);
+  });
+  group.rotation.y = Math.PI / 4 + (ctx.rand() - 0.5) * 0.6;
+  return group;
 }
 
 function leafGeo(ctx, radius, seedOff, colors, ruffleAmp = 0.065, freq = 13) {
@@ -633,7 +658,14 @@ export class BurgerScene extends Stage {
    * @param {object} [options]
    */
   constructor(container, options = {}) {
-    super(container, Object.assign({ autoPatty: true, intro: true, onLayerClick: null, classify: null }, options));
+    super(
+      container,
+      Object.assign(
+        { autoPatty: true, intro: true, onLayerClick: null, classify: null, hint: options.onLayerClick ? 'Gira · toca un ingrediente para quitarlo' : 'Arrastra para girar' },
+        options
+      )
+    );
+    this._highlight = null;
     this.stack = this.root;
     this.layers = [];
     this.gap = { x: 0, v: 0, target: 0, y: Infinity, closeAt: 0 };
@@ -712,6 +744,17 @@ export class BurgerScene extends Stage {
     this._kick();
   }
 
+  /**
+   * Resalta un ingrediente (por nombre, ej. al pasar el mouse por su chip): se eleva un poco y brilla.
+   * @param {string | null} label
+   */
+  setHighlight(label) {
+    const n = label ? normalizeName(label) : null;
+    if (n === this._highlight) return;
+    this._highlight = n;
+    this._kick();
+  }
+
   _resolve(names) {
     const counts = {};
     const items = [];
@@ -738,7 +781,7 @@ export class BurgerScene extends Stage {
     this.stack.add(root);
     return {
       id: d.id, kind: d.kind, variant: d.variant, label: d.label, removable: d.removable, height: KINDS[d.kind].h,
-      root, mats: [], built: false, baseY: 0, opacity: -1,
+      root, mats: [], built: false, baseY: 0, opacity: -1, norm: d.label ? normalizeName(d.label) : null, glow: sp(0),
       px: sp(0), py: sp(0), pz: sp(0), ry: sp(0), tilt: sp(0), sc: sp(1),
       t0: 0, fade: 0.25, leaving: false, kY: 200, cY: 22, kXZ: 90, cXZ: 16,
       axis: new THREE.Vector3(1, 0, 0),
@@ -939,7 +982,17 @@ export class BurgerScene extends Stage {
         moving = spring(L.ry, tr, 70, 13, dt) || moving;
         moving = spring(L.tilt, tt, 110, 14, dt) || moving;
       }
-      moving = spring(L.sc, this._hovered === L ? 1.045 : 1, 320, 16, dt) || moving;
+      const lit = !L.leaving && (this._hovered === L || (this._highlight && L.norm === this._highlight));
+      moving = spring(L.sc, lit ? 1.05 : 1, 320, 16, dt) || moving;
+      if (spring(L.glow, lit ? 1 : 0, 120, 16, dt) || L.glow.x > 0.01) {
+        // brillo cálido que respira mientras está resaltado
+        const k = L.glow.x * (0.75 + 0.25 * Math.sin(now * 6)) * 0.42;
+        for (const m of L.mats) m.emissive.setRGB(0.6 * k, 0.33 * k, 0.08 * k);
+        moving = true;
+      } else if (L.glow.x !== 0) {
+        L.glow.x = 0;
+        for (const m of L.mats) m.emissive.setRGB(0, 0, 0);
+      }
       L.root.position.set(L.px.x, L.py.x, L.pz.x);
       L.root.quaternion.setFromAxisAngle(L.axis, L.tilt.x);
       L.root.rotateY(L.ry.x);

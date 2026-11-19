@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { motion } from 'framer-motion';
+import { motion, useDragControls, type PanInfo } from 'framer-motion';
 import { X, Minus, Plus, Check } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import type { Product, ProductVariation, ExtraIngredient } from '@/types';
@@ -39,6 +39,38 @@ export default function ProductModal({ product, categoryName, onClose }: Props) 
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const heroRef = useRef<HTMLDivElement>(null);
   const snapshotRef = useRef<(() => string | null) | null>(null);
+  const [highlight, setHighlight] = useState<string | null>(null);
+  const dragControls = useDragControls();
+
+  /** Resalta en 3D el ingrediente del chip bajo el mouse (o con foco de teclado). */
+  const hoverProps = (name: string, active: boolean) => ({
+    onPointerEnter: (e: React.PointerEvent) => e.pointerType === 'mouse' && active && setHighlight(name),
+    onPointerLeave: () => setHighlight((h) => (h === name ? null : h)),
+    onFocus: () => active && setHighlight(name),
+    onBlur: () => setHighlight((h) => (h === name ? null : h)),
+  });
+
+  /** Tocar un ingrediente en la hamburguesa 3D lo quita (base) o lo descarta (extra). */
+  const handleIngredientTap = useCallback(
+    (name: string) => {
+      setHighlight(null);
+      if (product.defaultIngredients.some((d) => d.name === name)) {
+        setRemovedIngredients((prev) => (prev.includes(name) ? prev : [...prev, name]));
+      } else {
+        setAddedExtras((prev) => {
+          const i = prev.findIndex((e) => e.name === name);
+          return i < 0 ? prev : prev.filter((_, k) => k !== i);
+        });
+      }
+      if (typeof navigator !== 'undefined') navigator.vibrate?.(10);
+    },
+    [product.defaultIngredients]
+  );
+
+  /** Arrastrar la hoja hacia abajo la cierra (si se suelta lejos o rápido). */
+  const handleDragEnd = (_: unknown, info: PanInfo) => {
+    if (info.offset.y > 110 || (info.velocity.y > 650 && info.offset.y > 60)) onClose();
+  };
 
   const variant = variantFromCategory(categoryName);
 
@@ -68,6 +100,8 @@ export default function ProductModal({ product, categoryName, onClose }: Props) 
       if (current.includes(optionName)) {
         return { ...prev, [selectionId]: current.filter((o) => o !== optionName) };
       }
+      // opción única: tocar otra la reemplaza (como un radio button)
+      if (max === 1) return { ...prev, [selectionId]: [optionName] };
       if (current.length >= max) return prev;
       return { ...prev, [selectionId]: [...current, optionName] };
     });
@@ -141,10 +175,22 @@ export default function ProductModal({ product, categoryName, onClose }: Props) 
         animate={{ y: 0, opacity: 1 }}
         exit={{ y: '100%', opacity: 0 }}
         transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+        drag="y"
+        dragListener={false}
+        dragControls={dragControls}
+        dragConstraints={{ top: 0, bottom: 0 }}
+        dragElastic={{ top: 0, bottom: 0.7 }}
+        onDragEnd={handleDragEnd}
         onClick={(e) => e.stopPropagation()}
         className="relative w-full sm:max-w-lg max-h-[calc(100%_-_8rem)] bg-cream rounded-t-3xl sm:rounded-3xl overflow-y-auto overscroll-contain"
       >
-        <div className="sticky top-0 z-10 flex items-start justify-between gap-4 px-6 pt-5 pb-3 bg-cream rounded-t-3xl">
+        <div
+          className="sticky top-0 z-10 flex items-start justify-between gap-4 px-6 pt-5 pb-3 bg-cream rounded-t-3xl cursor-grab active:cursor-grabbing"
+          style={{ touchAction: 'none' }}
+          onPointerDown={(e) => dragControls.start(e)}
+        >
+          {/* asa para deslizar y cerrar (móvil) */}
+          <span aria-hidden="true" className="absolute left-1/2 top-2 h-1.5 w-10 -translate-x-1/2 rounded-full bg-carbon/20 sm:hidden" />
           <div className="min-w-0">
             <h2 className="text-xl font-bold text-carbon leading-tight">{product.name}</h2>
             <p className="text-sm text-carbon/55 mt-0.5">{product.description}</p>
@@ -166,6 +212,8 @@ export default function ProductModal({ product, categoryName, onClose }: Props) 
             description={product.description}
             imageUrl={product.imageUrl}
             snapshotRef={snapshotRef}
+            highlight={highlight}
+            onIngredientTap={variant === 'burger' ? handleIngredientTap : undefined}
             defaultIngredients={product.defaultIngredients}
             removedIngredients={removedIngredients}
             addedExtras={addedExtras}
@@ -254,6 +302,7 @@ export default function ProductModal({ product, categoryName, onClose }: Props) 
                   return (
                     <button
                       key={ing.id}
+                      {...hoverProps(ing.name, !isRemoved)}
                       aria-pressed={isRemoved}
                       data-tone="rose"
                       onClick={() => {
@@ -282,6 +331,7 @@ export default function ProductModal({ product, categoryName, onClose }: Props) 
                   return (
                     <button
                       key={extra.id}
+                      {...hoverProps(extra.name, !!isAdded)}
                       disabled={!avail}
                       aria-pressed={!!isAdded}
                       data-tone="mint"
