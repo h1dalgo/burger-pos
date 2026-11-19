@@ -923,11 +923,12 @@ export class BurgerScene extends Stage {
       L.root.visible = true;
       let tx = 0, tz = 0, ty = L.baseY + (L.baseY >= g.y ? g.x : 0), tr = 0, tt = 0;
       if (L.leaving) {
-        tx = L.out.x;
-        tz = L.out.z;
-        ty = L.baseY + 0.2;
-        tr = -1.4;
-        tt = 0.45;
+        // al terminar su trayectoria de salida se queda donde está hasta desaparecer
+        tx = L.px.x;
+        tz = L.pz.x;
+        ty = L.py.x;
+        tr = L.ry.x;
+        tt = L.tilt.x;
       }
       let moving;
       if (L.path) moving = this._followPath(L, now, ty);
