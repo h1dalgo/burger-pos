@@ -173,26 +173,6 @@ function buildCheese(ctx, variant) {
   });
   const group = new THREE.Group();
   group.add(mesh(g, mat));
-  // gotas de queso derretido colgando de las esquinas
-  const corners = [[1, 1], [1, -1], [-1, 1], [-1, -1]].map(() => ({ best: -Infinity, x: 0, y: 0, z: 0 }));
-  [[1, 1], [1, -1], [-1, 1], [-1, -1]].forEach(([sx, sz], k) => {
-    for (let i = 0; i < p.count; i++) {
-      const dot = p.getX(i) * sx + p.getZ(i) * sz - p.getY(i) * 0.01;
-      if (dot > corners[k].best) corners[k] = { best: dot, x: p.getX(i), y: p.getY(i), z: p.getZ(i) };
-    }
-  });
-  const dripGeo = new THREE.SphereGeometry(1, 12, 10);
-  corners.forEach((cn, k) => {
-    if (k > 1 && ctx.rand() < 0.4) return; // 2 a 4 gotas
-    const len = 0.07 + ctx.rand() * 0.09;
-    const neck = mesh(dripGeo, mat);
-    neck.scale.set(0.04, len, 0.035);
-    neck.position.set(cn.x * 0.985, cn.y - len * 0.75, cn.z * 0.985);
-    const bulb = mesh(dripGeo, mat);
-    bulb.scale.set(0.05, 0.055, 0.045);
-    bulb.position.set(cn.x * 0.985, cn.y - len * 1.55, cn.z * 0.985);
-    group.add(neck, bulb);
-  });
   group.rotation.y = Math.PI / 4 + (ctx.rand() - 0.5) * 0.6;
   return group;
 }

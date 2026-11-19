@@ -13,6 +13,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { mergeVertices, mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
+import { RGBELoader } from 'three/examples/jsm/loaders/RGBELoader.js';
 
 export { THREE, mergeGeometries };
 
@@ -642,6 +643,39 @@ export function getTier(option = 'auto') {
 }
 
 /* ------------------------------------------------------------------ */
+/* HDRI de estudio (iluminación real), opcional y diferido             */
+/* ------------------------------------------------------------------ */
+
+let HDR_CACHE = null; // { url, promise, tex } — se descarga una sola vez por página
+
+function loadHDR(url) {
+  if (HDR_CACHE && HDR_CACHE.url === url) return HDR_CACHE.promise;
+  const entry = { url, tex: null, promise: null };
+  entry.promise = new RGBELoader()
+    .setDataType(THREE.HalfFloatType)
+    .loadAsync(url)
+    .then((t) => {
+      t.mapping = THREE.EquirectangularReflectionMapping;
+      entry.tex = t;
+      return t;
+    })
+    .catch(() => {
+      if (HDR_CACHE === entry) HDR_CACHE = null; // sin HDRI: se queda el estudio procedural
+      return null;
+    });
+  HDR_CACHE = entry;
+  return entry.promise;
+}
+
+/** El HDRI (~1,6 MB) solo se usa en equipos medianos/potentes y sin ahorro de datos. */
+function hdrAllowed(q) {
+  if (q.name === 'low') return false;
+  const c = typeof navigator !== 'undefined' ? navigator.connection : null;
+  if (c && (c.saveData || /2g|3g/.test(c.effectiveType || ''))) return false;
+  return true;
+}
+
+/* ------------------------------------------------------------------ */
 /* Stage: todo lo común a cualquier producto 3D                        */
 /* ------------------------------------------------------------------ */
 
@@ -655,7 +689,10 @@ export function getTier(option = 'auto') {
 export class Stage {
   constructor(container, options = {}) {
     this.container = container;
-    this.opts = Object.assign({ autoRotate: true, hint: 'Arrastra para girar', quality: 'auto', frameCenter: 0.46, autoRotateSpeed: 1.6 }, options);
+    this.opts = Object.assign(
+      { autoRotate: true, hint: 'Arrastra para girar', quality: 'auto', frameCenter: 0.46, autoRotateSpeed: 1.6, hdri: '/hdr/studio_1k.hdr' },
+      options
+    );
     this.reduced = typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches;
     this.q = getTier(this.opts.quality);
     this._time = 0;
@@ -898,8 +935,13 @@ export class Stage {
       typeof requestIdleCallback === 'function' ? requestIdleCallback(() => res(), { timeout: 450 }) : setTimeout(res, 250)
     );
     if (this._disposed) return;
-    this._envRT = studioEnvironment(this.renderer);
-    this.scene.environment = this._envRT.texture;
+    // Iluminación: HDRI real si ya está descargado; si no, el estudio procedural
+    // (mismo tamaño de mapa → cambiar uno por otro no recompila shaders).
+    const hdrUrl = this.opts.hdri && hdrAllowed(this.q) ? this.opts.hdri : null;
+    const pending = hdrUrl ? loadHDR(hdrUrl) : null; // la descarga empieza ya, en paralelo
+    const cached = hdrUrl && HDR_CACHE?.url === hdrUrl ? HDR_CACHE.tex : null;
+    this._setEnvironment(cached ? this._pmremFrom(cached) : studioEnvironment(this.renderer), !!cached);
+    if (pending && !cached) this._swapToHDR(pending);
     const g = new THREE.Group();
     const geo = new THREE.PlaneGeometry(0.01, 0.01);
     solidColor(geo, WHITE);
@@ -932,6 +974,39 @@ export class Stage {
     this._ready = true;
     this._shadowDirty = true;
     this._clock.getDelta();
+    this._kick();
+  }
+
+  _pmremFrom(tex) {
+    const pm = new THREE.PMREMGenerator(this.renderer);
+    const rt = pm.fromEquirectangular(tex);
+    pm.dispose();
+    return rt;
+  }
+
+  _setEnvironment(rt, hdr) {
+    const old = this._envRT;
+    this._envRT = rt;
+    this.scene.environment = rt.texture;
+    // el HDRI ya trae la luz del estudio: se baja un poco la luz directa
+    this.scene.environmentIntensity = hdr ? 0.85 : 1;
+    this.scene.environmentRotation.set(0, hdr ? -0.9 : 0, 0);
+    this._key.intensity = hdr ? 1.25 : 1.7;
+    if (old && old !== rt) old.dispose();
+    this._dirty = true;
+    this._shadowDirty = true;
+  }
+
+  /** Cambia al HDRI cuando termine de descargar, sin interrumpir la animación de entrada. */
+  async _swapToHDR(pending) {
+    const tex = await pending;
+    if (!tex || this._disposed) return;
+    await new Promise((res) => setTimeout(res, 1200));
+    await new Promise((res) =>
+      typeof requestIdleCallback === 'function' ? requestIdleCallback(() => res(), { timeout: 600 }) : setTimeout(res, 0)
+    );
+    if (this._disposed) return;
+    this._setEnvironment(this._pmremFrom(tex), true);
     this._kick();
   }
 
