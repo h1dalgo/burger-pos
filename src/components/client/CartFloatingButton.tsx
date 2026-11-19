@@ -1,9 +1,11 @@
 'use client';
 
-import { motion, AnimatePresence } from 'framer-motion';
+import { useEffect } from 'react';
+import { motion, AnimatePresence, useAnimationControls, useReducedMotion } from 'framer-motion';
 import { ShoppingBag } from 'lucide-react';
 import { useCartStore } from '@/store/cart-store';
 import { formatPrice } from '@/lib/utils';
+import { CART_BUMP_EVENT } from '@/lib/fly-to-cart';
 
 interface Props {
   onClick: () => void;
@@ -14,6 +16,22 @@ export default function CartFloatingButton({ onClick }: Props) {
   const getTotalAmount = useCartStore((s) => s.getTotalAmount);
   const totalItems = getTotalItems();
   const totalAmount = getTotalAmount();
+  const bump = useAnimationControls();
+  const reduced = useReducedMotion();
+
+  // Rebote al recibir un producto (ver lib/fly-to-cart)
+  useEffect(() => {
+    const onBump = () => {
+      void bump.start(
+        reduced
+          ? { scale: [1, 1.04, 1], transition: { duration: 0.2 } }
+          : { scale: [1, 1.16, 0.95, 1.03, 1], transition: { duration: 0.5, ease: 'easeOut' } }
+      );
+      if (!reduced && typeof navigator !== 'undefined' && 'vibrate' in navigator) navigator.vibrate?.(12);
+    };
+    window.addEventListener(CART_BUMP_EVENT, onBump);
+    return () => window.removeEventListener(CART_BUMP_EVENT, onBump);
+  }, [bump, reduced]);
 
   return (
     <motion.button
@@ -23,25 +41,28 @@ export default function CartFloatingButton({ onClick }: Props) {
       transition={{ type: 'spring', damping: 22, stiffness: 300 }}
       whileTap={{ scale: 0.95 }}
       onClick={onClick}
+      data-cart-target
       aria-label={`Ver pedido: ${totalItems} productos, ${formatPrice(totalAmount)}`}
-      className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 flex items-center gap-3 bg-burger text-cream pl-5 pr-6 py-3.5 rounded-full border-2 border-carbon shadow-pop font-bold sign"
+      className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 bg-burger text-cream pl-5 pr-6 py-3.5 rounded-full border-2 border-carbon shadow-pop font-bold sign"
     >
-      <div className="relative">
-        <ShoppingBag className="w-5 h-5" />
-        <AnimatePresence mode="wait">
-          <motion.span
-            key={totalItems}
-            initial={{ scale: 1.5, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 1.5, opacity: 0 }}
-            className="absolute -top-2 -right-3 min-w-5 h-5 px-1 bg-mustard text-carbon text-xs font-bold rounded-full border-2 border-carbon flex items-center justify-center tabular-nums"
-          >
-            {totalItems}
-          </motion.span>
-        </AnimatePresence>
-      </div>
-      <span className="hidden sm:inline">Ver Pedido</span>
-      <span className="font-bold tabular-nums">{formatPrice(totalAmount)}</span>
+      <motion.span animate={bump} className="flex items-center gap-3">
+        <span className="relative">
+          <ShoppingBag className="w-5 h-5" />
+          <AnimatePresence mode="wait">
+            <motion.span
+              key={totalItems}
+              initial={{ scale: 1.5, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 1.5, opacity: 0 }}
+              className="absolute -top-2 -right-3 min-w-5 h-5 px-1 bg-mustard text-carbon text-xs font-bold rounded-full border-2 border-carbon flex items-center justify-center tabular-nums"
+            >
+              {totalItems}
+            </motion.span>
+          </AnimatePresence>
+        </span>
+        <span className="hidden sm:inline">Ver Pedido</span>
+        <span className="font-bold tabular-nums">{formatPrice(totalAmount)}</span>
+      </motion.span>
     </motion.button>
   );
 }

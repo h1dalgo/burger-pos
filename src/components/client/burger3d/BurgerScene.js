@@ -12,7 +12,7 @@
  * La infraestructura (renderer, luces, calidad, bucle) vive en ./core.js.
  */
 import {
-  THREE, mergeGeometries, Stage, fromTemplate, materialsOf, spring, sp, clamp01, smooth, lerp, mulberry32, strHash, fbm,
+  THREE, mergeGeometries, Stage, fromTemplate, materialsOf, spring, sp, ease, clamp01, smooth, lerp, mulberry32, strHash, fbm,
   spline, flatLine, joinProfiles, latheGeo, cleanMerge, displace, paint, solidColor, col, WHITE, mesh, food,
 } from './core.js';
 
@@ -703,9 +703,10 @@ export class BurgerScene extends Stage {
 
     if (gapY < Infinity) {
       this.gap.y = Math.min(this.gap.target > 0 ? this.gap.y : Infinity, gapY);
+      if (this.gap.target === 0 && Math.abs(this.gap.x) < 0.01 && !this.reduced) this.gap.v = -0.55; // anticipación: la tapa baja un poco antes de abrirse
       this.gap.target = Math.max(this.gap.target, gapAmt);
-      this.gap.closeAt = now + 0.42;
-      this._squashAt = now + 0.62;
+      this.gap.closeAt = now + 0.5;
+      this._squashAt = now + 0.7;
     }
     this._dirty = true;
     this._kick();
@@ -782,26 +783,56 @@ export class BurgerScene extends Stage {
     this._squashAt = this._time + 0.15 + (n - 1) * 0.09 + 0.38;
   }
 
+  /** Entra en arco desde el lado derecho de la pantalla y aterriza en su lugar. */
   _enterLayer(L, now) {
     const right = this._screenRight();
-    const dist = 3.6;
-    L.px.x = right.x * dist;
-    L.pz.x = right.z * dist;
-    L.py.x = L.baseY + 0.35;
-    L.ry.x = 1.6;
-    L.tilt.x = -0.45;
     L.axis.set(-right.z, 0, right.x);
-    L.t0 = now + 0.1;
-    L.fade = 0.22;
+    L.t0 = now + 0.08;
+    L.fade = 0.16;
+    L.path = {
+      t0: L.t0, dur: 0.5, ease: ease.outCubic, landing: true,
+      from: { x: right.x * 3.4, y: 0.9, z: right.z * 3.4 },
+      ctrl: { x: right.x * 1.0, y: 1.3, z: right.z * 1.0 },
+      ry: [1.4, 0], tilt: [-0.35, 0],
+    };
+    L.px.x = right.x * 3.4;
+    L.pz.x = right.z * 3.4;
+    L.py.x = L.baseY + 0.9;
   }
 
+  /** Sale en arco hacia la izquierda, girando y desvaneciéndose. */
   _beginLeave(L) {
     const right = this._screenRight();
     L.leaving = true;
     L.t0 = this._time;
-    L.out = { x: -right.x * 3.8, z: -right.z * 3.8 };
     L.axis.set(-right.z, 0, right.x);
-    L.kY = 120;
+    L.path = {
+      t0: L.t0, dur: 0.5, ease: ease.inOutCubic, absolute: true,
+      from: { x: L.px.x, y: L.py.x, z: L.pz.x },
+      ctrl: { x: -right.x * 0.8, y: L.py.x + 0.9, z: -right.z * 0.8 },
+      to: { x: -right.x * 3.6, y: L.py.x + 0.5, z: -right.z * 3.6 },
+      ry: [L.ry.x, -1.3], tilt: [L.tilt.x, 0.4],
+    };
+  }
+
+  /** Avanza una trayectoria (Bézier cuadrática con easing). Devuelve true si sigue en curso. */
+  _followPath(L, now, ty) {
+    const P = L.path;
+    const t = clamp01((now - P.t0) / P.dur);
+    const e = P.ease(t);
+    const a = (1 - e) * (1 - e), b = 2 * (1 - e) * e, c = e * e;
+    const to = P.to || { x: 0, y: ty, z: 0 };
+    const off = P.absolute ? 0 : ty; // en la entrada, from/ctrl son relativos a la altura final
+    L.px.x = a * P.from.x + b * P.ctrl.x + c * to.x;
+    L.py.x = a * (P.from.y + off) + b * (P.ctrl.y + off) + c * to.y;
+    L.pz.x = a * P.from.z + b * P.ctrl.z + c * to.z;
+    L.ry.x = lerp(P.ry[0], P.ry[1], e);
+    L.tilt.x = lerp(P.tilt[0], P.tilt[1], e);
+    L.px.v = L.py.v = L.pz.v = L.ry.v = L.tilt.v = 0;
+    if (t < 1) return true;
+    L.path = null;
+    if (P.landing) L.sc.v -= 0.9; // pequeño aplastón al aterrizar
+    return false;
   }
 
   _sweepDead() {
@@ -880,7 +911,9 @@ export class BurgerScene extends Stage {
     this.stack.scale.set(bulge, sq, bulge);
 
     let topY = 0;
+    let visible = false;
     for (const L of this.layers) {
+      if (L.built && now >= L.t0) visible = true;
       if (!L.leaving) topY = Math.max(topY, L.baseY + L.height);
       if (!L.built || now < L.t0) {
         L.root.visible = false;
@@ -896,20 +929,25 @@ export class BurgerScene extends Stage {
         tr = -1.4;
         tt = 0.45;
       }
-      let moving = spring(L.py, ty, L.kY, L.cY, dt);
-      moving = spring(L.px, tx, L.kXZ, L.cXZ, dt) || moving;
-      moving = spring(L.pz, tz, L.kXZ, L.cXZ, dt) || moving;
-      moving = spring(L.ry, tr, 70, 13, dt) || moving;
-      moving = spring(L.tilt, tt, 110, 14, dt) || moving;
-      moving = spring(L.sc, this._hovered === L ? 1.045 : 1, 300, 20, dt) || moving;
+      let moving;
+      if (L.path) moving = this._followPath(L, now, ty);
+      else {
+        moving = spring(L.py, ty, L.kY, L.cY, dt);
+        moving = spring(L.px, tx, L.kXZ, L.cXZ, dt) || moving;
+        moving = spring(L.pz, tz, L.kXZ, L.cXZ, dt) || moving;
+        moving = spring(L.ry, tr, 70, 13, dt) || moving;
+        moving = spring(L.tilt, tt, 110, 14, dt) || moving;
+      }
+      moving = spring(L.sc, this._hovered === L ? 1.045 : 1, 320, 16, dt) || moving;
       L.root.position.set(L.px.x, L.py.x, L.pz.x);
       L.root.quaternion.setFromAxisAngle(L.axis, L.tilt.x);
       L.root.rotateY(L.ry.x);
-      L.root.scale.setScalar(L.sc.x);
+      const ls = L.sc.x, wide = ls < 1 ? 1 + (1 - ls) * 0.5 : ls; // aplastar en Y y ensanchar en XZ (conserva volumen)
+      L.root.scale.set(wide, ls, wide);
       const life = now - L.t0;
       if (L.leaving) {
-        moving = this._setOpacity(L, 1 - (life - 0.08) / 0.32) || moving;
-        if (life > 0.75) L.dead = true;
+        moving = this._setOpacity(L, 1 - (life - 0.15) / 0.33) || moving;
+        if (life > 0.55) L.dead = true;
       } else {
         moving = this._setOpacity(L, life / L.fade) || moving;
       }
@@ -922,7 +960,7 @@ export class BurgerScene extends Stage {
 
     this.frameH = Math.max(topY, this.totalH || 1.4) + g.x;
     this.frameW = 1.55;
-    return { active, built };
+    return { active, built, visible };
   }
 }
 

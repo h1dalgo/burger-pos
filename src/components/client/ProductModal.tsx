@@ -9,6 +9,8 @@ import { formatPrice } from '@/lib/utils';
 import { useCartStore } from '@/store/cart-store';
 import { useStockStore } from '@/store/stock-store';
 import { Button } from '@/components/ui/Button';
+import { AnimatedPrice } from '@/components/ui/AnimatedPrice';
+import { flyToCart } from '@/lib/fly-to-cart';
 import ProductVisual3D, { variantFromCategory } from './ProductVisual3D';
 
 interface Props {
@@ -31,11 +33,12 @@ export default function ProductModal({ product, categoryName, onClose }: Props) 
   const [quantity, setQuantity] = useState(1);
   const [note, setNote] = useState('');
   const [error, setError] = useState('');
-  const [imageFailed, setImageFailed] = useState(false);
   const [celebrateSeq, setCelebrateSeq] = useState(0);
   const [celebrating, setCelebrating] = useState(false);
   const closeRef = useRef<HTMLButtonElement>(null);
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const heroRef = useRef<HTMLDivElement>(null);
+  const snapshotRef = useRef<(() => string | null) | null>(null);
 
   const variant = variantFromCategory(categoryName);
 
@@ -96,6 +99,8 @@ export default function ProductModal({ product, categoryName, onClose }: Props) 
       note,
     });
 
+    // El producto "vuela" desde el visor 3D hasta el botón del carrito.
+    flyToCart(snapshotRef.current?.() ?? null, heroRef.current?.getBoundingClientRect());
     toast.success(`${product.name} agregado al pedido`);
     setCelebrating(true);
     setCelebrateSeq((s) => s + 1);
@@ -115,8 +120,10 @@ export default function ProductModal({ product, categoryName, onClose }: Props) 
     selections,
   };
   const previewPrice = getItemPrice(previewItem);
-  const imageUrl = product.imageUrl ?? '';
-  const hasImage = imageUrl !== '' && !imageFailed;
+  const missingChoice =
+    product.hasVariation && !selectedVariation
+      ? 'Elige una opción'
+      : product.requiredSelections.find((rs) => !(selections[rs.id] || []).length)?.label;
 
   return (
     <motion.div
@@ -137,22 +144,7 @@ export default function ProductModal({ product, categoryName, onClose }: Props) 
         onClick={(e) => e.stopPropagation()}
         className="relative w-full sm:max-w-lg max-h-[calc(100%_-_8rem)] bg-cream rounded-t-3xl sm:rounded-3xl overflow-y-auto overscroll-contain"
       >
-        {hasImage && (
-          <div className="h-44 sm:h-52 overflow-hidden bg-carbon/5">
-            <img
-              src={imageUrl}
-              alt={product.name}
-              onError={() => setImageFailed(true)}
-              className="w-full h-full object-cover"
-            />
-          </div>
-        )}
-
-        <div
-          className={`sticky top-0 z-10 flex items-start justify-between gap-4 px-6 pt-5 pb-3 bg-cream ${
-            hasImage ? '' : 'rounded-t-3xl'
-          }`}
-        >
+        <div className="sticky top-0 z-10 flex items-start justify-between gap-4 px-6 pt-5 pb-3 bg-cream rounded-t-3xl">
           <div className="min-w-0">
             <h2 className="text-xl font-bold text-carbon leading-tight">{product.name}</h2>
             <p className="text-sm text-carbon/55 mt-0.5">{product.description}</p>
@@ -167,26 +159,33 @@ export default function ProductModal({ product, categoryName, onClose }: Props) 
           </button>
         </div>
 
-        <div className="px-6 pb-6" style={{ paddingBottom: 'calc(1.5rem + env(safe-area-inset-bottom))' }}>
+        <div ref={heroRef} className="px-4 sm:px-6 pt-1">
           <ProductVisual3D
             variant={variant}
             productName={product.name}
             description={product.description}
+            imageUrl={product.imageUrl}
+            snapshotRef={snapshotRef}
             defaultIngredients={product.defaultIngredients}
             removedIngredients={removedIngredients}
             addedExtras={addedExtras}
             quantity={quantity}
             celebrateSeq={celebrateSeq}
-            celebrating={celebrating}
             choiceLabels={[
               ...(selectedVariation ? [selectedVariation.name] : []),
               ...Object.values(selections).flat(),
             ]}
           />
+        </div>
+
+        <div className="px-6 pb-5">
 
           {product.hasVariation && (
             <div className="mt-4">
-              <p className="text-sm font-semibold text-carbon mb-2">Selecciona:</p>
+              <p className="text-sm font-semibold text-carbon mb-2 flex items-center gap-2">
+                Selecciona:
+                {!selectedVariation && <RequiredTag />}
+              </p>
               <div className="flex flex-wrap gap-2">
                 {product.variations.map((v) => {
                   const avail = isVariationAvailable(v.id);
@@ -214,8 +213,9 @@ export default function ProductModal({ product, categoryName, onClose }: Props) 
 
           {product.requiredSelections.map((rs) => (
             <div key={rs.id} className="mt-4">
-              <p className="text-sm font-semibold text-carbon mb-2">
+              <p className="text-sm font-semibold text-carbon mb-2 flex flex-wrap items-center gap-x-2">
                 {rs.label} {rs.maxSelections > 1 ? `(máx ${rs.maxSelections})` : ''}
+                {!(selections[rs.id] || []).length && <RequiredTag />}
               </p>
               <div className="flex flex-wrap gap-2">
                 {rs.options.map((opt) => {
@@ -315,50 +315,66 @@ export default function ProductModal({ product, categoryName, onClose }: Props) 
             />
           </div>
 
-          <div className="mt-6 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <button
-                onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                disabled={quantity <= 1}
-                aria-label="Quitar uno"
-                className="w-10 h-10 rounded-full bg-card border-2 border-carbon/30 flex items-center justify-center disabled:opacity-40 hover:border-carbon transition-colors"
-              >
-                <Minus className="w-4 h-4 text-carbon" />
-              </button>
-              <span className="font-bold text-lg w-6 text-center tabular-nums" aria-live="polite">
-                {quantity}
-              </span>
-              <button
-                onClick={() => setQuantity(quantity + 1)}
-                aria-label="Agregar uno"
-                className="w-10 h-10 rounded-full bg-card border-2 border-carbon/30 flex items-center justify-center hover:border-carbon transition-colors"
-              >
-                <Plus className="w-4 h-4 text-carbon" />
-              </button>
-            </div>
-          </div>
+        </div>
 
+        {/* Barra fija: cantidad + agregar, siempre visible */}
+        <div
+          className="sticky bottom-0 z-10 border-t-2 border-carbon bg-cream px-4 sm:px-6 pt-3"
+          style={{ paddingBottom: 'calc(0.75rem + env(safe-area-inset-bottom))' }}
+        >
           {error && (
             <motion.p
-              initial={{ opacity: 0, x: -8 }}
-              animate={{ opacity: 1, x: 0 }}
-              className="text-rose text-sm mt-3 font-medium"
+              initial={{ opacity: 0, y: 4 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="text-rose text-sm mb-2 font-medium"
               role="alert"
             >
               {error}
             </motion.p>
           )}
-
-          <div className="mt-4">
-            <Button onClick={handleAddToCart} fullWidth size="lg" disabled={celebrating}>
-              <span className="flex w-full items-center justify-between">
-                <span>{celebrating ? '¡Agregado!' : 'Agregar al Pedido'}</span>
-                <span className="tabular-nums">{formatPrice(previewPrice * quantity)}</span>
+          <div className="flex items-center gap-3">
+            <div className="flex shrink-0 items-center gap-1.5 rounded-full border-2 border-carbon bg-card p-1">
+              <motion.button
+                whileTap={{ scale: 0.88 }}
+                onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                disabled={quantity <= 1}
+                aria-label="Quitar uno"
+                className="w-9 h-9 rounded-full flex items-center justify-center disabled:opacity-30 hover:bg-mustard transition-colors"
+              >
+                <Minus className="w-4 h-4 text-carbon" />
+              </motion.button>
+              <span className="font-bold text-lg w-6 text-center tabular-nums" aria-live="polite">
+                {quantity}
+              </span>
+              <motion.button
+                whileTap={{ scale: 0.88 }}
+                onClick={() => setQuantity(quantity + 1)}
+                aria-label="Agregar uno"
+                className="w-9 h-9 rounded-full flex items-center justify-center hover:bg-mustard transition-colors"
+              >
+                <Plus className="w-4 h-4 text-carbon" />
+              </motion.button>
+            </div>
+            <Button onClick={handleAddToCart} size="lg" disabled={celebrating} className="flex-1 min-w-0">
+              <span className="flex w-full items-center justify-between gap-3">
+                <span className="truncate">
+                  {celebrating ? '¡Agregado!' : missingChoice ? `Elige: ${missingChoice}` : 'Agregar al pedido'}
+                </span>
+                <AnimatedPrice value={previewPrice * quantity} className="shrink-0" />
               </span>
             </Button>
           </div>
         </div>
       </motion.div>
     </motion.div>
+  );
+}
+
+/** Etiqueta para grupos de opciones obligatorios aún sin elegir. */
+function RequiredTag() {
+  return (
+    <span className="rounded-full border-2 border-carbon bg-mustard px-2 py-px text-[10px] font-bold uppercase tracking-wide text-carbon">
+      Obligatorio
+    </span>
   );
 }

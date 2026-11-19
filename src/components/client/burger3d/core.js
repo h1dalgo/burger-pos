@@ -515,11 +515,27 @@ export function detectTier() {
   return 'high';
 }
 
+/**
+ * Resorte amortiguado integrado en sub-pasos fijos (≤ 1/240 s): el movimiento
+ * es idéntico a 30, 60 o 120 Hz y no se vuelve inestable si un cuadro tarda.
+ */
 export function spring(s, target, k, c, dt) {
-  s.v += (-k * (s.x - target) - c * s.v) * dt;
-  s.x += s.v * dt;
+  const n = Math.max(1, Math.ceil(dt * 240));
+  const h = dt / n;
+  for (let i = 0; i < n; i++) {
+    s.v += (-k * (s.x - target) - c * s.v) * h;
+    s.x += s.v * h;
+  }
   return Math.abs(s.v) > 1e-3 || Math.abs(s.x - target) > 1e-3;
 }
+
+/** Curvas de easing para trayectorias con tiempo fijo. */
+export const ease = {
+  outCubic: (t) => 1 - Math.pow(1 - t, 3),
+  inCubic: (t) => t * t * t,
+  outBack: (t, s = 1.4) => 1 + (s + 1) * Math.pow(t - 1, 3) + s * Math.pow(t - 1, 2),
+  inOutCubic: (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2),
+};
 export const sp = (x) => ({ x, v: 0 });
 
 let TIER_CACHE = null;
@@ -787,6 +803,20 @@ export class Stage {
     this._kick();
   }
 
+  /**
+   * Imagen PNG del cuadro actual (para la animación de "volar al carrito").
+   * @returns {string | null}
+   */
+  snapshot() {
+    if (this._disposed || !this._ready) return null;
+    try {
+      this.renderer.render(this.scene, this.camera);
+      return this.renderer.domElement.toDataURL('image/png');
+    } catch {
+      return null;
+    }
+  }
+
   /** Raycast contra `this.root`: devuelve el primer objeto tocado. */
   _raycast(e) {
     const rect = this.renderer.domElement.getBoundingClientRect();
@@ -947,6 +977,11 @@ export class Stage {
     const res = this._update(dt, now) || {};
     const active = !!res.active;
     const built = !!res.built;
+    if (!this._announced && res.visible !== false) {
+      this._announced = true;
+      // avisa en el siguiente cuadro, cuando ya hay algo dibujado
+      requestAnimationFrame(() => !this._disposed && this.opts.onReady?.());
+    }
 
     // Encuadre automático
     const H = this.frameH;

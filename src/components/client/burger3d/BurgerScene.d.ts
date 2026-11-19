@@ -12,6 +12,8 @@ export interface LayerInfo {
 }
 
 export interface BurgerSceneOptions {
+  /** Se llama cuando el primer cuadro ya está dibujado. */
+  onReady?: () => void;
   autoRotate?: boolean;
   /** Agrega una carne base si la lista no trae proteína. Default true. */
   autoPatty?: boolean;
@@ -33,6 +35,8 @@ export declare class BurgerScene {
   constructor(container: HTMLElement, options?: BurgerSceneOptions);
   setIngredients(names: string[], options?: { animate?: boolean }): void;
   setAutoRotate(on: boolean): void;
+  /** PNG del cuadro actual (null si aún no está listo). */
+  snapshot(): string | null;
   readonly quality: 'high' | 'medium' | 'low';
   dispose(): void;
 }

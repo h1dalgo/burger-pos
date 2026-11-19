@@ -1,8 +1,8 @@
 'use client';
 
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef, useState, type MutableRefObject } from 'react';
 import dynamic from 'next/dynamic';
-import { motion, useAnimationControls, useReducedMotion } from 'framer-motion';
+import { motion, AnimatePresence, useAnimationControls, useReducedMotion } from 'framer-motion';
 import type { DefaultIngredient, ExtraIngredient } from '@/types';
 
 /**
@@ -12,13 +12,13 @@ import type { DefaultIngredient, ExtraIngredient } from '@/types';
  *  - Bebidas: botella, jarra o vaso; el sabor cambia el color del líquido.
  *  - Entradas: cesta con alitas / papas; cada salsa elegida aparece en su envase.
  *  - Postres: paleta que gira y cambia de sabor.
+ *
+ * Mientras el 3D se prepara se muestra la foto del producto (difuminada) o una
+ * silueta, y se hace un fundido cuando ya hay imagen.
  */
 
-const VIEW_HEIGHT = 240;
-
-const placeholder = () => <div style={{ height: VIEW_HEIGHT }} />;
-const Burger3D = dynamic(() => import('./burger3d/Burger3D'), { ssr: false, loading: placeholder });
-const Item3D = dynamic(() => import('./burger3d/Item3D'), { ssr: false, loading: placeholder });
+const Burger3D = dynamic(() => import('./burger3d/Burger3D'), { ssr: false });
+const Item3D = dynamic(() => import('./burger3d/Item3D'), { ssr: false });
 
 export type FoodVariant = 'burger' | 'drink' | 'starter' | 'dessert';
 
@@ -33,41 +33,43 @@ export function variantFromCategory(name?: string): FoodVariant {
   return 'burger';
 }
 
-/* ------------------------------------------------------------------ */
-/* Escenario: pulsos y estallido                                       */
-/* ------------------------------------------------------------------ */
-
-const BURST_COLORS = ['#ffc72c', '#d9261c', '#1b7a43', '#fffdf6'];
-
 interface Props {
   variant: FoodVariant;
   productName?: string;
   description?: string;
+  /** Foto del producto: se usa como marcador mientras carga el 3D. */
+  imageUrl?: string | null;
   defaultIngredients: DefaultIngredient[];
   removedIngredients: string[];
   addedExtras: ExtraIngredient[];
   quantity: number;
   celebrateSeq: number;
-  celebrating?: boolean;
   /** Variación y opciones elegidas (ej. "Pollo Crispy", un sabor, salsas): cambian el 3D. */
   choiceLabels?: string[];
+  height?: number;
+  /** Recibe una función que devuelve un PNG del 3D (para "volar al carrito"). */
+  snapshotRef?: MutableRefObject<(() => string | null) | null>;
 }
 
 export default function ProductVisual3D({
   variant,
   productName = '',
   description = '',
+  imageUrl,
   defaultIngredients,
   removedIngredients,
   addedExtras,
   quantity,
   celebrateSeq,
-  celebrating = false,
   choiceLabels = [],
+  height = 280,
+  snapshotRef,
 }: Props) {
   const reduced = useReducedMotion();
   const pulse = useAnimationControls();
   const prevQty = useRef(quantity);
+  const [ready, setReady] = useState(false);
+  const [photoFailed, setPhotoFailed] = useState(false);
 
   const choicesKey = choiceLabels.join('|');
   const choices = useMemo(() => (choicesKey ? choicesKey.split('|') : []), [choicesKey]);
@@ -87,37 +89,80 @@ export default function ProductVisual3D({
     prevQty.current = quantity;
     void pulse.start(
       reduced
-        ? { scale: [1, 1.05, 1], transition: { duration: 0.22 } }
+        ? { scale: [1, 1.04, 1], transition: { duration: 0.22 } }
         : up
-          ? { y: [0, -13, 0], scale: [1, 1.07, 1], transition: { duration: 0.44, ease: 'easeOut' } }
-          : { y: [0, 7, 0], scale: [1, 0.96, 1], transition: { duration: 0.34, ease: 'easeOut' } }
+          ? { y: [0, -10, 0], scale: [1, 1.05, 1], transition: { duration: 0.42, ease: 'easeOut' } }
+          : { y: [0, 6, 0], scale: [1, 0.97, 1], transition: { duration: 0.32, ease: 'easeOut' } }
     );
   }, [quantity, reduced, pulse]);
 
-  /* Estallido al agregar al pedido */
+  /* Al agregar al pedido el producto "sale volando" (lib/fly-to-cart): aquí se encoge y se atenúa. */
   useEffect(() => {
     if (celebrateSeq === 0) return;
     void pulse.start(
       reduced
-        ? { scale: [1, 1.06, 1], transition: { duration: 0.28 } }
-        : {
-            y: [0, -28, 0],
-            rotate: [0, -6, 5, 0],
-            scale: [1, 1.12, 1],
-            transition: { duration: 0.64, ease: 'easeOut' },
-          }
+        ? { opacity: [1, 0.6, 1], transition: { duration: 0.3 } }
+        : { scale: [1, 0.88], opacity: [1, 0.25], transition: { duration: 0.28, ease: 'easeIn' } }
     );
   }, [celebrateSeq, reduced, pulse]);
 
+  const showPhoto = !!imageUrl && !photoFailed;
+  const onReady = () => setReady(true);
+
   return (
-    <div className="relative w-full pt-1 pb-1" aria-hidden="true">
-      <motion.div animate={pulse} className="w-full" style={{ transformOrigin: 'bottom center' }}>
+    <div
+      className="relative overflow-hidden rounded-2xl border-2 border-carbon bg-card shadow-card"
+      style={{ height }}
+      aria-hidden="true"
+    >
+      {/* Marcador mientras carga el 3D */}
+      <AnimatePresence>
+        {!ready && (
+          <motion.div
+            key="placeholder"
+            initial={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: reduced ? 0 : 0.45, ease: 'easeOut' }}
+            className="absolute inset-0 flex items-center justify-center"
+          >
+            {showPhoto ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={imageUrl!}
+                alt=""
+                onError={() => setPhotoFailed(true)}
+                className="h-full w-full scale-110 object-cover opacity-70 blur-md"
+              />
+            ) : (
+              <div className="flex flex-col items-center gap-2">
+                <div className="h-20 w-36 animate-pulse rounded-[45%] bg-carbon/10" />
+                <div className="h-3 w-28 animate-pulse rounded-full bg-carbon/10" />
+              </div>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <div
+        className="h-full w-full"
+        style={{ opacity: ready ? 1 : 0, transition: reduced ? undefined : 'opacity 0.45s ease-out' }}
+      >
+      <motion.div animate={pulse} className="h-full w-full" style={{ transformOrigin: 'center 70%' }}>
         {variant === 'burger' ? (
-          <Burger3D ingredients={burgerIngredients} height={VIEW_HEIGHT} />
+          <Burger3D ingredients={burgerIngredients} height={height} onReady={onReady} snapshotRef={snapshotRef} />
         ) : (
-          <Item3D variant={variant} name={productName} description={description} choices={choices} height={VIEW_HEIGHT} />
+          <Item3D
+            variant={variant}
+            name={productName}
+            description={description}
+            choices={choices}
+            height={height}
+            onReady={onReady}
+            snapshotRef={snapshotRef}
+          />
         )}
       </motion.div>
+      </div>
 
       {/* Contador de unidades */}
       <motion.div
@@ -125,37 +170,11 @@ export default function ProductVisual3D({
         initial={{ scale: 0.5, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         transition={{ type: 'spring', stiffness: 520, damping: 17 }}
-        className="absolute top-1 left-1 rounded-full border-2 border-carbon bg-mustard px-2.5 py-1 text-xs font-bold tabular-nums text-carbon shadow-card"
+        className="absolute top-2.5 left-2.5 rounded-full border-2 border-carbon bg-mustard px-2.5 py-1 text-xs font-bold tabular-nums text-carbon shadow-card"
         style={{ minWidth: 44, textAlign: 'center' }}
       >
         ×{quantity}
       </motion.div>
-
-      {/* Estallido de confeti al agregar */}
-      {celebrating && !reduced && (
-        <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-          {Array.from({ length: 10 }).map((_, i) => {
-            const a = (i / 10) * Math.PI * 2 + 0.4;
-            const d = 58 + (i % 3) * 20;
-            return (
-              <motion.span
-                key={`${celebrateSeq}-${i}`}
-                initial={{ x: 0, y: 0, scale: 0, opacity: 1 }}
-                animate={{
-                  x: Math.cos(a) * d,
-                  y: Math.sin(a) * d * 0.85,
-                  scale: [0, 1, 0.5],
-                  rotate: i % 2 ? 190 : -170,
-                  opacity: [1, 1, 0],
-                }}
-                transition={{ duration: 0.62, delay: i * 0.02, ease: 'easeOut' }}
-                className="absolute h-2.5 w-2.5 rounded-[3px] border-2 border-carbon"
-                style={{ background: BURST_COLORS[i % BURST_COLORS.length] }}
-              />
-            );
-          })}
-        </div>
-      )}
     </div>
   );
 }

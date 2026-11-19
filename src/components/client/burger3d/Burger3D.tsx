@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, type MutableRefObject } from 'react';
 import { BurgerScene } from './BurgerScene';
 
 export interface Burger3DProps {
@@ -12,27 +12,36 @@ export interface Burger3DProps {
   autoRotate?: boolean;
   /** Si se pasa, tocar un ingrediente en 3D lo devuelve (útil para quitarlo con un toque). */
   onLayerClick?: (label: string) => void;
+  /** Se llama cuando el primer cuadro ya está dibujado. */
+  onReady?: () => void;
+  /** Recibe una función que devuelve un PNG del cuadro actual. */
+  snapshotRef?: MutableRefObject<(() => string | null) | null>;
 }
 
-export default function Burger3D({ ingredients, height = 280, className, autoRotate = true, onLayerClick }: Burger3DProps) {
+export default function Burger3D({ ingredients, height = 280, className, autoRotate = true, onLayerClick, onReady, snapshotRef }: Burger3DProps) {
   const ref = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<BurgerScene | null>(null);
   const clickRef = useRef(onLayerClick);
+  const readyRef = useRef(onReady);
   const key = ingredients.join('|');
 
   useEffect(() => {
     clickRef.current = onLayerClick;
-  }, [onLayerClick]);
+    readyRef.current = onReady;
+  }, [onLayerClick, onReady]);
 
   useEffect(() => {
     if (!ref.current) return;
     const scene = new BurgerScene(ref.current, {
       autoRotate,
       onLayerClick: onLayerClick ? (label: string) => clickRef.current?.(label) : null,
+      onReady: () => readyRef.current?.(),
     });
     sceneRef.current = scene;
+    if (snapshotRef) snapshotRef.current = () => scene.snapshot();
     scene.setIngredients(ingredients);
     return () => {
+      if (snapshotRef) snapshotRef.current = null;
       scene.dispose();
       sceneRef.current = null;
     };

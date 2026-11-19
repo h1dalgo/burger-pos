@@ -809,12 +809,12 @@ export class ItemScene extends Stage {
   }
 
   _update(dt, now) {
-    if (!this.model) return {};
+    if (!this.model) return { visible: false };
     const active = this.model.update(dt, now);
     this.frameH = this.model.frameH;
     this.frameW = this.model.frameW;
     this.frameCenter = this.model.frameCenter;
-    return { active };
+    return { active, visible: this.model.group.visible };
   }
 }
 
