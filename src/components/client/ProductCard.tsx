@@ -9,6 +9,7 @@ import { formatPrice } from '@/lib/utils';
 import { flyToCart } from '@/lib/fly-to-cart';
 import { useCartStore } from '@/store/cart-store';
 import { Badge } from '@/components/ui/Badge';
+import { cldUrl } from '@/lib/cloudinary';
 
 interface Props {
   product: Product;
@@ -27,7 +28,7 @@ export default function ProductCard({ product, isAvailable, onSelect, index, ent
   const [justAdded, setJustAdded] = useState(false);
   const thumbRef = useRef<HTMLDivElement>(null);
   const addedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const imageUrl = product.imageUrl ?? '';
+  const imageUrl = cldUrl(product.imageUrl, { w: 80, h: 80 }); // miniatura al tamaño justo
   const hasImage = imageUrl !== '' && !imageFailed;
   const quick = canQuickAdd(product);
 
@@ -55,7 +56,6 @@ export default function ProductCard({ product, isAvailable, onSelect, index, ent
       <button
         onClick={() => isAvailable && onSelect(product)}
         disabled={!isAvailable}
-        aria-label={`${product.name}, ${formatPrice(Number(product.basePrice))}${isAvailable ? '' : ', agotado'}`}
         className={`group w-full text-left rounded-2xl p-4 pr-16 transition-[background-color,border-color,box-shadow,transform] ${
           isAvailable
             ? 'card lift hover:shadow-pop active:translate-x-[3px] active:translate-y-[3px] active:shadow-none'
@@ -78,6 +78,9 @@ export default function ProductCard({ product, isAvailable, onSelect, index, ent
               <img
                 src={imageUrl}
                 alt=""
+                width={80}
+                height={80}
+                decoding="async"
                 onError={() => setImageFailed(true)}
                 loading="lazy"
                 className="w-full h-full object-cover transition-transform duration-300 ease-out group-hover:scale-110"
@@ -88,7 +91,10 @@ export default function ProductCard({ product, isAvailable, onSelect, index, ent
           </div>
 
           <div className="flex-1 min-w-0">
-            <h3 className="font-bold text-carbon text-base leading-snug">{product.name}</h3>
+            <h3 className="font-bold text-carbon text-base leading-snug">
+              {product.name}
+              {!isAvailable && <span className="sr-only"> (agotado)</span>}
+            </h3>
             <p className="text-sm text-carbon/60 mt-0.5 line-clamp-2">{product.description}</p>
             <p className="inline-block bg-mustard text-carbon border-2 border-carbon rounded-md px-2 py-0.5 font-bold text-lg mt-2 tabular-nums">
               {formatPrice(Number(product.basePrice))}

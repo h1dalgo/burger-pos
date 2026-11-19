@@ -16,6 +16,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import PaymentSelector from './PaymentSelector';
 import { canQuickAdd } from './ProductCard';
 import { savePreview, type PreviewVariant } from '@/lib/order-preview';
+import { cldUrl } from '@/lib/cloudinary';
 
 interface Props {
   isOpen: boolean;
@@ -206,7 +207,7 @@ export default function CartDrawer({ isOpen, onClose, onRequireTable, onEditItem
                 {tableNumber ? (
                   <>
                     Mesa {tableNumber}
-                    <span className="font-semibold text-carbon/55">· Cambiar</span>
+                    <span className="font-semibold text-carbon/65">· Cambiar</span>
                   </>
                 ) : (
                   'Elige tu mesa'
@@ -248,7 +249,7 @@ export default function CartDrawer({ isOpen, onClose, onRequireTable, onEditItem
                       />
                     ))}
                   </AnimatePresence>
-                  <p className="text-center text-[11px] text-carbon/50">Desliza un producto a la izquierda para quitarlo</p>
+                  <p className="text-center text-[11px] text-carbon/70">Desliza un producto a la izquierda para quitarlo</p>
                 </>
               )}
             </div>
@@ -509,7 +510,7 @@ function CartRow({
 function SuggestionCard({ product, onAdd }: { product: Product; onAdd: () => void }) {
   const [done, setDone] = useState(false);
   const [imgFailed, setImgFailed] = useState(false);
-  const img = product.imageUrl && !imgFailed ? product.imageUrl : null;
+  const img = product.imageUrl && !imgFailed ? cldUrl(product.imageUrl, { w: 144, h: 64 }) : null;
   const quick = canQuickAdd(product);
   return (
     <motion.button

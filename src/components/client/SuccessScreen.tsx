@@ -133,13 +133,17 @@ export default function SuccessScreen({ orderId }: Props) {
   const seenKey = `burger-pos:ready-seen:${orderId}`;
 
   /** Aviso fuera de la app (si el cliente dio permiso y no está mirando la pestaña). */
-  const notifyReady = useCallback(() => {
+  const notifyReady = useCallback(async () => {
+    if (typeof Notification === 'undefined' || Notification.permission !== 'granted' || !document.hidden) return;
+    const title = `¡Tu pedido #${displayNum} está listo!`;
+    const opts = { body: 'Muestra tu número en el mostrador.', tag: `order-${orderId}`, icon: '/icon', data: { url: `/success?orderId=${orderId}` } };
     try {
-      if (typeof Notification !== 'undefined' && Notification.permission === 'granted' && document.hidden) {
-        new Notification(`¡Tu pedido #${displayNum} está listo!`, { body: 'Muestra tu número en el mostrador.', tag: `order-${orderId}` });
-      }
+      // En Android (y en iPhone con la app instalada) los avisos deben salir del service worker
+      const reg = 'serviceWorker' in navigator ? await navigator.serviceWorker.getRegistration() : undefined;
+      if (reg) await reg.showNotification(title, opts);
+      else new Notification(title, opts);
     } catch {
-      /* algunos navegadores móviles solo permiten avisos desde una app instalada */
+      /* el navegador no permite avisos aquí: queda el aviso en pantalla, el sonido y la vibración */
     }
   }, [displayNum, orderId]);
 
@@ -157,7 +161,7 @@ export default function SuccessScreen({ orderId }: Props) {
       if (!initial) {
         playReadyChime();
         if (typeof navigator !== 'undefined') navigator.vibrate?.([200, 100, 200, 100, 400]);
-        notifyReady();
+        void notifyReady();
       }
     },
     [seenKey, notifyReady]
@@ -299,7 +303,11 @@ export default function SuccessScreen({ orderId }: Props) {
           >
             {current?.title || 'Pedido registrado'}
           </motion.h1>
-          <p className="text-sm text-carbon/60 mt-2">Tu número de pedido es</p>
+          {/* anuncia cada cambio de etapa a lectores de pantalla */}
+          <p className="sr-only" aria-live="polite" role="status">
+            {current ? `Pedido ${displayNum}: ${current.title}. ${current.desc}` : ''}
+          </p>
+          <p className="text-sm text-carbon/65 mt-2">Tu número de pedido es</p>
           <p className="display text-5xl text-burger sign mt-0.5 tabular-nums">#{displayNum}</p>
 
           {eta !== null && (

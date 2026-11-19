@@ -7,6 +7,7 @@ import { useSessionStore, useSessionHydrated } from '@/store/session-store';
 import { UtensilsCrossed, Table2, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Skeleton } from '@/components/ui/Skeleton';
+import { cldUrl } from '@/lib/cloudinary';
 
 export default function WelcomeForm() {
   const router = useRouter();
@@ -63,7 +64,7 @@ export default function WelcomeForm() {
             <Skeleton className="w-24 h-24 rounded-full" />
           ) : businessLogo && !logoFailed ? (
             <img
-              src={businessLogo}
+              src={cldUrl(businessLogo, { w: 112, h: 112, fit: 'fit' })}
               alt={businessName}
               onError={() => setLogoFailed(true)}
               className="w-28 h-28 object-contain"

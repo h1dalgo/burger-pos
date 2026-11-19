@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { preload } from 'react-dom';
 import { useRouter } from 'next/navigation';
 import { AnimatePresence } from 'framer-motion';
 import { AlertTriangle, UtensilsCrossed, Receipt, Table2, Bell } from 'lucide-react';
@@ -23,6 +24,8 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { Button } from '@/components/ui/Button';
 
 export default function MenuPage() {
+  // El navegador pide el menú en paralelo con el JavaScript (el fetch de abajo reutiliza esta respuesta).
+  preload('/api/products', { as: 'fetch', crossOrigin: 'anonymous' });
   const router = useRouter();
   const { customerName, tableNumber, lastOrderId, setTableNumber } = useSessionStore();
   const { isProductAvailable, applyStockUpdate, initializeFromProducts } = useStockStore();
@@ -183,7 +186,7 @@ export default function MenuPage() {
           <header className="px-4 py-3 flex items-center gap-3">
             <button
               onClick={() => setTablePickerOpen(true)}
-              aria-label={tableNumber ? `Mesa ${tableNumber}. Toca para cambiar de mesa` : 'Elige tu mesa'}
+              aria-label={tableNumber ? `Mesa ${tableNumber}. Toca para cambiar de mesa` : 'Elige mesa'}
               className="shrink-0 flex items-center gap-1.5 text-[11px] font-bold uppercase bg-mustard text-carbon border-2 border-carbon rounded-full px-2.5 py-1 hover:bg-cream transition-colors"
             >
               <Table2 className="w-3.5 h-3.5" />
@@ -224,10 +227,23 @@ export default function MenuPage() {
           {customerName ? `¡Hola, ${customerName}!` : '¿Qué se te antoja hoy?'}
         </p>
         {loading && (
-          <div className="grid gap-3 sm:grid-cols-2">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <Skeleton key={i} className="h-32" />
-            ))}
+          <div aria-busy="true" aria-label="Cargando menú">
+            <Skeleton className="mb-3 h-5 w-40" />
+            <div className="grid gap-3 sm:grid-cols-2">
+              {Array.from({ length: 4 }).map((_, i) => (
+                // misma forma que una tarjeta de producto: foto, nombre, descripción y precio
+                <div key={i} className="flex items-start gap-3.5 rounded-2xl border-2 border-carbon/10 bg-card p-4">
+                  <Skeleton className="h-20 w-20 shrink-0 rounded-xl" />
+                  <div className="flex-1 space-y-2 pt-0.5">
+                    <Skeleton className="h-4 w-3/5" />
+                    <Skeleton className="h-3 w-full" />
+                    <Skeleton className="h-3 w-4/5" />
+                    <Skeleton className="mt-1 h-7 w-16 rounded-md" />
+                  </div>
+                  <Skeleton className="h-11 w-11 shrink-0 rounded-full" />
+                </div>
+              ))}
+            </div>
           </div>
         )}
 

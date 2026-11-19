@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="theme-color" content="#d9261c" />
+<title>Burger POS — un momento…</title>
+<style>
+  :root { --cream:#fdf6e3; --card:#fffdf6; --carbon:#1a1712; --burger:#d9261c; --mustard:#ffc72c; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body { background: var(--cream); color: var(--carbon); font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+         display: flex; align-items: center; justify-content: center; padding: 16px; }
+  .card { width: 100%; max-width: 380px; background: var(--card); border: 2px solid var(--carbon); border-radius: 16px;
+          box-shadow: 5px 5px 0 var(--carbon); padding: 32px 24px; text-align: center; position: relative; overflow: hidden; }
+  .bar { position: absolute; inset: 0 0 auto 0; height: 6px; background: var(--burger); }
+  .logo { width: 88px; height: 88px; margin: 0 auto 18px; border-radius: 50%; background: var(--burger); border: 2px solid var(--carbon);
+          box-shadow: 3px 3px 0 var(--carbon); display: flex; align-items: center; justify-content: center; animation: bob 1.6s ease-in-out infinite; }
+  h1 { font-size: 24px; margin: 0 0 8px; line-height: 1.2; }
+  p { margin: 0; color: rgba(26,23,18,.72); line-height: 1.5; }
+  .status { margin-top: 18px; display: inline-flex; gap: 8px; align-items: center; font-weight: 700; font-size: 14px;
+            background: var(--mustard); border: 2px solid var(--carbon); border-radius: 999px; padding: 6px 14px; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--burger); animation: pulse 1s ease-in-out infinite; }
+  button { margin-top: 18px; width: 100%; font: inherit; font-weight: 700; color: var(--cream); background: var(--burger);
+           border: 2px solid var(--carbon); border-radius: 8px; box-shadow: 3px 3px 0 var(--carbon); padding: 12px; cursor: pointer; }
+  @keyframes bob { 0%,100% { transform: translateY(0) } 50% { transform: translateY(-6px) } }
+  @keyframes pulse { 0%,100% { opacity: 1 } 50% { opacity: .3 } }
+  @media (prefers-reduced-motion: reduce) { .logo, .dot { animation: none; } }
+</style>
+</head>
+<body>
+  <main class="card" role="status" aria-live="polite">
+    <div class="bar"></div>
+    <div class="logo" aria-hidden="true">
+      <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#fdf6e3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="m16 2-2.3 2.3a3 3 0 0 0 0 4.2l1.8 1.8a3 3 0 0 0 4.2 0L22 8"/><path d="M15 15 3.3 3.3a4.2 4.2 0 0 0 0 6l7.3 7.3c.7.7 2 .7 2.8 0L15 15Zm0 0 7 7"/><path d="m2.1 21.8 6.4-6.3"/><path d="m19 5-7 7"/>
+      </svg>
+    </div>
+    <h1 id="title">Estamos preparando la cocina…</h1>
+    <p id="msg">El menú tarda unos segundos en abrir. Esta página se recarga sola cuando esté listo.</p>
+    <div class="status"><span class="dot"></span><span id="state">Conectando</span></div>
+    <button type="button" onclick="location.reload()">Reintentar ahora</button>
+  </main>
+<script>
+  // Reintenta hasta que el servidor responda y entonces vuelve a la página pedida.
+  (function () {
+    var tries = 0;
+    function check() {
+      tries++;
+      document.getElementById('state').textContent = navigator.onLine === false ? 'Sin conexión a internet' : 'Conectando (intento ' + tries + ')';
+      fetch('/api/settings', { cache: 'no-store' })
+        .then(function (r) { if (r.ok) location.reload(); else setTimeout(check, 4000); })
+        .catch(function () { setTimeout(check, 4000); });
+    }
+    setTimeout(check, 1500);
+  })();
+</script>
+</body>
+</html>

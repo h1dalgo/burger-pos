@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState, type MutableRefObject } from 'rea
 import dynamic from 'next/dynamic';
 import { motion, AnimatePresence, useAnimationControls, useReducedMotion } from 'framer-motion';
 import type { DefaultIngredient, ExtraIngredient } from '@/types';
+import { cldUrl } from '@/lib/cloudinary';
 
 /**
  * Objeto 3D del modal de producto (Three.js, ver ./burger3d). Se puede girar
@@ -134,7 +135,7 @@ export default function ProductVisual3D({
             {showPhoto ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
-                src={imageUrl!}
+                src={cldUrl(imageUrl, { w: 320, quality: 'auto:low' })}
                 alt=""
                 onError={() => setPhotoFailed(true)}
                 className="h-full w-full scale-110 object-cover opacity-70 blur-md"

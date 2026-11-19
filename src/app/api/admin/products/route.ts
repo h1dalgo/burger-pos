@@ -1,6 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
+/** Datos del formulario de productos (los precios pueden llegar como texto o número). */
+type PriceInput = string | number | null | undefined;
+interface VariationInput { name: string; additionalPrice?: PriceInput }
+interface ExtraInput { name: string; basePrice?: PriceInput }
+interface OptionInput { name: string; additionalPrice?: PriceInput }
+interface SelectionInput { label: string; maxSelections?: PriceInput; options?: OptionInput[] }
+const toPrice = (v: PriceInput, fallback: number) => parseFloat(String(v || fallback));
+
 export const runtime = 'nodejs';
 
 export async function GET() {
@@ -39,21 +47,21 @@ export async function POST(request: NextRequest) {
         imageUrl: imageUrl || null,
         hasVariation: hasVariation || false,
         variations: variations?.length
-          ? { create: variations.map((v: any) => ({ name: v.name, additionalPrice: parseFloat(v.additionalPrice || 0) })) }
+          ? { create: variations.map((v: VariationInput) => ({ name: v.name, additionalPrice: toPrice(v.additionalPrice, 0) })) }
           : undefined,
         defaultIngredients: defaultIngredients?.length
           ? { create: defaultIngredients.map((n: string) => ({ name: n })) }
           : undefined,
         extraIngredients: extraIngredients?.length
-          ? { create: extraIngredients.map((e: any) => ({ name: e.name, basePrice: parseFloat(e.basePrice || 1.0) })) }
+          ? { create: extraIngredients.map((e: ExtraInput) => ({ name: e.name, basePrice: toPrice(e.basePrice, 1.0) })) }
           : undefined,
         requiredSelections: requiredSelections?.length
           ? {
-              create: requiredSelections.map((rs: any) => ({
+              create: requiredSelections.map((rs: SelectionInput) => ({
                 label: rs.label,
                 maxSelections: Number(rs.maxSelections) || 1,
                 options: rs.options?.length
-                  ? { create: rs.options.map((o: any) => ({ name: o.name, additionalPrice: parseFloat(o.additionalPrice || 0) })) }
+                  ? { create: rs.options.map((o: OptionInput) => ({ name: o.name, additionalPrice: toPrice(o.additionalPrice, 0) })) }
                   : undefined,
               })),
             }

@@ -211,7 +211,7 @@ export default function ProductModal({ product, categoryName, onClose, editItem 
           <span aria-hidden="true" className="absolute left-1/2 top-2 h-1.5 w-10 -translate-x-1/2 rounded-full bg-carbon/20 sm:hidden" />
           <div className="min-w-0">
             <h2 className="text-xl font-bold text-carbon leading-tight">{product.name}</h2>
-            <p className="text-sm text-carbon/55 mt-0.5">{product.description}</p>
+            <p className="text-sm text-carbon/65 mt-0.5">{product.description}</p>
           </div>
           <button
             ref={closeRef}

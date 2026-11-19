@@ -33,7 +33,7 @@ export default function TablePickerSheet({ onClose, tableCount, current, onSelec
         <div className="sticky top-0 z-10 bg-cream px-6 pt-5 pb-3 border-b-2 border-carbon flex items-center justify-between">
           <div>
             <h2 className="display text-2xl text-carbon sign-yellow">¿En qué mesa estás?</h2>
-            <p className="text-xs text-carbon/50 mt-1">Cámbiate de mesa cuando quieras tocando aquí</p>
+            <p className="text-xs text-carbon/65 mt-1">Cámbiate de mesa cuando quieras tocando aquí</p>
           </div>
           <button
             onClick={onClose}
@@ -67,7 +67,7 @@ export default function TablePickerSheet({ onClose, tableCount, current, onSelec
         </div>
 
         {current && (
-          <p className="px-6 pb-2 text-xs text-carbon/50 flex items-center gap-1.5" style={{ paddingBottom: 'calc(1rem + env(safe-area-inset-bottom))' }}>
+          <p className="px-6 pb-2 text-xs text-carbon/65 flex items-center gap-1.5" style={{ paddingBottom: 'calc(1rem + env(safe-area-inset-bottom))' }}>
             <Table2 className="w-3.5 h-3.5" />
             Ahora estás en la mesa {current}
           </p>

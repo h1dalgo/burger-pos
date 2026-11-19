@@ -415,3 +415,19 @@
     scroll-behavior: auto !important;
   }
 }
+
+/* Transición de entrada entre pantallas (app/template.tsx). Termina en transform: none
+   para no afectar a los elementos position: fixed (modales, carrito). */
+@keyframes page-enter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.page-enter {
+  animation: page-enter 0.32s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}

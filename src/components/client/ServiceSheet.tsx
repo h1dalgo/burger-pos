@@ -65,7 +65,7 @@ export default function ServiceSheet({ onClose, onPickTable }: Props) {
         <div className="px-6 pt-5 pb-4 border-b-2 border-carbon flex items-start justify-between gap-3">
           <div className="min-w-0">
             <h2 className="display text-2xl text-carbon sign-yellow">¿Necesitas ayuda?</h2>
-            <p className="text-xs text-carbon/50 mt-1 flex items-center gap-1.5">
+            <p className="text-xs text-carbon/65 mt-1 flex items-center gap-1.5">
               <Table2 className="w-3.5 h-3.5 shrink-0" />
               {hasTable ? `Estás en la mesa ${tableNumber}` : 'Elige tu mesa para continuar'}
             </p>
@@ -117,7 +117,7 @@ export default function ServiceSheet({ onClose, onPickTable }: Props) {
                 <DollarSign className="w-5 h-5" />
                 {sending === 'bill' ? 'Enviando...' : 'Pedir Cuenta'}
               </motion.button>
-              <p className="flex items-center justify-center gap-1.5 pt-1 text-center text-carbon/40 text-xs">
+              <p className="flex items-center justify-center gap-1.5 pt-1 text-center text-carbon/65 text-xs">
                 <Users className="w-3.5 h-3.5" />
                 Tu solicitud será notificada al mesero asignado
               </p>

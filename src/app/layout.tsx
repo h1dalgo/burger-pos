@@ -1,8 +1,9 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { Archivo, Alfa_Slab_One, JetBrains_Mono } from 'next/font/google';
 import './globals.css';
 import { Toaster } from '@/components/ui/Toaster';
 import MotionProvider from '@/components/MotionProvider';
+import ServiceWorkerRegister from '@/components/ServiceWorkerRegister';
 
 const archivo = Archivo({
   subsets: ['latin'],
@@ -25,7 +26,16 @@ const jetbrains = JetBrains_Mono({
 
 export const metadata: Metadata = {
   title: 'Burger POS - Pedidos Auto-gestionados',
-  description: 'Hacé tu pedido directo desde tu mesa',
+  description: 'Haz tu pedido directo desde tu mesa',
+  applicationName: 'Burger POS',
+  appleWebApp: { capable: true, title: 'Burger POS', statusBarStyle: 'default' },
+};
+
+export const viewport: Viewport = {
+  themeColor: '#d9261c',
+  width: 'device-width',
+  initialScale: 1,
+  viewportFit: 'cover',
 };
 
 export default function RootLayout({
@@ -41,6 +51,7 @@ export default function RootLayout({
       <body>
         <MotionProvider>{children}</MotionProvider>
         <Toaster />
+        <ServiceWorkerRegister />
       </body>
     </html>
   );
