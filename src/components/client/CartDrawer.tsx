@@ -15,6 +15,7 @@ import { AnimatedPrice } from '@/components/ui/AnimatedPrice';
 import { EmptyState } from '@/components/ui/EmptyState';
 import PaymentSelector from './PaymentSelector';
 import { canQuickAdd } from './ProductCard';
+import { savePreview, type PreviewVariant } from '@/lib/order-preview';
 
 interface Props {
   isOpen: boolean;
@@ -27,9 +28,11 @@ interface Props {
   onOpenProduct?: (product: Product) => void;
   /** Sugerencias ("¿Le agregas algo?"): normalmente bebidas y postres. */
   suggestions?: Product[];
+  /** Tipo de producto (hamburguesa, bebida…) para la vista 3D del seguimiento. */
+  variantOf?: (product: Product) => PreviewVariant;
 }
 
-export default function CartDrawer({ isOpen, onClose, onRequireTable, onEditItem, onOpenProduct, suggestions = [] }: Props) {
+export default function CartDrawer({ isOpen, onClose, onRequireTable, onEditItem, onOpenProduct, suggestions = [], variantOf }: Props) {
   const router = useRouter();
   const { items, removeItem, restoreItem, updateQuantity, addSimple, paymentMethod, setPaymentMethod, getTotalAmount, clearCart } =
     useCartStore();
@@ -146,6 +149,7 @@ export default function CartDrawer({ isOpen, onClose, onRequireTable, onEditItem
       const order = await res.json();
 
       useSessionStore.getState().setLastOrderId(String(order.displayId));
+      savePreview(String(order.displayId), items, (i) => variantOf?.(i.product) ?? 'burger');
       const { joinRoom } = await import('@/lib/socket-client');
       joinRoom('clients');
 

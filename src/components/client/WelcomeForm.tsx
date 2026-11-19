@@ -89,7 +89,7 @@ export default function WelcomeForm() {
           transition={{ delay: 0.4 }}
           className="text-center text-burger font-semibold mb-8"
         >
-          Hace tu pedido directo desde tu mesa
+          Haz tu pedido directo desde tu mesa
         </motion.p>
 
         <motion.div

@@ -307,6 +307,7 @@ export default function MenuPage() {
         onEditItem={setEditingItem}
         onOpenProduct={setSelectedProduct}
         suggestions={suggestions}
+        variantOf={(p) => variantFromCategory(categoryNameOf(p))}
       />
 
       {/* Editar un producto desde el carrito (encima del carrito) */}
