@@ -159,10 +159,10 @@ export default function MenuShowcase({ slides, onOpen, paused = false }: Props) 
               <motion.div
                 key={p.id}
                 custom={dir}
-                initial={reduced ? { opacity: 0 } : { opacity: 0, x: dir * 40 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={reduced ? { opacity: 0 } : { opacity: 0, x: dir * -40 }}
-                transition={{ type: 'spring', stiffness: 320, damping: 30 }}
+                initial={reduced ? { opacity: 0 } : { opacity: 0, x: dir * 14, filter: 'blur(6px)' }}
+                animate={{ opacity: 1, x: 0, filter: 'blur(0px)' }}
+                exit={reduced ? { opacity: 0 } : { opacity: 0, x: dir * -10, filter: 'blur(6px)' }}
+                transition={{ duration: 0.28, ease: [0.23, 1, 0.32, 1] }}
                 aria-live="polite"
               >
                 <p className="eyebrow tabular-nums">

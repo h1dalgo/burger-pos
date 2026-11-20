@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
+import CountUp from '@/components/reactbits/CountUp';
 import { motion } from 'framer-motion';
 import {
   ShoppingBag,
@@ -86,12 +87,14 @@ export default function AdminDashboard() {
     {
       label: 'Ingresos de hoy',
       value: formatPrice(revenue),
+      count: { to: revenue, prefix: '$', decimals: 2 },
       icon: TrendingUp,
       chip: 'bg-mint/15 border-mint/60 text-mint-ink',
     },
     {
       label: 'Pedidos de hoy',
       value: String(today?.count ?? 0),
+      count: { to: today?.count ?? 0, prefix: '', decimals: 0 },
       sub: `${formatPrice(avgTicket)} promedio`,
       icon: Receipt,
       chip: 'bg-burger/10 border-burger/40 text-burger',
@@ -99,12 +102,14 @@ export default function AdminDashboard() {
     {
       label: 'En cocina',
       value: String(inKitchen),
+      count: { to: inKitchen, prefix: '', decimals: 0 },
       icon: ChefHat,
       chip: 'bg-status-preparing/15 border-status-preparing/60 text-status-preparing',
     },
     {
       label: 'Productos agotados',
       value: String(unavailable),
+      count: { to: unavailable, prefix: '', decimals: 0 },
       icon: AlertTriangle,
       chip: unavailable > 0 ? 'bg-rose/10 border-rose/50 text-rose' : 'bg-carbon/8 border-carbon/25 text-carbon/60',
     },
@@ -162,7 +167,10 @@ export default function AdminDashboard() {
                   <span className="text-xs font-bold uppercase text-carbon/70 text-right">{kpi.label}</span>
                 </div>
                 <div>
-                  <p className="display text-4xl leading-none tabular-nums text-carbon sign-yellow">{kpi.value}</p>
+                  <p className="display text-4xl leading-none tabular-nums text-carbon" aria-label={kpi.value}>
+                    {/* el número sube al cargar (React Bits) */}
+                    <CountUp to={kpi.count.to} prefix={kpi.count.prefix} decimals={kpi.count.decimals} separator="," duration={0.9} trigger="load" />
+                  </p>
                   {'sub' in kpi && kpi.sub && <p className="text-xs text-carbon/60 mt-1.5">{kpi.sub}</p>}
                 </div>
               </motion.div>

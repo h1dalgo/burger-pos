@@ -536,7 +536,7 @@ body:has(.noir) {
   font-weight: 650;
   letter-spacing: 0.005em;
   transition:
-    transform 0.16s cubic-bezier(0.2, 0.8, 0.2, 1),
+    transform 0.16s cubic-bezier(0.23, 1, 0.32, 1),
     filter 0.16s ease,
     background-color 0.16s ease,
     border-color 0.16s ease,
@@ -597,6 +597,11 @@ body:has(.noir) {
 
 /* Chips */
 .noir .chip {
+  transition:
+    border-color 0.18s ease,
+    background-color 0.18s ease,
+    color 0.18s ease,
+    transform 0.16s cubic-bezier(0.23, 1, 0.32, 1);
   background-color: rgb(242 233 218 / 0.035);
   border: 1px solid var(--line-strong);
   color: rgb(242 233 218 / 0.9);

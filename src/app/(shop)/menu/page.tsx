@@ -25,6 +25,8 @@ import ServiceSheet from '@/components/client/ServiceSheet';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Button } from '@/components/ui/Button';
+import ShinyText from '@/components/reactbits/ShinyText';
+import { useScrollReveal } from '@/hooks/use-scroll-reveal';
 
 export default function MenuPage() {
   // El navegador pide el menú en paralelo con el JavaScript (el fetch de abajo reutiliza esta respuesta).
@@ -88,6 +90,7 @@ export default function MenuPage() {
     window.scrollTo({ top, behavior: reduce ? 'auto' : 'smooth' });
   };
 
+  const contentRef = useRef<HTMLDivElement>(null);
   const business = useBusinessStore((s) => s.settings);
   const loadBusiness = useBusinessStore((s) => s.load);
   useEffect(() => {
@@ -185,6 +188,8 @@ export default function MenuPage() {
     }))
     .filter((c) => c.products.length > 0);
   const isEmptyMenu = !loading && !error && categories.length > 0 && sections.length === 0;
+  // secciones y tarjetas aparecen al entrar en pantalla (GSAP + ScrollTrigger)
+  useScrollReveal(contentRef, [loading, sections.length, sections.reduce((n, c) => n + c.products.length, 0)]);
   // "¿Le agregas algo?" en el carrito: bebidas y postres disponibles
   const suggestions = categories
     .filter((c) => ['drink', 'dessert'].includes(variantFromCategory(c.name)))
@@ -247,7 +252,7 @@ export default function MenuPage() {
         </div>
       </div>
 
-      <div className="max-w-5xl mx-auto px-4 pt-7 pb-4">
+      <div ref={contentRef} className="max-w-5xl mx-auto px-4 pt-7 pb-4">
         {/* Saludo: línea discreta con nombre y mesa + titular */}
         <div className="mb-7">
           {(customerName || tableNumber) && (
@@ -256,7 +261,11 @@ export default function MenuPage() {
             </p>
           )}
           <h1 className="display text-[2.1rem] leading-[1.05] text-carbon sm:text-5xl">
-            ¿Qué se te <em className="italic text-burger-dark">antoja</em> hoy?
+            ¿Qué se te{' '}
+            <em className="italic">
+              <ShinyText text="antoja" color="#e2bd7e" shineColor="#fff3dc" speed={1.6} delay={0.5} trigger="view" glow={0.35} />
+            </em>{' '}
+            hoy?
           </h1>
           {business && !business.open && (
             <p className="mt-4 flex items-center gap-2 rounded-2xl border border-rose/30 bg-rose/10 px-4 py-3 text-sm font-semibold text-rose" role="status">
@@ -346,12 +355,12 @@ export default function MenuPage() {
             >
               {/* Encabezado: etiqueta de categoría + subtítulo + subrayado de marca */}
               <h2 id={`cat-title-${cat.id}`} className="mb-5">
-                <span className="eyebrow block">
+                <span data-reveal className="eyebrow block">
                   {sentenceCase(cat.name)}
                 </span>
                 <span className="sr-only"> — </span>
-                <span className="display mt-1 block text-[1.6rem] leading-tight text-carbon">{categorySubtitle(cat.name)}</span>
-                <span aria-hidden="true" className="mt-3 block h-px w-12 bg-gradient-to-r from-burger to-transparent" />
+                <span data-reveal className="display mt-1 block text-[1.6rem] leading-tight text-carbon">{categorySubtitle(cat.name)}</span>
+                <span aria-hidden="true" data-reveal-line className="mt-3 block h-px w-12 bg-gradient-to-r from-burger to-transparent" />
               </h2>
               <div className="grid gap-3 sm:grid-cols-2">
                 {cat.products.map((product, i) => (

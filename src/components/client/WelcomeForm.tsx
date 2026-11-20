@@ -7,6 +7,7 @@ import { useSessionStore, useSessionHydrated } from '@/store/session-store';
 import { UtensilsCrossed, Table2, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Skeleton } from '@/components/ui/Skeleton';
+import SplitText from '@/components/reactbits/SplitText';
 import { cldUrl } from '@/lib/cloudinary';
 
 export default function WelcomeForm() {
@@ -82,7 +83,11 @@ export default function WelcomeForm() {
           transition={{ delay: 0.3 }}
           className="display text-[2.6rem] leading-[1.05] text-center text-carbon mb-3"
         >
-          {loadingSettings ? <span className="inline-block w-40 h-9 skeleton mx-auto" /> : businessName}
+          {loadingSettings ? (
+            <span className="inline-block w-40 h-9 skeleton mx-auto" />
+          ) : (
+            <SplitText text={businessName} tag="span" effect="blur" splitType="chars" trigger="load" delay={28} duration={0.7} ease="power3.out" textAlign="center" className="display" />
+          )}
         </motion.h1>
         <motion.p
           initial={{ opacity: 0 }}

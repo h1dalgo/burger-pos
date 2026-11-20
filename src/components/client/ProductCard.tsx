@@ -11,19 +11,28 @@ import { useCartStore } from '@/store/cart-store';
 import { Badge } from '@/components/ui/Badge';
 import { cldUrl } from '@/lib/cloudinary';
 import { PriceBs } from '@/components/ui/PriceBs';
+import SpotlightCard from '@/components/reactbits/SpotlightCard';
 
 interface Props {
   product: Product;
   isAvailable: boolean;
   onSelect: (product: Product) => void;
-  index: number;
+  /** Ya no se usan: la entrada la hace el menú con GSAP (data-reveal). */
+  index?: number;
   entrance?: boolean;
 }
+
+/** Luz dorada que sigue al dedo/cursor sobre la tarjeta (React Bits). */
+const SPOTLIGHT_STYLE = {
+  '--spotlight-card-surface': 'var(--color-card)',
+  '--spotlight-card-shadow': 'var(--shadow-card)',
+  '--spotlight-card-border': 'rgb(242 233 218 / 0.1)',
+} as React.CSSProperties;
 
 /** Un producto se puede agregar con un toque si no tiene nada obligatorio que elegir. */
 export const canQuickAdd = (p: Product) => !p.hasVariation && p.requiredSelections.length === 0;
 
-export default function ProductCard({ product, isAvailable, onSelect, index, entrance = true }: Props) {
+export default function ProductCard({ product, isAvailable, onSelect }: Props) {
   const addSimple = useCartStore((s) => s.addSimple);
   const [imageFailed, setImageFailed] = useState(false);
   const [justAdded, setJustAdded] = useState(false);
@@ -48,19 +57,15 @@ export default function ProductCard({ product, isAvailable, onSelect, index, ent
   };
 
   return (
-    <motion.div
-      initial={entrance ? { opacity: 0, y: 16 } : false}
-      animate={{ opacity: 1, y: 0 }}
-      transition={entrance ? { delay: Math.min(index * 0.05, 0.3), duration: 0.3 } : { duration: 0 }}
-      className="relative"
-    >
+    <div data-reveal className="relative">
+      <Shell available={isAvailable}>
       <button
         onClick={() => isAvailable && onSelect(product)}
         disabled={!isAvailable}
-        className={`group w-full text-left rounded-2xl p-4 pr-16 transition-[background-color,border-color,box-shadow,transform] ${
+        className={`group block w-full text-left rounded-[1.25rem] p-4 pr-16 ${
           isAvailable
-            ? 'card lift active:scale-[0.99]'
-            : 'rounded-[1.25rem] border border-carbon/10 bg-carbon/[0.03] opacity-60 cursor-not-allowed'
+            ? 'transition-transform duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] active:scale-[0.985]'
+            : 'border border-carbon/10 bg-carbon/[0.03] opacity-60 cursor-not-allowed'
         }`}
       >
         {!isAvailable && (
@@ -84,7 +89,7 @@ export default function ProductCard({ product, isAvailable, onSelect, index, ent
                 decoding="async"
                 onError={() => setImageFailed(true)}
                 loading="lazy"
-                className="w-full h-full object-cover transition-transform duration-300 ease-out group-hover:scale-110"
+                className="w-full h-full object-cover transition-transform duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] [@media(hover:hover)]:group-hover:scale-105"
               />
             ) : (
               <ImageIcon className="w-7 h-7 text-carbon/25" />
@@ -114,6 +119,7 @@ export default function ProductCard({ product, isAvailable, onSelect, index, ent
           </div>
         )}
       </button>
+      </Shell>
 
       {/* Botón "+" aparte (no anidado): agrega directo o abre las opciones */}
       {isAvailable && (
@@ -142,6 +148,16 @@ export default function ProductCard({ product, isAvailable, onSelect, index, ent
           </AnimatePresence>
         </motion.button>
       )}
-    </motion.div>
+    </div>
+  );
+}
+
+/** Tarjeta con luz dorada (React Bits) si está disponible; simple si está agotada. */
+function Shell({ available, children }: { available: boolean; children: React.ReactNode }) {
+  if (!available) return <>{children}</>;
+  return (
+    <SpotlightCard theme="dark" spotlightColor="#d8ad66" intensity={0.16} borderGlow={0.6} spotlightSize={220} proximity={0} className="lift p-0! rounded-[1.25rem]!" style={SPOTLIGHT_STYLE}>
+      {children}
+    </SpotlightCard>
   );
 }
