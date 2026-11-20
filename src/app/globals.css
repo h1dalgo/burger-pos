@@ -416,15 +416,15 @@
   }
 }
 
-/* Transición de entrada entre pantallas (app/template.tsx). Termina en transform: none
-   para no afectar a los elementos position: fixed (modales, carrito). */
+/* Transición de entrada entre pantallas (app/template.tsx). Solo desplazamiento, sin
+   opacidad: el contenido es visible desde el primer cuadro (si arrancara transparente,
+   el navegador retrasa el "primer contenido pintado"). Termina en transform: none para
+   no afectar a los elementos position: fixed (modales, carrito). */
 @keyframes page-enter {
   from {
-    opacity: 0;
-    transform: translateY(8px);
+    transform: translateY(10px);
   }
   to {
-    opacity: 1;
     transform: none;
   }
 }
