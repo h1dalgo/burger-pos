@@ -28,17 +28,17 @@ export default function AdminLoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-cream flex items-center justify-center p-4">
+    <div className="min-h-screen flex items-center justify-center p-4">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         className="w-full max-w-sm"
       >
         <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-burger border-2 border-carbon rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-pop">
-            <Lock className="w-8 h-8 text-cream" />
+          <div className="w-16 h-16 rounded-full border border-burger/40 bg-burger/10 flex items-center justify-center mx-auto mb-5">
+            <Lock className="w-7 h-7 text-burger" strokeWidth={1.4} />
           </div>
-          <h1 className="display text-4xl text-carbon sign-yellow">ADMIN</h1>
+          <h1 className="display text-4xl text-carbon">Administración</h1>
           <p className="text-carbon/65 text-sm mt-1">Ingresa el PIN de administrador</p>
         </div>
 

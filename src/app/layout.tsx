@@ -1,21 +1,22 @@
 import type { Metadata, Viewport } from 'next';
-import { Archivo, Alfa_Slab_One, JetBrains_Mono } from 'next/font/google';
+import { Fraunces, Manrope, JetBrains_Mono } from 'next/font/google';
 import './globals.css';
 import { Toaster } from '@/components/ui/Toaster';
 import MotionProvider from '@/components/MotionProvider';
 import ServiceWorkerRegister from '@/components/ServiceWorkerRegister';
 
-const archivo = Archivo({
+/* Tipografía: serif editorial (títulos, precios) + sans moderna (texto) */
+const fraunces = Fraunces({
   subsets: ['latin'],
   display: 'swap',
-  variable: '--font-archivo',
+  axes: ['opsz', 'SOFT'],
+  variable: '--font-fraunces',
 });
 
-const alfa = Alfa_Slab_One({
-  weight: '400',
+const manrope = Manrope({
   subsets: ['latin'],
   display: 'swap',
-  variable: '--font-alfa',
+  variable: '--font-manrope',
 });
 
 const jetbrains = JetBrains_Mono({
@@ -28,11 +29,12 @@ export const metadata: Metadata = {
   title: 'Burger POS - Pedidos Auto-gestionados',
   description: 'Haz tu pedido directo desde tu mesa',
   applicationName: 'Burger POS',
-  appleWebApp: { capable: true, title: 'Burger POS', statusBarStyle: 'default' },
+  appleWebApp: { capable: true, title: 'Burger POS', statusBarStyle: 'black-translucent' },
 };
 
 export const viewport: Viewport = {
-  themeColor: '#d9261c',
+  themeColor: '#0f0d0a',
+  colorScheme: 'dark',
   width: 'device-width',
   initialScale: 1,
   viewportFit: 'cover',
@@ -46,10 +48,13 @@ export default function RootLayout({
   return (
     <html
       lang="es"
-      className={`${archivo.variable} ${alfa.variable} ${jetbrains.variable}`}
+      className={`${fraunces.variable} ${manrope.variable} ${jetbrains.variable}`}
     >
       <body>
-        <MotionProvider>{children}</MotionProvider>
+        {/* Tema noir en toda la app (ver globals.css) */}
+        <div className="noir">
+          <MotionProvider>{children}</MotionProvider>
+        </div>
         <Toaster />
         <ServiceWorkerRegister />
       </body>

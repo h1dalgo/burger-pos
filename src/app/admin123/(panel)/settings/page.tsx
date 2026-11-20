@@ -65,7 +65,7 @@ export default function AdminSettingsPage() {
 
   return (
     <div>
-      <h1 className="display text-4xl text-carbon sign-yellow leading-none">CONFIGURACIÓN DEL NEGOCIO</h1>
+      <h1 className="display text-4xl text-carbon sign-yellow leading-none">Configuración del negocio</h1>
       <p className="text-sm text-carbon/65 mt-2 mb-6">Datos generales del restaurante</p>
 
       {loading ? (
@@ -102,7 +102,7 @@ export default function AdminSettingsPage() {
             type="file"
             accept="image/*"
             onChange={handleLogo}
-            className="text-sm text-carbon/60 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-burger file:text-white file:text-sm file:font-semibold file:cursor-pointer"
+            className="text-sm text-carbon/60 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-burger file:text-cream file:text-sm file:font-semibold file:cursor-pointer"
           />
           {logoPreview && (
             <div className="mt-3 relative inline-block">

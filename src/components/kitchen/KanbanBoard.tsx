@@ -265,15 +265,15 @@ export default function KanbanBoard() {
   const waitingCount = getOrdersByStatus('WAITING_PAYMENT').length;
 
   return (
-    <div className="h-screen bg-cream flex flex-col">
-      <header className="relative bg-burger px-4 sm:px-6 py-3 flex items-center justify-between gap-3 border-b-2 border-carbon">
+    <div className="h-screen flex flex-col">
+      <header className="relative bg-cream/80 backdrop-blur-xl px-4 sm:px-6 py-3 flex items-center justify-between gap-3 border-b border-carbon/10">
         <div className="flex items-center gap-3 min-w-0">
-          <div className="w-10 h-10 shrink-0 rounded-xl bg-mustard border-2 border-carbon flex items-center justify-center">
-            <ChefHat className="w-5 h-5 text-carbon" />
+          <div className="w-10 h-10 shrink-0 rounded-xl border border-burger/40 bg-burger/10 flex items-center justify-center">
+            <ChefHat className="w-5 h-5 text-burger" strokeWidth={1.6} />
           </div>
           <div className="min-w-0">
-            <h1 className="display text-xl text-cream sign leading-none">COCINA</h1>
-            <p className="text-[11px] text-cream/75 uppercase tracking-widest mt-0.5">
+            <h1 className="display text-2xl text-carbon leading-none">Cocina</h1>
+            <p className="eyebrow mt-1">
               Panel de Producción
             </p>
           </div>
@@ -287,15 +287,15 @@ export default function KanbanBoard() {
               {waitingCount} pendientes de pago
             </motion.span>
           )}
-          <div className="hidden lg:flex items-center gap-3 text-[11px] text-cream/85 font-semibold ml-1">
+          <div className="hidden lg:flex items-center gap-3 text-[11px] text-carbon/60 font-semibold ml-1">
             <span className="flex items-center gap-1.5">
-              <kbd className="bg-cream text-carbon border-2 border-carbon rounded px-1.5 py-0.5 font-bold shadow-[2px_2px_0_#1a1712]">
+              <kbd className="rounded-md border border-carbon/20 bg-carbon/[0.06] px-1.5 py-0.5 font-bold text-carbon">
                 E
               </kbd>
               iniciar la más vieja
             </span>
             <span className="flex items-center gap-1.5">
-              <kbd className="bg-cream text-carbon border-2 border-carbon rounded px-1.5 py-0.5 font-bold shadow-[2px_2px_0_#1a1712]">
+              <kbd className="rounded-md border border-carbon/20 bg-carbon/[0.06] px-1.5 py-0.5 font-bold text-carbon">
                 L
               </kbd>
               marcar listo
@@ -310,7 +310,7 @@ export default function KanbanBoard() {
             onClick={toggleMute}
             aria-pressed={muted}
             title={muted ? 'Activar sonido' : 'Silenciar sonido'}
-            className={`border-carbon ${muted ? 'bg-cream text-rose' : 'bg-cream text-carbon hover:bg-mustard/70'}`}
+            className={muted ? 'text-rose' : ''}
           >
             {muted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
             <span className="hidden sm:inline">{muted ? 'Sin sonido' : 'Sonido'}</span>
@@ -319,7 +319,7 @@ export default function KanbanBoard() {
             variant="outline"
             size="sm"
             onClick={() => setShowStock(!showStock)}
-            className={`border-carbon ${showStock ? 'bg-mustard text-carbon' : 'bg-cream text-carbon hover:bg-mustard/70'}`}
+            className={showStock ? 'border-burger/60 bg-burger/10 text-burger-dark' : ''}
           >
             <Package className="w-4 h-4" />
             <span className="hidden sm:inline">Stock</span>

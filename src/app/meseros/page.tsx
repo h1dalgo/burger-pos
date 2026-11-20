@@ -451,17 +451,17 @@ export default function WaiterPage() {
 
   if (!waiterName) {
     return (
-      <div className="min-h-screen bg-cream flex items-center justify-center p-4">
+      <div className="min-h-screen flex items-center justify-center p-4">
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           className="card p-8 w-full max-w-sm text-center relative overflow-hidden"
         >
-          <div className="absolute top-0 inset-x-0 h-1.5 bg-burger" />
+          <div className="hairline-gold absolute top-0 inset-x-10" />
           <div className="w-16 h-16 rounded-full bg-mustard border-2 border-carbon flex items-center justify-center mx-auto mb-4 shadow-card">
             <UserRound className="w-8 h-8 text-carbon" />
           </div>
-          <h1 className="display text-2xl text-carbon sign-yellow">¿Quién está en servicio?</h1>
+          <h1 className="display text-3xl text-carbon">¿Quién está en servicio?</h1>
           <p className="text-sm text-carbon/60 mt-2">Tus pedidos y alertas se asocian a tu nombre.</p>
           <input
             value={waiterDraft}
@@ -485,7 +485,7 @@ export default function WaiterPage() {
   const readyOrder = readyOrderFor(selectedTable);
 
   return (
-    <div className="min-h-screen bg-cream">
+    <div className="min-h-screen">
       <AnimatePresence>
         {pendingAlerts.length > 0 &&
           (() => {
@@ -539,37 +539,42 @@ export default function WaiterPage() {
           })()}
       </AnimatePresence>
 
-      <header className="bg-burger px-4 py-3 flex items-center justify-between border-b-2 border-carbon sticky top-0 z-20">
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-mustard border-2 border-carbon flex items-center justify-center">
-            <ChefHat className="w-5 h-5 text-carbon" />
+      <header className="bg-cream/80 backdrop-blur-xl px-4 py-3 flex items-center justify-between gap-3 border-b border-carbon/10 sticky top-0 z-20">
+        <div className="flex min-w-0 items-center gap-3">
+          <div className="w-9 h-9 shrink-0 rounded-xl border border-burger/40 bg-burger/10 flex items-center justify-center">
+            <ChefHat className="w-5 h-5 text-burger" strokeWidth={1.6} />
           </div>
           <div>
-            <h1 className="display text-xl text-cream sign leading-none">MESERO</h1>
-            <p className="text-[10px] text-cream/75 uppercase tracking-widest mt-0.5">Piso de servicio</p>
+            <h1 className="display text-2xl text-carbon leading-none">Mesero</h1>
+            <p className="eyebrow mt-1 hidden whitespace-nowrap sm:block">Piso de servicio</p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex shrink-0 items-center gap-2">
           <div
-            className={`flex items-center gap-1.5 text-[10px] font-bold uppercase px-2.5 py-1.5 rounded-full border-2 border-carbon ${connected ? 'bg-cream text-mint-ink' : 'bg-cream text-rose'}`}
+            title={connected ? 'En línea' : 'Sin conexión'}
+            className={`flex items-center gap-1.5 text-[10px] font-bold uppercase px-2.5 py-1.5 rounded-full border border-carbon/15 ${connected ? 'text-mint-ink' : 'text-rose'}`}
           >
             <span className={`w-1.5 h-1.5 rounded-full ${connected ? 'bg-mint' : 'bg-rose'} ${connected ? '' : 'animate-pulse'}`} />
-            {connected ? 'En línea' : 'Sin conexión'}
+            <span className="hidden sm:inline">{connected ? 'En línea' : 'Sin conexión'}</span>
           </div>
           <button
             type="button"
             onClick={leaveService}
             title="Cambiar mesero"
             aria-label={`Mesero en servicio: ${waiterName}. Toca para cambiar`}
-            className="flex items-center gap-1.5 bg-cream/20 hover:bg-cream/35 text-cream text-xs font-bold px-2.5 py-1.5 rounded-full border-2 border-cream/40 transition-colors"
+            className="flex items-center gap-1.5 text-carbon text-xs font-semibold px-2.5 py-1.5 rounded-full border border-carbon/15 hover:bg-carbon/[0.06] transition-colors"
           >
             <UserRound className="w-3.5 h-3.5" />
             <span className="max-w-24 truncate">{waiterName}</span>
           </button>
           {activeCalls.length > 0 && (
-            <div className="flex items-center gap-1.5 bg-cream text-rose text-xs font-bold px-3 py-1.5 rounded-full border-2 border-carbon">
+            <div
+              aria-label={`${activeCalls.length} notificación(es)`}
+              className="flex items-center gap-1.5 text-rose text-xs font-bold px-3 py-1.5 rounded-full border border-rose/40 bg-rose/10"
+            >
               <span className="w-1.5 h-1.5 rounded-full bg-rose animate-pulse" />
-              {activeCalls.length} notificación(es)
+              {activeCalls.length}
+              <span className="hidden sm:inline">notificación(es)</span>
             </div>
           )}
         </div>
@@ -650,7 +655,7 @@ export default function WaiterPage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-30 bg-black/60"
+            className="fixed inset-0 z-30 bg-black/70 backdrop-blur-[3px]"
             onClick={() => setShowOrderPanel(false)}
           >
             <motion.div

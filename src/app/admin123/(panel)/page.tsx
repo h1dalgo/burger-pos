@@ -100,7 +100,7 @@ export default function AdminDashboard() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="display text-4xl text-carbon sign-yellow leading-none">DASHBOARD</h1>
+        <h1 className="display text-4xl text-carbon sign-yellow leading-none">Panel general</h1>
         <p className="text-sm text-carbon/65 mt-2">Resumen del negocio en tiempo real</p>
       </div>
 

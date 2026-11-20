@@ -1,8 +1,8 @@
 @import "tailwindcss";
 
 @theme inline {
-  --font-sans: var(--font-archivo);
-  --font-display: var(--font-alfa);
+  --font-sans: var(--font-manrope);
+  --font-display: var(--font-fraunces);
   --font-mono: var(--font-jetbrains);
 }
 
@@ -420,7 +420,7 @@
 }
 
 /* ==========================================================================
-   Tema NOIR (pantallas del cliente) — ver app/(shop)/layout.tsx
+   Tema NOIR (toda la app) — ver app/layout.tsx
    Redefine los mismos tokens: cream = fondo, carbon = tinta, burger = acento
    dorado, mustard = superficie elevada. Así todos los componentes del cliente
    cambian de piel sin duplicar clases.
@@ -439,6 +439,9 @@
   --color-rose: #e8758b;
   --color-azul: #d8ad66;
   --color-status-preparing: #e6b45c;
+  --color-status-waiting: #b89cff;
+  --color-status-pending: #ff8080;
+  --color-status-ready: #5cb987;
 
   --line: rgb(242 233 218 / 0.1);
   --line-strong: rgb(242 233 218 / 0.2);
@@ -453,6 +456,7 @@
 
   min-height: 100dvh;
   color-scheme: dark;
+  caret-color: var(--color-burger);
   color: var(--color-carbon);
   font-family: var(--font-manrope), ui-sans-serif, system-ui, sans-serif;
   letter-spacing: -0.005em;
@@ -641,6 +645,34 @@ body:has(.noir) {
 .noir .badge-info {
   background-color: rgb(167 139 250 / 0.14);
   color: #c9b8ff;
+}
+
+.noir :is(input[type='checkbox'], input[type='radio'], input[type='range']) {
+  accent-color: var(--color-burger);
+}
+
+/* Al imprimir (QR, corte de caja) se vuelve a papel blanco y tinta negra */
+@media print {
+  body:has(.noir) {
+    background: #fff;
+  }
+  .noir {
+    --color-cream: #ffffff;
+    --color-card: #ffffff;
+    --color-carbon: #1a1712;
+    --color-burger: #8a6420;
+    --color-burger-dark: #8a6420;
+    --color-mustard: #f4ecdc;
+    --color-mint-ink: #0f5132;
+    --line: rgb(26 23 18 / 0.2);
+    --line-strong: rgb(26 23 18 / 0.35);
+    background: #fff;
+    color: #1a1712;
+  }
+  .noir .card {
+    background: #fff;
+    box-shadow: none;
+  }
 }
 
 /* Detalles de marca */

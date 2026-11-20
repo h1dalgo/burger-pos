@@ -215,7 +215,7 @@ export default function ProductForm({ product }: Props) {
 
       <div>
         <label className="block text-sm font-semibold text-carbon/75 mb-1">Imagen del Producto</label>
-        <input type="file" accept="image/*" onChange={handleImage} className="text-sm text-carbon/60 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-burger file:text-white file:text-sm file:font-semibold" />
+        <input type="file" accept="image/*" onChange={handleImage} className="text-sm text-carbon/60 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-burger file:text-cream file:text-sm file:font-semibold" />
         {imagePreview && (
           <div className="mt-2 relative inline-block">
             <img src={imagePreview} alt="Preview" className="w-24 h-24 object-cover rounded-lg border-2 border-carbon/20" />

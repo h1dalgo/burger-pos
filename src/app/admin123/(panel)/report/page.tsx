@@ -55,7 +55,7 @@ export default function ReportPage() {
 
   const kpis = [
     { label: 'Ventas del día', value: formatPrice(data?.revenue ?? 0), icon: TrendingUp, chip: 'bg-mint/15 border-mint/60 text-mint-ink' },
-    { label: 'Propinas', value: formatPrice(data?.tips ?? 0), icon: HandCoins, chip: 'bg-mustard/25 border-mustard/60 text-carbon' },
+    { label: 'Propinas', value: formatPrice(data?.tips ?? 0), icon: HandCoins, chip: 'bg-burger/10 border-burger/40 text-burger' },
     { label: 'Pedidos', value: String(data?.count ?? 0), icon: Receipt, chip: 'bg-status-pending/10 border-status-pending/40 text-status-pending' },
     { label: 'Ticket promedio', value: formatPrice(data?.avgTicket ?? 0), icon: ShoppingBag, chip: 'bg-azul/10 border-azul/40 text-azul' },
   ];

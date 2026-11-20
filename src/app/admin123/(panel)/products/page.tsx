@@ -67,7 +67,7 @@ export default function AdminProductsPage() {
     <div>
       <div className="flex items-center justify-between mb-6 gap-3">
         <div>
-          <h1 className="display text-4xl text-carbon sign-yellow leading-none">PRODUCTOS</h1>
+          <h1 className="display text-4xl text-carbon sign-yellow leading-none">Productos</h1>
           <p className="text-sm text-carbon/65 mt-2">Gestiona el menú del restaurante</p>
         </div>
         <Link href="/admin123/products/new">
