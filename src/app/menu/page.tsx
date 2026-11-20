@@ -12,6 +12,7 @@ import { useCartStore } from '@/store/cart-store';
 import { getSocket, joinRoom } from '@/lib/socket-client';
 import type { Category, Product, StockUpdate, CartItem } from '@/types';
 import { variantFromCategory } from '@/components/client/ProductVisual3D';
+import { categorySubtitle, sentenceCase, formatPersonName } from '@/lib/category-copy';
 import CategoryNav from '@/components/client/CategoryNav';
 import ProductCard from '@/components/client/ProductCard';
 import ProductModal from '@/components/client/ProductModal';
@@ -223,9 +224,15 @@ export default function MenuPage() {
       </div>
 
       <div className="max-w-5xl mx-auto px-4 py-4">
-        <p className="display text-xl text-carbon sign-yellow mb-3">
-          {customerName ? `¡Hola, ${customerName}!` : '¿Qué se te antoja hoy?'}
-        </p>
+        {/* Saludo: línea discreta con nombre y mesa + titular */}
+        <div className="mb-6">
+          {(customerName || tableNumber) && (
+            <p className="text-sm font-semibold text-carbon/70">
+              {[customerName && `Hola, ${formatPersonName(customerName)}`, tableNumber && `Mesa ${tableNumber}`].filter(Boolean).join(' · ')}
+            </p>
+          )}
+          <h1 className="display text-2xl leading-tight text-carbon">¿Qué se te antoja hoy?</h1>
+        </div>
         {loading && (
           <div aria-busy="true" aria-label="Cargando menú">
             <Skeleton className="mb-3 h-5 w-40" />
@@ -277,10 +284,16 @@ export default function MenuPage() {
                 sectionRefs.current[cat.id] = el;
               }}
               aria-labelledby={`cat-title-${cat.id}`}
-              className={ci > 0 ? 'pt-7' : ''}
+              className={ci > 0 ? 'pt-9' : ''}
             >
-              <h2 id={`cat-title-${cat.id}`} className="display text-lg text-carbon mb-3">
-                {cat.name}
+              {/* Encabezado: etiqueta de categoría + subtítulo + subrayado de marca */}
+              <h2 id={`cat-title-${cat.id}`} className="mb-4">
+                <span className="block text-[11px] font-bold uppercase tracking-[0.12em] text-burger-dark">
+                  {sentenceCase(cat.name)}
+                </span>
+                <span className="sr-only"> — </span>
+                <span className="display block text-xl leading-tight text-carbon">{categorySubtitle(cat.name)}</span>
+                <span aria-hidden="true" className="mt-1.5 block h-1 w-7 rounded-full bg-burger" />
               </h2>
               <div className="grid gap-3 sm:grid-cols-2">
                 {cat.products.map((product, i) => (
