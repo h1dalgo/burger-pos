@@ -206,7 +206,8 @@ export default function ProductForm({ product }: Props) {
         </div>
         <div>
           <label className="block text-sm font-semibold text-carbon/75 mb-1">Categoría *</label>
-          <select ref={catRef} defaultValue={product?.categoryId || product?.category?.id || ''} className={inputWide} required>
+          {/* key: las categorías llegan después; se vuelve a montar para que tome la categoría guardada */}
+          <select key={categories.length} ref={catRef} defaultValue={product?.categoryId || product?.category?.id || ''} className={inputWide} required>
             <option value="">Seleccionar...</option>
             {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
           </select>
