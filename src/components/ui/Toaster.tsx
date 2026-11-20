@@ -9,21 +9,23 @@ export function Toaster() {
       toastOptions={{
         duration: 3500,
         style: {
-          background: '#1a1712',
-          color: '#fdf6e3',
-          borderRadius: '12px',
-          border: '2px solid #1a1712',
-          boxShadow: '4px 4px 0 rgb(26 23 18 / 0.35)',
+          background: 'rgba(23, 19, 15, 0.94)',
+          color: '#f2e9da',
+          borderRadius: '14px',
+          border: '1px solid rgba(242, 233, 218, 0.12)',
+          backdropFilter: 'blur(14px)',
+          boxShadow: '0 18px 40px -18px rgba(0, 0, 0, 0.7)',
           fontSize: '14px',
           fontWeight: 600,
+          letterSpacing: '-0.005em',
           padding: '12px 16px',
           maxWidth: '420px',
         },
         success: {
-          iconTheme: { primary: '#ffc72c', secondary: '#1a1712' },
+          iconTheme: { primary: '#d8ad66', secondary: '#17130f' },
         },
         error: {
-          iconTheme: { primary: '#ff7a7a', secondary: '#1a1712' },
+          iconTheme: { primary: '#e8758b', secondary: '#17130f' },
         },
       }}
     />

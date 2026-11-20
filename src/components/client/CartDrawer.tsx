@@ -83,7 +83,7 @@ export default function CartDrawer({ isOpen, onClose, onRequireTable, onEditItem
               restoreItem(item, index);
               toast.dismiss(t.id);
             }}
-            className="rounded-full border-2 border-carbon bg-mustard px-2.5 py-0.5 text-xs font-bold text-carbon"
+            className="rounded-full bg-[#d8ad66] px-2.5 py-0.5 text-xs font-bold text-[#17110a]"
           >
             Deshacer
           </button>
@@ -174,7 +174,7 @@ export default function CartDrawer({ isOpen, onClose, onRequireTable, onEditItem
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-50 bg-black/50"
+          className="fixed inset-0 z-50 bg-black/70 backdrop-blur-[3px]"
           onClick={onClose}
         >
           <motion.div
@@ -186,12 +186,12 @@ export default function CartDrawer({ isOpen, onClose, onRequireTable, onEditItem
             role="dialog"
             aria-modal="true"
             aria-label="Tu pedido"
-            className="absolute bottom-0 left-0 right-0 sm:max-w-lg sm:mx-auto max-h-[88vh] bg-cream rounded-t-3xl overflow-y-auto overscroll-contain flex flex-col"
+            className="absolute bottom-0 left-0 right-0 sm:max-w-lg sm:mx-auto max-h-[88vh] bg-card border-t border-carbon/10 rounded-t-[1.75rem] overflow-y-auto overscroll-contain flex flex-col"
           >
             {/* Encabezado: título, mesa y cerrar */}
-            <div className="sticky top-0 z-10 bg-cream px-6 pt-5 pb-3 border-b-2 border-carbon flex items-center gap-3">
+            <div className="sticky top-0 z-10 bg-card/95 backdrop-blur-xl px-6 pt-5 pb-3 border-b-2 border-carbon flex items-center gap-3">
               <div className="min-w-0">
-                <h2 className="text-lg font-bold text-carbon">Tu pedido</h2>
+                <h2 className="display text-2xl leading-tight text-carbon">Tu pedido</h2>
                 <p className="text-xs text-carbon/60 tabular-nums">
                   {totalCount} {totalCount === 1 ? 'producto' : 'productos'}
                 </p>
@@ -200,7 +200,7 @@ export default function CartDrawer({ isOpen, onClose, onRequireTable, onEditItem
                 onClick={() => onRequireTable?.()}
                 aria-label={tableNumber ? `Mesa ${tableNumber}. Cambiar mesa` : 'Elegir mesa'}
                 className={`ml-auto flex shrink-0 items-center gap-1.5 rounded-full border-2 border-carbon px-2.5 py-1 text-xs font-bold transition-colors ${
-                  tableNumber ? 'bg-card text-carbon hover:bg-mustard' : 'bg-mustard text-carbon animate-pulse'
+                  tableNumber ? 'text-carbon hover:bg-carbon/[0.06]' : 'border-burger/60 bg-burger/10 text-burger-dark animate-pulse'
                 }`}
               >
                 <Table2 className="h-3.5 w-3.5" />
@@ -216,7 +216,7 @@ export default function CartDrawer({ isOpen, onClose, onRequireTable, onEditItem
               <button
                 onClick={onClose}
                 aria-label="Cerrar"
-                className="w-9 h-9 shrink-0 rounded-full bg-card border-2 border-carbon flex items-center justify-center hover:bg-mustard transition-colors"
+                className="w-9 h-9 shrink-0 rounded-full border border-carbon/15 flex items-center justify-center transition-colors hover:bg-carbon/[0.06]"
               >
                 <X className="w-4.5 h-4.5 text-carbon" />
               </button>
@@ -307,10 +307,10 @@ export default function CartDrawer({ isOpen, onClose, onRequireTable, onEditItem
                           role="radio"
                           aria-checked={selected}
                           onClick={() => setTipPct(pct)}
-                          className={`py-2.5 rounded-xl border-2 transition-[border-color,background-color,color,box-shadow] ${
+                          className={`py-2.5 rounded-2xl border transition-[border-color,background-color,color,box-shadow] ${
                             selected
-                              ? 'border-carbon bg-mint text-cream shadow-card'
-                              : 'border-carbon/25 bg-card text-carbon hover:border-carbon'
+                              ? 'border-burger/70 bg-burger/[0.12] text-burger-dark'
+                              : 'border-carbon/15 bg-carbon/[0.03] text-carbon hover:border-carbon/40'
                           }`}
                         >
                           <span className="block text-sm font-bold leading-tight">{pct}%</span>
@@ -330,7 +330,7 @@ export default function CartDrawer({ isOpen, onClose, onRequireTable, onEditItem
             {/* Barra fija: total + enviar */}
             {items.length > 0 && (
               <div
-                className="sticky bottom-0 z-10 mt-auto border-t-2 border-carbon bg-cream px-6 pt-3"
+                className="sticky bottom-0 z-10 mt-auto border-t-2 border-carbon bg-card/95 backdrop-blur-xl px-6 pt-3"
                 style={{ paddingBottom: 'calc(0.75rem + env(safe-area-inset-bottom))' }}
               >
                 {error && (
@@ -415,7 +415,7 @@ function CartRow({
       <motion.div
         aria-hidden="true"
         style={{ opacity: reveal }}
-        className="absolute inset-0 flex items-center justify-end gap-1.5 rounded-xl bg-rose pr-5 text-sm font-bold text-cream"
+        className="absolute inset-0 flex items-center justify-end gap-1.5 rounded-2xl bg-rose pr-5 text-sm font-bold text-cream"
       >
         <Trash2 className="h-4 w-4" />
         Quitar
@@ -428,11 +428,11 @@ function CartRow({
         dragElastic={{ left: 0.9, right: 0.05 }}
         onDragEnd={onDragEnd}
         style={{ x, touchAction: 'pan-y' }}
-        className="relative rounded-xl border-2 border-carbon/20 bg-card p-3.5"
+        className="relative rounded-2xl border border-carbon/10 bg-carbon/[0.03] p-3.5"
       >
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0 flex-1">
-            <p className="text-sm font-semibold text-carbon">{item.product.name}</p>
+            <p className="display text-base leading-snug text-carbon">{item.product.name}</p>
             <div className="mt-1 flex flex-wrap gap-1">
               {item.variation && <Tag tone="brand">{item.variation.name}</Tag>}
               {selected.map((opt, i) => (
@@ -479,7 +479,7 @@ function CartRow({
         </div>
 
         <div className="mt-2.5 flex items-center justify-between">
-          <div className="flex items-center gap-1.5 rounded-full border-2 border-carbon/25 bg-card p-0.5">
+          <div className="flex items-center gap-1.5 rounded-full border border-carbon/15 p-0.5">
             <motion.button
               whileTap={{ scale: 0.86 }}
               onClick={() => onQty(item.quantity - 1)}
@@ -499,7 +499,7 @@ function CartRow({
               <Plus className="h-4 w-4 text-carbon" />
             </motion.button>
           </div>
-          <AnimatedPrice value={lineTotal} className="font-bold text-burger" />
+          <AnimatedPrice value={lineTotal} className="price text-base" />
         </div>
       </motion.div>
     </motion.div>
@@ -535,7 +535,7 @@ function SuggestionCard({ product, onAdd }: { product: Product; onAdd: () => voi
       </div>
       <span className="line-clamp-2 text-xs font-bold leading-tight text-carbon">{product.name}</span>
       <span className="flex items-center justify-between">
-        <span className="text-xs font-bold tabular-nums text-carbon">{formatPrice(Number(product.basePrice))}</span>
+        <span className="price text-sm">{formatPrice(Number(product.basePrice))}</span>
         <span
           className={`flex h-7 w-7 items-center justify-center rounded-full border-2 border-carbon transition-colors ${
             done ? 'bg-mint' : 'bg-burger'

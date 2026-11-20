@@ -58,8 +58,8 @@ export default function ProductCard({ product, isAvailable, onSelect, index, ent
         disabled={!isAvailable}
         className={`group w-full text-left rounded-2xl p-4 pr-16 transition-[background-color,border-color,box-shadow,transform] ${
           isAvailable
-            ? 'card lift hover:shadow-pop active:translate-x-[3px] active:translate-y-[3px] active:shadow-none'
-            : 'bg-carbon/5 border-2 border-carbon/25 opacity-70 cursor-not-allowed'
+            ? 'card lift active:scale-[0.99]'
+            : 'rounded-[1.25rem] border border-carbon/10 bg-carbon/[0.03] opacity-60 cursor-not-allowed'
         }`}
       >
         {!isAvailable && (
@@ -71,7 +71,7 @@ export default function ProductCard({ product, isAvailable, onSelect, index, ent
         <div className="flex items-start gap-3.5">
           <div
             ref={thumbRef}
-            className="w-20 h-20 rounded-xl overflow-hidden flex-shrink-0 bg-carbon/5 border-2 border-carbon/15 flex items-center justify-center"
+            className="w-20 h-20 rounded-2xl overflow-hidden flex-shrink-0 bg-carbon/5 ring-1 ring-carbon/10 flex items-center justify-center"
           >
             {hasImage ? (
               // eslint-disable-next-line @next/next/no-img-element
@@ -91,12 +91,12 @@ export default function ProductCard({ product, isAvailable, onSelect, index, ent
           </div>
 
           <div className="flex-1 min-w-0">
-            <h3 className="font-bold text-carbon text-base leading-snug">
+            <h3 className="display text-[1.15rem] leading-snug text-carbon">
               {product.name}
               {!isAvailable && <span className="sr-only"> (agotado)</span>}
             </h3>
-            <p className="text-sm text-carbon/60 mt-0.5 line-clamp-2">{product.description}</p>
-            <p className="inline-block bg-mustard text-carbon border-2 border-carbon rounded-md px-2 py-0.5 font-bold text-lg mt-2 tabular-nums">
+            <p className="mt-1 line-clamp-2 text-[13px] leading-relaxed text-carbon/55">{product.description}</p>
+            <p className="price mt-2 text-lg">
               {formatPrice(Number(product.basePrice))}
             </p>
           </div>
@@ -120,8 +120,10 @@ export default function ProductCard({ product, isAvailable, onSelect, index, ent
           onClick={handlePlus}
           whileTap={{ scale: 0.86 }}
           aria-label={quick ? `Agregar ${product.name} al pedido` : `Elegir opciones de ${product.name}`}
-          className={`absolute top-4 right-4 w-11 h-11 rounded-full border-2 border-carbon flex items-center justify-center shadow-card transition-colors ${
-            justAdded ? 'bg-mint' : 'bg-burger hover:bg-burger-dark'
+          className={`absolute top-4 right-4 flex h-10 w-10 items-center justify-center rounded-full transition-colors ${
+            justAdded
+              ? 'bg-mint'
+              : 'border border-burger/50 bg-burger/10 text-burger-dark hover:bg-burger hover:text-cream'
           }`}
         >
           <AnimatePresence mode="wait" initial={false}>
@@ -133,7 +135,7 @@ export default function ProductCard({ product, isAvailable, onSelect, index, ent
               transition={{ type: 'spring', stiffness: 500, damping: 26 }}
               className="flex"
             >
-              {justAdded ? <Check className="w-5 h-5 text-cream" /> : <Plus className="w-5 h-5 text-cream" />}
+              {justAdded ? <Check className="w-5 h-5 text-cream" /> : <Plus className="w-5 h-5" strokeWidth={1.75} />}
             </motion.span>
           </AnimatePresence>
         </motion.button>

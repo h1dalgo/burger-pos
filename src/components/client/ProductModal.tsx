@@ -182,7 +182,7 @@ export default function ProductModal({ product, categoryName, onClose, editItem 
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className={`fixed inset-0 ${stacked ? 'z-[60]' : 'z-50'} flex items-end sm:items-center justify-center bg-black/50`}
+      className={`fixed inset-0 ${stacked ? 'z-[60]' : 'z-50'} flex items-end sm:items-center justify-center bg-black/70 backdrop-blur-[3px]`}
       onClick={onClose}
       role="dialog"
       aria-modal="true"
@@ -200,24 +200,24 @@ export default function ProductModal({ product, categoryName, onClose, editItem 
         dragElastic={{ top: 0, bottom: 0.7 }}
         onDragEnd={handleDragEnd}
         onClick={(e) => e.stopPropagation()}
-        className="relative w-full sm:max-w-lg max-h-[calc(100%_-_8rem)] bg-cream rounded-t-3xl sm:rounded-3xl overflow-y-auto overscroll-contain"
+        className="relative w-full sm:max-w-lg max-h-[calc(100%_-_8rem)] bg-card border-t border-carbon/10 sm:border rounded-t-[1.75rem] sm:rounded-[1.75rem] overflow-y-auto overscroll-contain"
       >
         <div
-          className="sticky top-0 z-10 flex items-start justify-between gap-4 px-6 pt-5 pb-3 bg-cream rounded-t-3xl cursor-grab active:cursor-grabbing"
+          className="sticky top-0 z-10 flex items-start justify-between gap-4 px-6 pt-5 pb-3 bg-card rounded-t-[1.75rem] cursor-grab active:cursor-grabbing"
           style={{ touchAction: 'none' }}
           onPointerDown={(e) => dragControls.start(e)}
         >
           {/* asa para deslizar y cerrar (móvil) */}
           <span aria-hidden="true" className="absolute left-1/2 top-2 h-1.5 w-10 -translate-x-1/2 rounded-full bg-carbon/20 sm:hidden" />
           <div className="min-w-0">
-            <h2 className="text-xl font-bold text-carbon leading-tight">{product.name}</h2>
-            <p className="text-sm text-carbon/65 mt-0.5">{product.description}</p>
+            <h2 className="display text-[1.75rem] leading-[1.1] text-carbon">{product.name}</h2>
+            <p className="mt-1.5 text-[13px] leading-relaxed text-carbon/60">{product.description}</p>
           </div>
           <button
             ref={closeRef}
             onClick={onClose}
             aria-label="Cerrar"
-            className="w-9 h-9 shrink-0 rounded-full bg-card border-2 border-carbon flex items-center justify-center hover:bg-mustard transition-colors"
+            className="w-9 h-9 shrink-0 rounded-full border border-carbon/15 flex items-center justify-center transition-colors hover:bg-carbon/[0.06]"
           >
             <X className="w-4.5 h-4.5 text-carbon" />
           </button>
@@ -387,7 +387,7 @@ export default function ProductModal({ product, categoryName, onClose, editItem 
 
         {/* Barra fija: cantidad + agregar, siempre visible */}
         <div
-          className="sticky bottom-0 z-10 border-t-2 border-carbon bg-cream px-4 sm:px-6 pt-3"
+          className="sticky bottom-0 z-10 border-t-2 border-carbon bg-card/95 backdrop-blur-xl px-4 sm:px-6 pt-3"
           style={{ paddingBottom: 'calc(0.75rem + env(safe-area-inset-bottom))' }}
         >
           {error && (
@@ -401,7 +401,7 @@ export default function ProductModal({ product, categoryName, onClose, editItem 
             </motion.p>
           )}
           <div className="flex items-center gap-3">
-            <div className="flex shrink-0 items-center gap-1.5 rounded-full border-2 border-carbon bg-card p-1">
+            <div className="flex shrink-0 items-center gap-1.5 rounded-full border border-carbon/15 p-1">
               <motion.button
                 whileTap={{ scale: 0.88 }}
                 onClick={() => setQuantity(Math.max(1, quantity - 1))}
@@ -434,7 +434,11 @@ export default function ProductModal({ product, categoryName, onClose, editItem 
                       ? choicePrompt(missingChoice)
                       : editItem
                         ? 'Guardar cambios'
-                        : 'Agregar al pedido'}
+                        : (
+                            <>
+                              Agregar<span className="hidden min-[420px]:inline"> al pedido</span>
+                            </>
+                          )}
                 </span>
                 <AnimatedPrice value={previewPrice * quantity} className="shrink-0" />
               </span>
@@ -454,7 +458,7 @@ function choicePrompt(label: string) {
 /** Etiqueta para grupos de opciones obligatorios aún sin elegir. */
 function RequiredTag() {
   return (
-    <span className="rounded-full border-2 border-carbon bg-mustard px-2 py-px text-[10px] font-bold uppercase tracking-wide text-carbon">
+    <span className="rounded-full border border-burger/40 bg-burger/10 px-2 py-px text-[10px] font-semibold uppercase tracking-[0.14em] text-burger-dark">
       Obligatorio
     </span>
   );

@@ -22,7 +22,7 @@ export default function SuccessPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen bg-cream flex items-center justify-center">
+        <div className="min-h-screen flex items-center justify-center">
           <span className="spinner" />
         </div>
       }

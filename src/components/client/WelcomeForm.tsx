@@ -46,14 +46,14 @@ export default function WelcomeForm() {
   }, [router]);
 
   return (
-    <div className="min-h-screen bg-cream flex items-center justify-center p-4">
+    <div className="min-h-screen flex items-center justify-center p-4">
       <motion.div
         initial={{ opacity: 0, y: 40 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, ease: 'easeOut' }}
-        className="w-full max-w-md card p-8 relative overflow-hidden"
+        className="w-full max-w-md card px-8 py-10 relative overflow-hidden"
       >
-        <div className="absolute top-0 inset-x-0 h-1.5 bg-burger" />
+        <div className="hairline-gold absolute top-0 inset-x-10" />
         <motion.div
           initial={{ scale: 0.95, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
@@ -70,8 +70,8 @@ export default function WelcomeForm() {
               className="w-28 h-28 object-contain"
             />
           ) : (
-            <div className="w-24 h-24 bg-burger border-2 border-carbon rounded-full flex items-center justify-center shadow-card">
-              <UtensilsCrossed className="w-12 h-12 text-cream" />
+            <div className="w-24 h-24 rounded-full border border-burger/40 bg-burger/[0.07] flex items-center justify-center">
+              <UtensilsCrossed className="w-10 h-10 text-burger" strokeWidth={1.25} />
             </div>
           )}
         </motion.div>
@@ -80,7 +80,7 @@ export default function WelcomeForm() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.3 }}
-          className="display text-4xl text-center text-carbon sign-yellow mb-2"
+          className="display text-[2.6rem] leading-[1.05] text-center text-carbon mb-3"
         >
           {loadingSettings ? <span className="inline-block w-40 h-9 skeleton mx-auto" /> : businessName}
         </motion.h1>
@@ -88,7 +88,7 @@ export default function WelcomeForm() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.4 }}
-          className="text-center text-burger font-semibold mb-8"
+          className="eyebrow text-center mb-9"
         >
           Haz tu pedido directo desde tu mesa
         </motion.p>
@@ -103,7 +103,7 @@ export default function WelcomeForm() {
             <div className="flex flex-wrap items-center justify-center gap-2 text-sm font-semibold text-carbon/75">
               {customerName && <span>¡Hola de nuevo, {customerName}!</span>}
               {tableNumber && (
-                <span className="inline-flex items-center gap-1.5 rounded-full border-2 border-carbon bg-mustard px-2.5 py-0.5 text-xs font-bold uppercase text-carbon">
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-burger/40 bg-burger/10 px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-burger-dark">
                   <Table2 className="h-3.5 w-3.5" />
                   Mesa {tableNumber}
                 </span>

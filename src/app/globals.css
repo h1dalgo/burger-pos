@@ -4,7 +4,10 @@
   --font-sans: var(--font-archivo);
   --font-display: var(--font-alfa);
   --font-mono: var(--font-jetbrains);
+}
 
+/* Colores como variables (no inline) para que el tema noir pueda redefinirlos */
+@theme {
   --color-cream: #fdf6e3;
   --color-burger: #d9261c;
   --color-burger-dark: #b01e15;
@@ -414,4 +417,250 @@
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+}
+
+/* ==========================================================================
+   Tema NOIR (pantallas del cliente) — ver app/(shop)/layout.tsx
+   Redefine los mismos tokens: cream = fondo, carbon = tinta, burger = acento
+   dorado, mustard = superficie elevada. Así todos los componentes del cliente
+   cambian de piel sin duplicar clases.
+   ========================================================================== */
+.noir {
+  --color-cream: #0f0d0a;
+  --color-card: #17130f;
+  --color-night: #0a0907;
+  --color-carbon: #f2e9da;
+  --color-burger: #d8ad66;
+  --color-burger-dark: #e2bd7e;
+  --color-mustard: #262019;
+  --color-mint: #5cb987;
+  --color-mint-dark: #4aa474;
+  --color-mint-ink: #8fd8ae;
+  --color-rose: #e8758b;
+  --color-azul: #d8ad66;
+  --color-status-preparing: #e6b45c;
+
+  --line: rgb(242 233 218 / 0.1);
+  --line-strong: rgb(242 233 218 / 0.2);
+  --gold-grad: linear-gradient(180deg, #e8c27f 0%, #d1a258 100%);
+  --ink-on-gold: #17110a;
+
+  --shadow-card: 0 1px 0 rgb(255 255 255 / 0.03) inset, 0 16px 36px -22px rgb(0 0 0 / 0.85);
+  --shadow-pop: 0 1px 0 rgb(255 255 255 / 0.04) inset, 0 34px 70px -34px rgb(0 0 0 / 0.95);
+  --shadow-lift: 0 22px 48px -26px rgb(0 0 0 / 0.95);
+  --shadow-glow-brand: 0 0 0 1px rgb(216 173 102 / 0.35), 0 22px 48px -26px rgb(0 0 0 / 0.95);
+  --font-display: var(--font-fraunces), ui-serif, Georgia, serif;
+
+  min-height: 100dvh;
+  color-scheme: dark;
+  color: var(--color-carbon);
+  font-family: var(--font-manrope), ui-sans-serif, system-ui, sans-serif;
+  letter-spacing: -0.005em;
+  background:
+    radial-gradient(1100px 520px at 50% -180px, rgb(216 173 102 / 0.09), transparent 70%),
+    var(--color-cream);
+}
+body:has(.noir) {
+  background-color: #0f0d0a;
+}
+
+.noir ::selection {
+  background-color: var(--color-burger);
+  color: var(--ink-on-gold);
+}
+.noir ::-webkit-scrollbar-thumb {
+  background: rgb(242 233 218 / 0.16);
+}
+.noir :is(input, textarea, select, button, a, [tabindex]):focus-visible {
+  outline: 2px solid var(--color-burger);
+  outline-offset: 3px;
+}
+
+/* Tipografía */
+.noir .display {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-variation-settings: 'SOFT' 40, 'opsz' 72;
+  letter-spacing: -0.02em;
+}
+.noir :is(.sign, .sign-yellow, .sign-red, .sign-cream) {
+  text-shadow: none;
+}
+
+/* Líneas finas en lugar de bordes gruesos */
+.noir .border-2 {
+  border-width: 1px;
+}
+.noir .border-carbon {
+  border-color: var(--line-strong);
+}
+.noir :is(.border-b-2, .border-t-2) {
+  border-color: var(--line);
+}
+
+/* Sombras suaves: las utilidades de Tailwind guardan la sombra dura del tema claro */
+.noir .shadow-card {
+  box-shadow: var(--shadow-card);
+}
+.noir .shadow-pop {
+  box-shadow: var(--shadow-pop);
+}
+.noir .shadow-lift {
+  box-shadow: var(--shadow-lift);
+}
+
+/* Superficies */
+.noir .card {
+  background:
+    linear-gradient(180deg, rgb(255 255 255 / 0.025), transparent 40%),
+    var(--color-card);
+  border: 1px solid var(--line);
+  border-radius: 1.25rem;
+}
+@media (hover: hover) {
+  .noir .lift:hover {
+    transform: translateY(-2px);
+    border-color: rgb(216 173 102 / 0.28);
+  }
+}
+
+/* Botones */
+.noir .btn {
+  border-radius: 9999px;
+  border: 1px solid transparent;
+  box-shadow: none;
+  font-weight: 650;
+  letter-spacing: 0.005em;
+  transition:
+    transform 0.16s cubic-bezier(0.2, 0.8, 0.2, 1),
+    filter 0.16s ease,
+    background-color 0.16s ease,
+    border-color 0.16s ease,
+    color 0.16s ease;
+}
+.noir .btn:active:not(:disabled) {
+  transform: scale(0.97);
+  box-shadow: none;
+}
+.noir :is(.btn-primary, .btn-solid) {
+  background: var(--gold-grad);
+  color: var(--ink-on-gold);
+  box-shadow:
+    0 1px 0 rgb(255 255 255 / 0.35) inset,
+    0 14px 30px -16px rgb(216 173 102 / 0.55);
+}
+.noir :is(.btn-primary, .btn-solid):hover {
+  background: var(--gold-grad);
+  filter: brightness(1.07);
+}
+.noir .btn-success {
+  background-color: var(--color-mint);
+  color: #07130c;
+}
+.noir .btn-danger {
+  background-color: var(--color-rose);
+  color: #1b0a0e;
+}
+.noir .btn-outline {
+  border-color: var(--line-strong);
+  color: var(--color-carbon);
+}
+.noir .btn-outline:hover {
+  background-color: rgb(242 233 218 / 0.06);
+  border-color: rgb(242 233 218 / 0.32);
+}
+.noir .btn-ghost:hover {
+  background-color: rgb(242 233 218 / 0.06);
+}
+
+/* Campos */
+.noir .field {
+  background-color: rgb(242 233 218 / 0.04);
+  border: 1px solid var(--line-strong);
+  border-radius: 0.875rem;
+  color: var(--color-carbon);
+}
+.noir .field::placeholder {
+  color: rgb(242 233 218 / 0.5);
+}
+.noir .field:hover:not(:disabled) {
+  border-color: rgb(242 233 218 / 0.32);
+}
+.noir .field:focus {
+  border-color: var(--color-burger);
+  box-shadow: 0 0 0 4px rgb(216 173 102 / 0.16);
+}
+
+/* Chips */
+.noir .chip {
+  background-color: rgb(242 233 218 / 0.035);
+  border: 1px solid var(--line-strong);
+  color: rgb(242 233 218 / 0.9);
+  font-weight: 550;
+}
+.noir .chip:hover:not([aria-pressed='true']):not(:disabled) {
+  border-color: rgb(242 233 218 / 0.38);
+}
+.noir .chip:is([aria-pressed='true'], .chip-active)[data-tone='brand'] {
+  background-color: rgb(216 173 102 / 0.14);
+  border-color: rgb(216 173 102 / 0.75);
+  color: #f0d29c;
+}
+.noir .chip:is([aria-pressed='true'], .chip-active)[data-tone='mint'] {
+  background-color: rgb(92 185 135 / 0.14);
+  border-color: rgb(92 185 135 / 0.7);
+  color: var(--color-mint-ink);
+}
+.noir .chip:is([aria-pressed='true'], .chip-active)[data-tone='rose'] {
+  background-color: rgb(232 117 139 / 0.12);
+  border-color: rgb(232 117 139 / 0.6);
+  color: #f2a3b2;
+}
+
+/* Insignias */
+.noir .badge {
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+.noir .badge-neutral {
+  background-color: rgb(242 233 218 / 0.07);
+  color: rgb(242 233 218 / 0.78);
+}
+.noir :is(.badge-brand, .badge-warning) {
+  background-color: rgb(216 173 102 / 0.13);
+  color: #ecc98c;
+}
+.noir .badge-success {
+  background-color: rgb(92 185 135 / 0.14);
+  color: var(--color-mint-ink);
+}
+.noir .badge-danger {
+  background-color: rgb(232 117 139 / 0.14);
+  color: #f2a3b2;
+}
+.noir .badge-info {
+  background-color: rgb(167 139 250 / 0.14);
+  color: #c9b8ff;
+}
+
+/* Detalles de marca */
+.noir .eyebrow {
+  font-size: 0.6875rem;
+  line-height: 1rem;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--color-burger);
+}
+.noir .hairline-gold {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgb(216 173 102 / 0.7), transparent);
+}
+.noir .price {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-variation-settings: 'SOFT' 40, 'opsz' 36;
+  color: #e9c587;
+  letter-spacing: -0.01em;
+  font-variant-numeric: lining-nums tabular-nums;
 }

@@ -279,14 +279,14 @@ export default function SuccessScreen({ orderId }: Props) {
   const showSummary = summaryOpen ?? status === 'WAITING_PAYMENT';
 
   return (
-    <div className="min-h-screen bg-cream flex items-start sm:items-center justify-center p-4">
+    <div className="min-h-screen flex items-start sm:items-center justify-center p-4">
       <motion.div
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
         className="max-w-sm w-full card p-5 relative overflow-hidden"
       >
-        <div className={`absolute top-0 inset-x-0 h-1.5 ${isReady || isDone ? 'bg-mint' : 'bg-mustard'}`} />
+        <div className={`absolute top-0 inset-x-8 h-px ${isReady || isDone ? 'bg-gradient-to-r from-transparent via-mint to-transparent' : 'hairline-gold'}`} />
 
         {/* Producto en 3D según la etapa */}
         {preview && (
@@ -350,7 +350,7 @@ export default function SuccessScreen({ orderId }: Props) {
                 key={stage.key}
                 className={`flex items-center gap-3 rounded-xl px-3 py-2 border-2 transition-colors ${
                   active
-                    ? 'border-carbon bg-mustard shadow-card'
+                    ? 'border-burger/40 bg-burger/[0.07]'
                     : done
                       ? 'border-mint/40 bg-mint/10'
                       : 'border-carbon/10 bg-carbon/[0.02] opacity-55'
@@ -393,7 +393,7 @@ export default function SuccessScreen({ orderId }: Props) {
         {notifPerm === 'default' && !isReady && !isDone && (
           <button
             onClick={askNotifications}
-            className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-carbon/30 px-3 py-2.5 text-sm font-semibold text-carbon hover:border-carbon transition-colors"
+            className="mt-4 flex w-full items-center justify-center gap-2 rounded-full border border-carbon/15 px-3 py-2.5 text-sm font-semibold text-carbon transition-colors hover:border-burger/50"
           >
             <Bell className="h-4 w-4" />
             Avísame cuando esté listo
@@ -510,7 +510,7 @@ export default function SuccessScreen({ orderId }: Props) {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-mint p-6"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-[#0b0a08] bg-[radial-gradient(600px_420px_at_50%_35%,rgb(92_185_135/0.22),transparent_70%)] p-6 text-[#f2e9da]"
             role="alertdialog"
             aria-modal="true"
             aria-label="Tu pedido está listo"
@@ -526,12 +526,12 @@ export default function SuccessScreen({ orderId }: Props) {
                 transition={{ duration: 1.1, repeat: Infinity, repeatDelay: 1.2 }}
                 className="inline-block"
               >
-                <BellRing className="h-16 w-16 text-cream" strokeWidth={1.8} />
+                <BellRing className="h-14 w-14 text-mint-ink" strokeWidth={1.4} />
               </motion.div>
-              <p className="display text-4xl text-cream sign mt-4 leading-tight">¡Tu pedido está listo!</p>
-              <p className="mt-6 text-sm font-semibold uppercase tracking-wide text-cream/85">Pedido</p>
-              <p className="display text-7xl text-cream sign tabular-nums">#{displayNum}</p>
-              <p className="mt-4 text-cream/90">
+              <p className="display text-4xl mt-5 leading-tight">¡Tu pedido está listo!</p>
+              <p className="eyebrow mt-8 !text-mint-ink">Pedido</p>
+              <p className="display text-7xl tabular-nums">#{displayNum}</p>
+              <p className="mt-4 text-sm leading-relaxed text-[#f2e9da]/70">
                 Muestra este número en el mostrador o espéralo en tu mesa{order?.tableNumber ? ` ${order.tableNumber}` : ''}.
               </p>
               <button onClick={dismissReady} className="btn btn-solid btn-lg mt-8 w-full">

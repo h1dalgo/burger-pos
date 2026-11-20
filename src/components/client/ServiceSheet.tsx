@@ -48,7 +48,7 @@ export default function ServiceSheet({ onClose, onPickTable }: Props) {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 bg-black/50"
+      className="fixed inset-0 z-50 bg-black/70 backdrop-blur-[3px]"
       onClick={onClose}
     >
       <motion.div
@@ -60,7 +60,7 @@ export default function ServiceSheet({ onClose, onPickTable }: Props) {
         role="dialog"
         aria-modal="true"
         aria-label="Llamar al mesero"
-        className="absolute bottom-0 left-0 right-0 sm:max-w-lg sm:mx-auto bg-cream rounded-t-3xl overflow-hidden"
+        className="absolute bottom-0 left-0 right-0 sm:max-w-lg sm:mx-auto bg-card border-t border-carbon/10 rounded-t-[1.75rem] overflow-hidden"
       >
         <div className="px-6 pt-5 pb-4 border-b-2 border-carbon flex items-start justify-between gap-3">
           <div className="min-w-0">
@@ -73,7 +73,7 @@ export default function ServiceSheet({ onClose, onPickTable }: Props) {
           <button
             onClick={onClose}
             aria-label="Cerrar"
-            className="w-9 h-9 shrink-0 rounded-full bg-card border-2 border-carbon flex items-center justify-center hover:bg-mustard transition-colors"
+            className="w-9 h-9 shrink-0 rounded-full border border-carbon/15 flex items-center justify-center transition-colors hover:bg-carbon/[0.06]"
           >
             <X className="w-4.5 h-4.5 text-carbon" />
           </button>
@@ -103,7 +103,7 @@ export default function ServiceSheet({ onClose, onPickTable }: Props) {
                 whileTap={{ scale: 0.97 }}
                 disabled={sending !== null}
                 onClick={() => handleAction('call')}
-                className="btn btn-primary btn-lg w-full rounded-2xl shadow-pop disabled:opacity-60"
+                className="btn btn-primary btn-lg w-full disabled:opacity-60"
               >
                 <Bell className="w-5 h-5" />
                 {sending === 'call' ? 'Enviando...' : 'Llamar Mesero'}

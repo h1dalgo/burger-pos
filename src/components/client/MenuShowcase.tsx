@@ -31,7 +31,6 @@ interface Props {
 }
 
 const AUTO_MS = 7000;
-const VIEW_H = 270;
 
 /**
  * Escaparate del menú: un producto destacado a la vez. Las hamburguesas se
@@ -115,19 +114,19 @@ export default function MenuShowcase({ slides, onOpen, paused = false }: Props) 
         dragElastic={0.18}
         onDragEnd={onDragEnd}
         style={{ touchAction: 'pan-y' }}
-        className="relative overflow-hidden rounded-2xl border-2 border-carbon bg-card shadow-pop"
+        className="relative overflow-hidden rounded-[1.75rem] border border-carbon/10 bg-card shadow-pop"
       >
-        <div className="absolute inset-x-0 top-0 z-10 h-1.5 bg-burger" />
+        <div className="hairline-gold absolute inset-x-8 top-0 z-10" />
         <div className="grid sm:grid-cols-2">
           {/* Producto en 3D */}
-          <div ref={viewRef} className="relative" style={{ height: VIEW_H, background: SHOWCASE_BG }} aria-hidden="true">
+          <div ref={viewRef} className="relative h-[270px] sm:h-auto sm:min-h-[300px]" style={{ background: SHOWCASE_BG }} aria-hidden="true">
             {!ready && <div className="absolute inset-0 m-auto h-24 w-40 animate-pulse rounded-[45%] bg-cream/10" />}
             {slide.variant === 'burger' ? (
               <Burger3D
                 key="burger"
                 ingredients={ingredients}
                 rebuildKey={p.id}
-                height={VIEW_H}
+                height="100%"
                 board
                 interactive={false}
                 hint={false}
@@ -142,7 +141,7 @@ export default function MenuShowcase({ slides, onOpen, paused = false }: Props) 
                 variant={slide.variant}
                 name={p.name}
                 description={p.description}
-                height={VIEW_H}
+                height="100%"
                 interactive={false}
                 hint={false}
                 paused={paused}
@@ -165,12 +164,12 @@ export default function MenuShowcase({ slides, onOpen, paused = false }: Props) 
                 transition={{ type: 'spring', stiffness: 320, damping: 30 }}
                 aria-live="polite"
               >
-                <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-burger-dark tabular-nums">
+                <p className="eyebrow tabular-nums">
                   {String(i + 1).padStart(2, '0')} / {String(n).padStart(2, '0')} · {sentenceCase(slide.categoryName)}
                 </p>
-                <h2 className="display mt-1 text-2xl leading-tight text-carbon">{p.name}</h2>
-                <p className="mt-1.5 line-clamp-2 text-sm text-carbon/70">{p.description}</p>
-                <p className="mt-3 inline-block rounded-md border-2 border-carbon bg-mustard px-2.5 py-0.5 text-lg font-bold tabular-nums text-carbon">
+                <h2 className="display mt-2 text-[2rem] leading-[1.05] text-carbon">{p.name}</h2>
+                <p className="mt-2 line-clamp-2 text-[13px] leading-relaxed text-carbon/60">{p.description}</p>
+                <p className="price mt-3 text-2xl">
                   {formatPrice(Number(p.basePrice))}
                 </p>
                 <div className="mt-4 flex gap-2">
@@ -205,7 +204,7 @@ export default function MenuShowcase({ slides, onOpen, paused = false }: Props) 
                       aria-current={k === i}
                       className="flex h-6 items-center"
                     >
-                      <span className={`block h-2 rounded-full border border-carbon transition-all ${k === i ? 'w-6 bg-burger' : 'w-2 bg-carbon/15'}`} />
+                      <span className={`block h-[3px] rounded-full transition-all duration-500 ${k === i ? 'w-7 bg-burger' : 'w-3 bg-carbon/20'}`} />
                     </button>
                   ))}
                 </div>
@@ -213,14 +212,14 @@ export default function MenuShowcase({ slides, onOpen, paused = false }: Props) 
                   <button type="button" onClick={() => {
                       userAction();
                       go(i - 1, -1);
-                    }} aria-label="Anterior" className="flex h-9 w-9 items-center justify-center rounded-full border-2 border-carbon bg-card hover:bg-mustard transition-colors">
-                    <ChevronLeft className="h-4 w-4" />
+                    }} aria-label="Anterior" className="flex h-9 w-9 items-center justify-center rounded-full border border-carbon/15 text-carbon/80 transition-colors hover:border-burger/50 hover:text-carbon">
+                    <ChevronLeft className="h-4 w-4" strokeWidth={1.75} />
                   </button>
                   <button type="button" onClick={() => {
                       userAction();
                       go(i + 1, 1);
-                    }} aria-label="Siguiente" className="flex h-9 w-9 items-center justify-center rounded-full border-2 border-carbon bg-card hover:bg-mustard transition-colors">
-                    <ChevronRight className="h-4 w-4" />
+                    }} aria-label="Siguiente" className="flex h-9 w-9 items-center justify-center rounded-full border border-carbon/15 text-carbon/80 transition-colors hover:border-burger/50 hover:text-carbon">
+                    <ChevronRight className="h-4 w-4" strokeWidth={1.75} />
                   </button>
                 </div>
               </div>

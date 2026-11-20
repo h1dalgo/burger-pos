@@ -43,7 +43,7 @@ export default function CartFloatingButton({ onClick }: Props) {
       onClick={onClick}
       data-cart-target
       aria-label={`Ver pedido: ${totalItems} productos, ${formatPrice(totalAmount)}`}
-      className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 bg-burger text-cream pl-5 pr-6 py-3.5 rounded-full border-2 border-carbon shadow-pop font-bold sign"
+      className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 rounded-full py-3.5 pl-5 pr-6 font-semibold text-[#17110a] [background:var(--gold-grad)] shadow-[0_1px_0_rgb(255_255_255/0.35)_inset,0_22px_44px_-18px_rgb(216_173_102/0.6),0_10px_30px_-10px_rgb(0_0_0/0.8)]"
     >
       <motion.span animate={bump} className="flex items-center gap-3">
         <span className="relative">
@@ -54,13 +54,14 @@ export default function CartFloatingButton({ onClick }: Props) {
               initial={{ scale: 1.5, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 1.5, opacity: 0 }}
-              className="absolute -top-2 -right-3 min-w-5 h-5 px-1 bg-mustard text-carbon text-xs font-bold rounded-full border-2 border-carbon flex items-center justify-center tabular-nums"
+              className="absolute -top-2 -right-3 flex h-5 min-w-5 items-center justify-center rounded-full bg-[#17110a] px-1 text-[11px] font-bold text-[#f0d29c] tabular-nums"
             >
               {totalItems}
             </motion.span>
           </AnimatePresence>
         </span>
         <span className="hidden sm:inline">Ver Pedido</span>
+        <span className="h-4 w-px bg-[#17110a]/25" aria-hidden="true" />
         <span className="font-bold tabular-nums">{formatPrice(totalAmount)}</span>
       </motion.span>
     </motion.button>

@@ -194,30 +194,30 @@ export default function MenuPage() {
   })();
 
   return (
-    <div className="min-h-screen bg-cream pb-28">
-      <div ref={headerRef} className="sticky top-0 z-30 bg-burger border-b-2 border-carbon">
+    <div className="min-h-screen pb-32">
+      <div ref={headerRef} className="sticky top-0 z-30 border-b border-carbon/10 bg-cream/75 backdrop-blur-xl backdrop-saturate-150">
         <div className="max-w-5xl mx-auto">
           <header className="px-4 py-3 flex items-center gap-3">
             <button
               onClick={() => setTablePickerOpen(true)}
               aria-label={tableNumber ? `Mesa ${tableNumber}. Toca para cambiar de mesa` : 'Elige mesa'}
-              className="shrink-0 flex items-center gap-1.5 text-[11px] font-bold uppercase bg-mustard text-carbon border-2 border-carbon rounded-full px-2.5 py-1 hover:bg-cream transition-colors"
+              className="shrink-0 flex items-center gap-1.5 rounded-full border border-carbon/15 bg-carbon/[0.04] px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-carbon/85 transition-colors hover:border-burger/50 hover:text-carbon"
             >
-              <Table2 className="w-3.5 h-3.5" />
+              <Table2 className="w-3.5 h-3.5 text-burger" />
               {tableNumber ? `Mesa ${tableNumber}` : 'Elige mesa'}
             </button>
             <div className="ml-auto flex items-center gap-2 shrink-0">
               <button
                 onClick={() => setServiceOpen(true)}
                 aria-label="Llamar al mesero o pedir cuenta"
-                className="w-9 h-9 rounded-full bg-cream border-2 border-carbon flex items-center justify-center text-carbon hover:bg-mustard transition-colors"
+                className="w-9 h-9 rounded-full border border-carbon/15 bg-carbon/[0.04] flex items-center justify-center text-carbon/85 transition-colors hover:border-burger/50 hover:text-carbon"
               >
                 <Bell className="w-4.5 h-4.5" />
               </button>
               {lastOrderId && (
                 <button
                   onClick={() => router.push(`/success?orderId=${lastOrderId}`)}
-                  className="flex items-center gap-1.5 bg-cream text-carbon border-2 border-carbon rounded-full px-3 py-1.5 text-xs font-bold hover:bg-mustard transition-colors shadow-card tabular-nums"
+                  className="flex items-center gap-1.5 rounded-full border border-burger/40 bg-burger/10 px-3 py-1.5 text-xs font-semibold text-burger-dark transition-colors hover:bg-burger/20 tabular-nums"
                 >
                   <Receipt className="w-3.5 h-3.5" />
                   Mi pedido #{String(lastOrderId).padStart(4, '0')}
@@ -236,15 +236,17 @@ export default function MenuPage() {
         </div>
       </div>
 
-      <div className="max-w-5xl mx-auto px-4 py-4">
+      <div className="max-w-5xl mx-auto px-4 pt-7 pb-4">
         {/* Saludo: línea discreta con nombre y mesa + titular */}
-        <div className="mb-6">
+        <div className="mb-7">
           {(customerName || tableNumber) && (
-            <p className="text-sm font-semibold text-carbon/70">
+            <p className="eyebrow mb-2">
               {[customerName && `Hola, ${formatPersonName(customerName)}`, tableNumber && `Mesa ${tableNumber}`].filter(Boolean).join(' · ')}
             </p>
           )}
-          <h1 className="display text-2xl leading-tight text-carbon">¿Qué se te antoja hoy?</h1>
+          <h1 className="display text-[2.1rem] leading-[1.05] text-carbon sm:text-5xl">
+            ¿Qué se te <em className="italic text-burger-dark">antoja</em> hoy?
+          </h1>
         </div>
         {loading && (
           <div aria-busy="true" aria-label="Cargando menú">
@@ -252,7 +254,7 @@ export default function MenuPage() {
             <div className="grid gap-3 sm:grid-cols-2">
               {Array.from({ length: 4 }).map((_, i) => (
                 // misma forma que una tarjeta de producto: foto, nombre, descripción y precio
-                <div key={i} className="flex items-start gap-3.5 rounded-2xl border-2 border-carbon/10 bg-card p-4">
+                <div key={i} className="card flex items-start gap-3.5 p-4">
                   <Skeleton className="h-20 w-20 shrink-0 rounded-xl" />
                   <div className="flex-1 space-y-2 pt-0.5">
                     <Skeleton className="h-4 w-3/5" />
@@ -305,16 +307,16 @@ export default function MenuPage() {
                 sectionRefs.current[cat.id] = el;
               }}
               aria-labelledby={`cat-title-${cat.id}`}
-              className={ci > 0 ? 'pt-9' : ''}
+              className={ci > 0 ? 'pt-12' : ''}
             >
               {/* Encabezado: etiqueta de categoría + subtítulo + subrayado de marca */}
-              <h2 id={`cat-title-${cat.id}`} className="mb-4">
-                <span className="block text-[11px] font-bold uppercase tracking-[0.12em] text-burger-dark">
+              <h2 id={`cat-title-${cat.id}`} className="mb-5">
+                <span className="eyebrow block">
                   {sentenceCase(cat.name)}
                 </span>
                 <span className="sr-only"> — </span>
-                <span className="display block text-xl leading-tight text-carbon">{categorySubtitle(cat.name)}</span>
-                <span aria-hidden="true" className="mt-1.5 block h-1 w-7 rounded-full bg-burger" />
+                <span className="display mt-1 block text-[1.6rem] leading-tight text-carbon">{categorySubtitle(cat.name)}</span>
+                <span aria-hidden="true" className="mt-3 block h-px w-12 bg-gradient-to-r from-burger to-transparent" />
               </h2>
               <div className="grid gap-3 sm:grid-cols-2">
                 {cat.products.map((product, i) => (

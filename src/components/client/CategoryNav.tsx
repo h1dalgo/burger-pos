@@ -34,7 +34,7 @@ export default function CategoryNav({ categories, activeId, onSelect }: Props) {
     <nav
       ref={navRef}
       aria-label="Categorías"
-      className="flex overflow-x-auto scrollbar-none gap-2 px-4 pb-3"
+      className="flex overflow-x-auto scrollbar-none gap-1.5 px-4 pb-3"
     >
       {categories.map((cat) => (
         <button
@@ -42,16 +42,14 @@ export default function CategoryNav({ categories, activeId, onSelect }: Props) {
           data-cat={cat.id}
           onClick={() => onSelect(cat.id)}
           aria-pressed={activeId === cat.id}
-          className={`relative flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-bold uppercase whitespace-nowrap transition-[color,background-color,border-color,box-shadow] border-2 ${
-            activeId === cat.id
-              ? 'text-carbon'
-              : 'border-transparent text-cream/85 hover:text-cream hover:bg-cream/15'
+          className={`relative flex items-center gap-1.5 rounded-full px-3.5 py-2 text-[11px] font-semibold uppercase tracking-[0.12em] whitespace-nowrap transition-colors ${
+            activeId === cat.id ? 'text-burger-dark' : 'text-carbon/55 hover:text-carbon'
           }`}
         >
           {activeId === cat.id && (
             <motion.div
               layoutId="activeCategory"
-              className="absolute inset-0 bg-mustard rounded-lg border-2 border-carbon shadow-[2px_2px_0_var(--color-carbon)]"
+              className="absolute inset-0 rounded-full border border-burger/45 bg-burger/10"
               transition={{ type: 'spring', stiffness: 400, damping: 30 }}
             />
           )}

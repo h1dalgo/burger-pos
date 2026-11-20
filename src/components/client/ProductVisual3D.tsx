@@ -121,7 +121,7 @@ export default function ProductVisual3D({
 
   return (
     <div
-      className="relative overflow-hidden rounded-2xl border-2 border-carbon shadow-card"
+      className="relative overflow-hidden rounded-[1.25rem] ring-1 ring-carbon/10"
       style={{ height, background: SHOWCASE_BG }}
       aria-hidden="true"
     >
@@ -189,7 +189,7 @@ export default function ProductVisual3D({
         initial={{ scale: 0.5, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         transition={{ type: 'spring', stiffness: 520, damping: 17 }}
-        className="absolute top-2.5 left-2.5 rounded-full border-2 border-carbon bg-mustard px-2.5 py-1 text-xs font-bold tabular-nums text-carbon shadow-card"
+        className="absolute top-3 left-3 rounded-full border border-white/15 bg-black/45 px-2.5 py-1 text-xs font-semibold tabular-nums text-[#f2e9da] backdrop-blur-md"
         style={{ minWidth: 44, textAlign: 'center' }}
       >
         ×{quantity}

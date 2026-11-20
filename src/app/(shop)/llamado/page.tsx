@@ -41,7 +41,7 @@ export default function LlamadoPage() {
   };
 
   return (
-    <div className="min-h-screen bg-cream flex flex-col items-center justify-center p-6">
+    <div className="min-h-screen flex flex-col items-center justify-center p-6">
       <div className="w-full max-w-sm mx-auto space-y-8">
         <motion.div
           initial={{ opacity: 0, y: 24 }}
@@ -49,12 +49,12 @@ export default function LlamadoPage() {
           transition={{ duration: 0.5, ease: 'easeOut' }}
           className="card p-7 space-y-6 relative overflow-hidden"
         >
-          <div className="absolute top-0 inset-x-0 h-1.5 bg-mustard" />
+          <div className="hairline-gold absolute top-0 inset-x-10" />
           <div className="text-center space-y-3">
-            <div className="w-16 h-16 rounded-2xl bg-burger border-2 border-carbon flex items-center justify-center mx-auto shadow-card">
-              <ChefHat className="w-8 h-8 text-cream" />
+            <div className="w-16 h-16 rounded-full border border-burger/40 bg-burger/[0.07] flex items-center justify-center mx-auto">
+              <ChefHat className="w-7 h-7 text-burger" strokeWidth={1.4} />
             </div>
-            <h1 className="display text-3xl text-carbon sign-yellow">¿NECESITAS AYUDA?</h1>
+            <h1 className="display text-3xl text-carbon sign-yellow">¿Necesitas ayuda?</h1>
             <p className="text-carbon/55 text-sm">Selecciona tu mesa y la opción que necesitas</p>
           </div>
 
@@ -78,7 +78,7 @@ export default function LlamadoPage() {
               whileTap={{ scale: 0.97 }}
               onClick={() => handleAction('call')}
               disabled={sending !== null}
-              className="btn btn-primary btn-lg w-full rounded-2xl shadow-pop"
+              className="btn btn-primary btn-lg w-full"
             >
               <Bell className="w-5 h-5" />
               {sending === 'call' ? 'Enviando...' : 'Llamar Mesero'}
