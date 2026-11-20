@@ -25,6 +25,7 @@ model Product {
   imageUrl       String?   @map("image_url")
   isAvailable    Boolean   @default(true) @map("is_available")
   hasVariation   Boolean   @default(false) @map("has_variation")
+  isFeatured     Boolean   @default(false) @map("is_featured") // sale en el escaparate del menú
   createdAt      DateTime  @default(now()) @map("created_at")
 
   category          Category              @relation(fields: [categoryId], references: [id])

@@ -32,7 +32,7 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { name, description, basePrice, categoryId, imageUrl, hasVariation, variations, defaultIngredients, extraIngredients, requiredSelections } = body;
+    const { name, description, basePrice, categoryId, imageUrl, hasVariation, isFeatured, variations, defaultIngredients, extraIngredients, requiredSelections } = body;
 
     if (!name || !basePrice || !categoryId) {
       return NextResponse.json({ error: 'Faltan campos requeridos' }, { status: 400 });
@@ -46,6 +46,7 @@ export async function POST(request: NextRequest) {
         categoryId,
         imageUrl: imageUrl || null,
         hasVariation: hasVariation || false,
+        isFeatured: isFeatured === true,
         variations: variations?.length
           ? { create: variations.map((v: VariationInput) => ({ name: v.name, additionalPrice: toPrice(v.additionalPrice, 0) })) }
           : undefined,

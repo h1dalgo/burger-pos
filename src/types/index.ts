@@ -14,6 +14,8 @@ export interface Product {
   imageUrl: string | null;
   isAvailable: boolean;
   hasVariation: boolean;
+  /** Destacado en el escaparate de arriba del menú. */
+  isFeatured?: boolean;
   variations: ProductVariation[];
   defaultIngredients: DefaultIngredient[];
   extraIngredients: ExtraIngredient[];

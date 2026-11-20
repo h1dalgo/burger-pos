@@ -364,6 +364,36 @@ export const TEXTURES = {
       },
       { srgb: true }
     ),
+  /** Tabla redonda de madera para servir (escaparate): vetas rectas y anillos suaves. */
+  woodboard: () =>
+    canvasTex(
+      512, 512,
+      (g, s) => {
+        const r = mulberry32(17);
+        g.fillStyle = '#b5814c';
+        g.fillRect(0, 0, s, s);
+        for (let y = 0; y < s; y += 2) {
+          const n = fbm(0, y / 40, 0, 4, 3);
+          g.fillStyle = `rgba(${n > 0 ? '120,78,40' : '214,170,118'},${0.08 + Math.abs(n) * 0.35})`;
+          g.fillRect(0, y, s, 2);
+        }
+        for (let i = 0; i < 70; i++) {
+          g.strokeStyle = `rgba(90,55,25,${0.08 + r() * 0.18})`;
+          g.lineWidth = 0.6 + r() * 1.6;
+          const y = r() * s;
+          g.beginPath();
+          g.moveTo(0, y);
+          g.bezierCurveTo(s * 0.33, y + (r() - 0.5) * 18, s * 0.66, y + (r() - 0.5) * 18, s, y + (r() - 0.5) * 10);
+          g.stroke();
+        }
+        const grd = g.createRadialGradient(s / 2, s / 2, s * 0.3, s / 2, s / 2, s / 2);
+        grd.addColorStop(0, 'rgba(0,0,0,0)');
+        grd.addColorStop(1, 'rgba(70,40,15,0.35)');
+        g.fillStyle = grd;
+        g.fillRect(0, 0, s, s);
+      },
+      { srgb: true }
+    ),
   crumb: () =>
     canvasTex(
       512, 512,
@@ -772,6 +802,12 @@ export class Stage {
     c.dampingFactor = 0.08;
     c.enablePan = false;
     c.enableZoom = false;
+    // modo escaparate: sin girar con el dedo (deslizar cambia de producto)
+    if (this.opts.interactive === false) {
+      c.enabled = false;
+      cv.style.pointerEvents = 'none';
+      cv.style.cursor = 'default';
+    }
     c.rotateSpeed = 0.9;
     c.minPolarAngle = 0.25;
     c.maxPolarAngle = 1.62;
@@ -857,6 +893,12 @@ export class Stage {
   /** Nivel de calidad elegido ('high' | 'medium' | 'low'). */
   get quality() {
     return this.q.name;
+  }
+
+  /** Pausa el dibujo (ej. cuando otra ventana 3D está encima) sin destruir la escena. */
+  setPaused(paused) {
+    this._paused = paused;
+    if (!paused) this._kick();
   }
 
   setAutoRotate(on) {
@@ -1066,7 +1108,7 @@ export class Stage {
   _loop() {
     this._raf = 0;
     if (this._disposed) return;
-    if (!this._visible || (typeof document !== 'undefined' && document.hidden)) return; // se reanuda con _kick()
+    if (this._paused || !this._visible || (typeof document !== 'undefined' && document.hidden)) return; // se reanuda con _kick()
     const raw = this._clock.getDelta();
     if (!this._ready) {
       this._raf = requestAnimationFrame(this._loop);

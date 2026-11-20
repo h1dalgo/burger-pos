@@ -43,7 +43,7 @@ export async function PATCH(
   const { id } = await params;
   try {
     const body = await request.json();
-    const { name, description, basePrice, categoryId, imageUrl, hasVariation, variations, defaultIngredients, extraIngredients, requiredSelections } = body;
+    const { name, description, basePrice, categoryId, imageUrl, hasVariation, isFeatured, variations, defaultIngredients, extraIngredients, requiredSelections } = body;
 
     const product = await prisma.$transaction(async (tx) => {
       await tx.productVariation.deleteMany({ where: { productId: id } });
@@ -65,6 +65,7 @@ export async function PATCH(
           categoryId: categoryId || undefined,
           imageUrl: imageUrl !== undefined ? (imageUrl || null) : undefined,
           hasVariation: hasVariation !== undefined ? hasVariation : undefined,
+          isFeatured: typeof isFeatured === 'boolean' ? isFeatured : undefined,
           variations: variations?.length
             ? { create: variations.map((v: VariationInput) => ({ name: v.name, additionalPrice: toPrice(v.additionalPrice, 0) })) }
             : undefined,

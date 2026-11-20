@@ -18,9 +18,19 @@ export interface Burger3DProps {
   snapshotRef?: MutableRefObject<(() => string | null) | null>;
   /** Nombre del ingrediente a resaltar (ej. el chip bajo el mouse). */
   highlight?: string | null;
+  /** false = no se gira con el dedo (escaparate). */
+  interactive?: boolean;
+  /** Tabla de madera bajo la hamburguesa. */
+  board?: boolean;
+  /** Texto de ayuda (false para ocultarlo). */
+  hint?: string | false;
+  /** Pausa el dibujo (ej. con otra ventana 3D encima). */
+  paused?: boolean;
+  /** Al cambiar, la hamburguesa se vuelve a armar desde cero. */
+  rebuildKey?: string | number;
 }
 
-export default function Burger3D({ ingredients, height = 280, className, autoRotate = true, onLayerClick, onReady, snapshotRef, highlight = null }: Burger3DProps) {
+export default function Burger3D({ ingredients, height = 280, className, autoRotate = true, onLayerClick, onReady, snapshotRef, highlight = null, interactive = true, board = false, hint, paused = false, rebuildKey }: Burger3DProps) {
   const ref = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<BurgerScene | null>(null);
   const clickRef = useRef(onLayerClick);
@@ -38,6 +48,9 @@ export default function Burger3D({ ingredients, height = 280, className, autoRot
       autoRotate,
       onLayerClick: onLayerClick ? (label: string) => clickRef.current?.(label) : null,
       onReady: () => readyRef.current?.(),
+      interactive,
+      board,
+      ...(hint !== undefined ? { hint } : {}),
     });
     sceneRef.current = scene;
     if (snapshotRef) snapshotRef.current = () => scene.snapshot();
@@ -50,6 +63,19 @@ export default function Burger3D({ ingredients, height = 280, className, autoRot
     // Se crea una sola vez; los cambios de ingredientes se animan en el efecto de abajo.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Reconstrucción desde cero (va antes que el cambio normal de ingredientes)
+  const lastRebuild = useRef(rebuildKey);
+  useEffect(() => {
+    if (lastRebuild.current === rebuildKey) return;
+    lastRebuild.current = rebuildKey;
+    sceneRef.current?.rebuild(ingredients);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rebuildKey]);
+
+  useEffect(() => {
+    sceneRef.current?.setPaused(paused);
+  }, [paused]);
 
   useEffect(() => {
     sceneRef.current?.setIngredients(ingredients);

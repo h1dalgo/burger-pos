@@ -17,9 +17,15 @@ export interface Item3DProps {
   onReady?: () => void;
   /** Recibe una función que devuelve un PNG del cuadro actual. */
   snapshotRef?: MutableRefObject<(() => string | null) | null>;
+  /** false = no se gira con el dedo (escaparate). */
+  interactive?: boolean;
+  /** Texto de ayuda (false para ocultarlo). */
+  hint?: string | false;
+  /** Pausa el dibujo (ej. con otra ventana 3D encima). */
+  paused?: boolean;
 }
 
-export default function Item3D({ variant, name, description = '', choices = [], height = 240, className, autoRotate = true, onReady, snapshotRef }: Item3DProps) {
+export default function Item3D({ variant, name, description = '', choices = [], height = 240, className, autoRotate = true, onReady, snapshotRef, interactive = true, hint, paused = false }: Item3DProps) {
   const ref = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<ItemScene | null>(null);
   const readyRef = useRef(onReady);
@@ -31,7 +37,12 @@ export default function Item3D({ variant, name, description = '', choices = [], 
 
   useEffect(() => {
     if (!ref.current) return;
-    const scene = new ItemScene(ref.current, { autoRotate, onReady: () => readyRef.current?.() });
+    const scene = new ItemScene(ref.current, {
+      autoRotate,
+      onReady: () => readyRef.current?.(),
+      interactive,
+      ...(hint !== undefined ? { hint } : {}),
+    });
     sceneRef.current = scene;
     if (snapshotRef) snapshotRef.current = () => scene.snapshot();
     return () => {
@@ -47,6 +58,10 @@ export default function Item3D({ variant, name, description = '', choices = [], 
     sceneRef.current?.setProduct({ variant, name, description, choices });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key]);
+
+  useEffect(() => {
+    sceneRef.current?.setPaused(paused);
+  }, [paused]);
 
   useEffect(() => {
     sceneRef.current?.setAutoRotate(autoRotate);

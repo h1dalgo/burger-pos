@@ -15,6 +15,7 @@ import { variantFromCategory } from '@/components/client/ProductVisual3D';
 import { categorySubtitle, sentenceCase, formatPersonName } from '@/lib/category-copy';
 import CategoryNav from '@/components/client/CategoryNav';
 import ProductCard from '@/components/client/ProductCard';
+import MenuShowcase, { type ShowcaseSlide } from '@/components/client/MenuShowcase';
 import ProductModal from '@/components/client/ProductModal';
 import CartFloatingButton from '@/components/client/CartFloatingButton';
 import CartDrawer from '@/components/client/CartDrawer';
@@ -180,6 +181,18 @@ export default function MenuPage() {
     .filter((p) => isProductAvailable(p.id));
   const categoryNameOf = (p: Product) => categories.find((c) => c.id === p.categoryId)?.name;
 
+  // Escaparate: los productos marcados como destacados; si no hay ninguno,
+  // las primeras hamburguesas + una bebida + un postre.
+  const showcase: ShowcaseSlide[] = (() => {
+    const all = categories.flatMap((c) =>
+      c.products.filter((p) => isProductAvailable(p.id)).map((p) => ({ product: p, categoryName: c.name, variant: variantFromCategory(c.name) }))
+    );
+    const marked = all.filter((s) => s.product.isFeatured);
+    if (marked.length) return marked.slice(0, 6);
+    const pick = (v: string) => all.filter((s) => s.variant === v);
+    return [...pick('burger').slice(0, 3), ...pick('drink').slice(0, 1), ...pick('dessert').slice(0, 1)];
+  })();
+
   return (
     <div className="min-h-screen bg-cream pb-28">
       <div ref={headerRef} className="sticky top-0 z-30 bg-burger border-b-2 border-carbon">
@@ -272,6 +285,14 @@ export default function MenuPage() {
             icon={<UtensilsCrossed className="w-7 h-7" />}
             title="El menú está vacío"
             description="Vuelve a intentarlo en un momento"
+          />
+        )}
+
+        {!loading && !error && showcase.length > 0 && (
+          <MenuShowcase
+            slides={showcase}
+            onOpen={setSelectedProduct}
+            paused={!!selectedProduct || !!editingItem || cartOpen}
           />
         )}
 

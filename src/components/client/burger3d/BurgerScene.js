@@ -648,6 +648,8 @@ export class BurgerScene extends Stage {
     this._highlight = null;
     this.stack = this.root;
     this.layers = [];
+    this._boardH = 0;
+    if (this.opts.board) this._addBoard();
     this.gap = { x: 0, v: 0, target: 0, y: Infinity, closeAt: 0 };
     this.squash = sp(1);
     this._squashAt = -1;
@@ -722,6 +724,32 @@ export class BurgerScene extends Stage {
     }
     this._dirty = true;
     this._kick();
+  }
+
+  /** Tabla de madera bajo la hamburguesa (fuera del grupo que se aplasta al asentarse). */
+  _addBoard() {
+    const H = 0.14;
+    const geo = new THREE.CylinderGeometry(1.78, 1.84, H, Math.round(this.q.seg * 0.75), 1);
+    const top = food({ map: 'woodboard', bumpScale: 0.6, roughness: 0.72, clearcoat: 0.12, clearcoatRoughness: 0.6 });
+    const side = food({ color: '#8a5a2e', roughness: 0.75, clearcoat: 0.1 });
+    const board = mesh(geo, [side, top, side]);
+    board.position.y = H / 2;
+    board.rotation.y = 0.4;
+    this.scene.add(board);
+    this._boardH = H;
+    this.stack.position.y = H;
+  }
+
+  /** Vuelve a armar la hamburguesa desde cero (capa por capa), con otros ingredientes. */
+  rebuild(names) {
+    if (this._disposed) return;
+    for (const L of this.layers) L.dead = true;
+    this._sweepDead();
+    this.gap.x = this.gap.v = this.gap.target = 0;
+    this.gap.y = Infinity;
+    this.squash.x = 1;
+    this.squash.v = 0;
+    this.setIngredients(names);
   }
 
   /**
@@ -992,8 +1020,8 @@ export class BurgerScene extends Stage {
       active = true;
     }
 
-    this.frameH = Math.max(topY, this.totalH || 1.4) + g.x;
-    this.frameW = 1.55;
+    this.frameH = Math.max(topY, this.totalH || 1.4) + g.x + this._boardH;
+    this.frameW = this._boardH ? 1.9 : 1.55;
     return { active, built, visible };
   }
 }

@@ -15,6 +15,7 @@ interface AdminProduct {
   basePrice: string;
   imageUrl: string | null;
   isAvailable: boolean;
+  isFeatured?: boolean;
   category?: { name: string } | null;
 }
 
@@ -120,6 +121,7 @@ export default function AdminProductsPage() {
                 <p className="text-carbon/65 text-xs truncate">
                   {p.category?.name} · {formatPrice(Number(p.basePrice))}
                   {!p.isAvailable && <span className="text-rose ml-2 font-semibold">Agotado</span>}
+                  {p.isFeatured && <span className="ml-2 rounded-full border border-carbon bg-mustard px-1.5 text-[10px] font-bold uppercase text-carbon">Escaparate</span>}
                 </p>
               </div>
 

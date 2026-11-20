@@ -15,6 +15,7 @@ export interface ProductLike {
   categoryId?: string;
   category?: { id?: string; name?: string };
   hasVariation?: boolean;
+  isFeatured?: boolean;
   variations?: { name: string; additionalPrice: number | string }[];
   defaultIngredients?: { name: string }[];
   extraIngredients?: { name: string; basePrice: number | string }[];
@@ -45,6 +46,7 @@ export default function ProductForm({ product }: Props) {
   const [imageUrl, setImageUrl] = useState(product?.imageUrl || '');
   const [imagePreview, setImagePreview] = useState(product?.imageUrl || '');
   const [hasVariation, setHasVariation] = useState(product?.hasVariation || false);
+  const [isFeatured, setIsFeatured] = useState(product?.isFeatured || false);
 
   const [variationKeys, setVariationKeys] = useState<number[]>(product?.variations?.map((_: unknown, i: number) => i) || [0]);
   const varNameRefs = useRef<(HTMLInputElement | null)[]>([]);
@@ -164,6 +166,7 @@ export default function ProductForm({ product }: Props) {
       categoryId: catRef.current?.value || '',
       imageUrl: finalImageUrl,
       hasVariation,
+      isFeatured,
       variations: collectVariations(),
       defaultIngredients: collectIngredients(),
       extraIngredients: collectExtras(),
@@ -219,6 +222,14 @@ export default function ProductForm({ product }: Props) {
             <button type="button" onClick={() => { setImagePreview(''); setImageUrl(''); }} className="absolute -top-2 -right-2 w-5 h-5 rounded-full bg-rose text-white flex items-center justify-center"><X className="w-3 h-3" /></button>
           </div>
         )}
+      </div>
+
+      <div className="flex items-start gap-2 rounded-xl border-2 border-mustard bg-mustard/15 p-3">
+        <input type="checkbox" id="isFeatured" checked={isFeatured} onChange={e => setIsFeatured(e.target.checked)} className="accent-burger mt-0.5" />
+        <label htmlFor="isFeatured" className="text-sm text-carbon">
+          <span className="font-semibold">Destacar en el escaparate</span>
+          <span className="block text-xs text-carbon/65">Aparece arriba del menú, en el carrusel 3D que se arma solo.</span>
+        </label>
       </div>
 
       <div className="flex items-center gap-2">

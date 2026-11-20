@@ -12,6 +12,10 @@ export interface LayerInfo {
 }
 
 export interface BurgerSceneOptions {
+  /** Tabla de madera bajo la hamburguesa. */
+  board?: boolean;
+  /** false = sin girar con el dedo (modo escaparate). */
+  interactive?: boolean;
   /** Se llama cuando el primer cuadro ya está dibujado. */
   onReady?: () => void;
   autoRotate?: boolean;
@@ -36,7 +40,11 @@ export declare class BurgerScene {
   setIngredients(names: string[], options?: { animate?: boolean }): void;
   /** Resalta un ingrediente por nombre (null para quitar el resaltado). */
   setHighlight(label: string | null): void;
+  /** Arma la hamburguesa desde cero, capa por capa. */
+  rebuild(names: string[]): void;
   setAutoRotate(on: boolean): void;
+  /** Pausa/reanuda el dibujo sin destruir la escena. */
+  setPaused(paused: boolean): void;
   /** PNG del cuadro actual (null si aún no está listo). */
   snapshot(): string | null;
   readonly quality: 'high' | 'medium' | 'low';
