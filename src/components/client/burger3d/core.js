@@ -726,6 +726,9 @@ function hdrAllowed(q) {
  * `this.root`; deben fijar `this.frameH` (alto del objeto) y `this.frameW`
  * (medio ancho) para el encuadre automático.
  */
+/** Cuánto se aleja la cámara respecto al encuadre justo del producto. */
+const FRAME_MARGIN = 1.2;
+
 export class Stage {
   constructor(container, options = {}) {
     this.container = container;
@@ -1163,7 +1166,8 @@ export class Stage {
     // Encuadre automático
     const H = this.frameH;
     const tanH = Math.tan(THREE.MathUtils.degToRad(this.camera.fov / 2));
-    const want = Math.max((H / 2 + 0.38) / tanH, this.frameW / (tanH * this.camera.aspect), 3.6);
+    // FRAME_MARGIN > 1 deja aire alrededor del producto (antes se veía muy encima)
+    const want = Math.max((H / 2 + 0.38) / tanH, this.frameW / (tanH * this.camera.aspect), 3.6) * FRAME_MARGIN;
     const k = Math.min(1, dt * 3);
     const c = this.controls;
     const ty = H * (this.frameCenter ?? this.opts.frameCenter);

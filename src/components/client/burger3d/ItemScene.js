@@ -468,8 +468,12 @@ function wing(q, seed) {
   return group;
 }
 
+/** Interior de la cesta donde caben las alitas (lado derecho; las papas van a la izquierda). */
+const WING_BOUNDS = { minX: -0.1, maxX: 1.1, minZ: -0.7, maxZ: 0.7, minY: 0.09 };
+
 function buildWings(q) {
   const group = new THREE.Group();
+  const box = new THREE.Box3();
   const r = mulberry32(77);
   const n = 7;
   for (let i = 0; i < n; i++) {
@@ -479,6 +483,12 @@ function buildWings(q) {
     holder.position.set(0.3 + r() * 0.5, 0.2 + (i % 3) * 0.08, (r() - 0.5) * 0.95);
     holder.rotation.y = r() * Math.PI * 2;
     group.add(holder);
+    // que ninguna alita atraviese la cesta: se empuja hacia adentro si se sale
+    holder.updateMatrixWorld(true);
+    box.setFromObject(holder);
+    holder.position.x += Math.min(0, WING_BOUNDS.maxX - box.max.x) + Math.max(0, WING_BOUNDS.minX - box.min.x);
+    holder.position.z += Math.min(0, WING_BOUNDS.maxZ - box.max.z) + Math.max(0, WING_BOUNDS.minZ - box.min.z);
+    holder.position.y += Math.max(0, WING_BOUNDS.minY - box.min.y);
   }
   return group;
 }
