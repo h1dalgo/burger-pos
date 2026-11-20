@@ -15,6 +15,7 @@ import {
   ImageOff,
   Loader2,
   UserRound,
+  ArrowRightLeft,
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { formatPrice } from '@/lib/utils';
@@ -22,6 +23,8 @@ import { getSocket, joinRoom } from '@/lib/socket-client';
 import type { Category, Product, CartItem, TableData, TableCall } from '@/components/waiter/shared';
 import { calcItemPrice } from '@/components/waiter/shared';
 import WaiterProductModal from '@/components/waiter/WaiterProductModal';
+import MoveTableSheet from '@/components/waiter/MoveTableSheet';
+import { subscribePush } from '@/lib/push-client';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Button } from '@/components/ui/Button';
@@ -143,6 +146,7 @@ export default function WaiterPage() {
   const [waiterDraft, setWaiterDraft] = useState('');
   const [connected, setConnected] = useState(true);
   const [tipPct, setTipPct] = useState(0);
+  const [moveFrom, setMoveFrom] = useState<string | null>(null);
 
   const [categories, setCategories] = useState<Category[]>([]);
   const [catalogLoading, setCatalogLoading] = useState(true);
@@ -159,6 +163,7 @@ export default function WaiterPage() {
       .then((data) => setTableCount(data.tableCount ?? 10))
       .catch(() => {});
     const savedWaiter = localStorage.getItem('waiter_name');
+    if (savedWaiter && typeof Notification !== 'undefined' && Notification.permission === 'granted') void subscribePush('waiter');
     if (savedWaiter) {
       const t = setTimeout(() => setWaiterName(savedWaiter), 0);
       return () => clearTimeout(t);
@@ -172,6 +177,10 @@ export default function WaiterPage() {
     setWaiterName(clean);
     setWaiterDraft('');
     toast.success(`${clean}, ¡en servicio!`);
+    // avisos de pedidos nuevos y listos aunque el teléfono esté bloqueado
+    if (typeof Notification !== 'undefined') {
+      void Promise.resolve(Notification.permission === 'default' ? Notification.requestPermission() : Notification.permission).then(() => subscribePush('waiter'));
+    }
   };
 
   const leaveService = () => {
@@ -294,13 +303,13 @@ export default function WaiterPage() {
     if (!showOrderPanel && !selectedProduct) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        if (selectedProduct) return;
+        if (selectedProduct || moveFrom) return;
         setShowOrderPanel(false);
       }
     };
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
-  }, [showOrderPanel, selectedProduct]);
+  }, [showOrderPanel, selectedProduct, moveFrom]);
 
   const resolveCall = async (callId: string) => {
     await fetch(`/api/table-calls/${callId}`, {
@@ -685,6 +694,16 @@ export default function WaiterPage() {
                     )}
                   </div>
                 </div>
+                {selectedTable && liveOrders.some((o) => o.tableNumber === selectedTable) && (
+                  <button
+                    type="button"
+                    onClick={() => setMoveFrom(selectedTable)}
+                    className="ml-auto mr-2 flex items-center gap-1.5 rounded-full border border-carbon/15 px-3 py-1.5 text-xs font-semibold text-carbon hover:bg-carbon/[0.06]"
+                  >
+                    <ArrowRightLeft className="h-3.5 w-3.5" />
+                    Mover / unir
+                  </button>
+                )}
                 <button
                   type="button"
                   onClick={() => setShowOrderPanel(false)}
@@ -896,6 +915,21 @@ export default function WaiterPage() {
             product={selectedProduct}
             onClose={() => setSelectedProduct(null)}
             onAdd={addToCart}
+          />
+        )}
+      </AnimatePresence>
+      <AnimatePresence>
+        {moveFrom && (
+          <MoveTableSheet
+            from={moveFrom}
+            tableCount={tableCount}
+            orders={liveOrders}
+            onClose={() => setMoveFrom(null)}
+            onDone={() => {
+              setMoveFrom(null);
+              setShowOrderPanel(false);
+              loadTables();
+            }}
           />
         )}
       </AnimatePresence>

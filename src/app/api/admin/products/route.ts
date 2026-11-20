@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
+const cleanAllergens = (v: unknown) => (Array.isArray(v) ? [...new Set(v.filter((x): x is string => typeof x === 'string' && !!x.trim()).map((x) => x.trim().slice(0, 30)))].slice(0, 15) : undefined);
+
 /** Datos del formulario de productos (los precios pueden llegar como texto o número). */
 type PriceInput = string | number | null | undefined;
 interface VariationInput { name: string; additionalPrice?: PriceInput }
@@ -32,7 +34,7 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { name, description, basePrice, categoryId, imageUrl, hasVariation, isFeatured, variations, defaultIngredients, extraIngredients, requiredSelections } = body;
+    const { name, description, basePrice, categoryId, imageUrl, hasVariation, isFeatured, allergens, variations, defaultIngredients, extraIngredients, requiredSelections } = body;
 
     if (!name || !basePrice || !categoryId) {
       return NextResponse.json({ error: 'Faltan campos requeridos' }, { status: 400 });
@@ -47,6 +49,7 @@ export async function POST(request: NextRequest) {
         imageUrl: imageUrl || null,
         hasVariation: hasVariation || false,
         isFeatured: isFeatured === true,
+        allergens: cleanAllergens(allergens) ?? [],
         variations: variations?.length
           ? { create: variations.map((v: VariationInput) => ({ name: v.name, additionalPrice: toPrice(v.additionalPrice, 0) })) }
           : undefined,

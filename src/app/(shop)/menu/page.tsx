@@ -4,11 +4,12 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { preload } from 'react-dom';
 import { useRouter } from 'next/navigation';
 import { AnimatePresence } from 'framer-motion';
-import { AlertTriangle, UtensilsCrossed, Receipt, Table2, Bell } from 'lucide-react';
+import { AlertTriangle, UtensilsCrossed, Receipt, Table2, Bell, Clock, Sparkles } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { useSessionStore } from '@/store/session-store';
 import { useStockStore } from '@/store/stock-store';
 import { useCartStore } from '@/store/cart-store';
+import { useBusinessStore } from '@/store/business-store';
 import { getSocket, joinRoom } from '@/lib/socket-client';
 import type { Category, Product, StockUpdate, CartItem } from '@/types';
 import { variantFromCategory } from '@/components/client/ProductVisual3D';
@@ -39,7 +40,6 @@ export default function MenuPage() {
   const [cartOpen, setCartOpen] = useState(false);
   const [tablePickerOpen, setTablePickerOpen] = useState(false);
   const [serviceOpen, setServiceOpen] = useState(false);
-  const [tableCount, setTableCount] = useState(10);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const headerRef = useRef<HTMLDivElement>(null);
@@ -88,13 +88,19 @@ export default function MenuPage() {
     window.scrollTo({ top, behavior: reduce ? 'auto' : 'smooth' });
   };
 
+  const business = useBusinessStore((s) => s.settings);
+  const loadBusiness = useBusinessStore((s) => s.load);
   useEffect(() => {
-    fetch('/api/settings')
-      .then((r) => r.json())
-      .then((d) => {
-        if (typeof d?.tableCount === 'number' && d.tableCount > 0) setTableCount(d.tableCount);
-      })
-      .catch(() => {});
+    void loadBusiness();
+  }, [loadBusiness]);
+  const tableCount = business && business.tableCount > 0 ? business.tableCount : 10;
+
+  // "Repetir pedido" desde el seguimiento abre el carrito al llegar
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get('cart') !== '1') return;
+    window.history.replaceState(null, '', '/menu');
+    const t = setTimeout(() => setCartOpen(true), 0);
+    return () => clearTimeout(t);
   }, []);
 
   const handleTableSelect = async (table: string) => {
@@ -118,8 +124,8 @@ export default function MenuPage() {
     }
   };
 
-  const fetchMenu = useCallback(() => {
-    fetch('/api/products')
+  const fetchMenu = useCallback((silent = false) => {
+    fetch('/api/products', { cache: 'no-store' })
       .then((r) => {
         if (!r.ok) throw new Error('No pudimos cargar el menú');
         return r.json();
@@ -129,7 +135,7 @@ export default function MenuPage() {
           throw new Error('El menú está vacío');
         }
         setCategories(data);
-        setActiveCategory(data[0].id);
+        if (!silent) setActiveCategory(data[0].id);
         const products = data.flatMap((c: Category) =>
           c.products.map((p) => ({
             id: p.id,
@@ -141,6 +147,7 @@ export default function MenuPage() {
         setLoading(false);
       })
       .catch((err) => {
+        if (silent) return;
         setError(err.message);
         setLoading(false);
       });
@@ -160,11 +167,15 @@ export default function MenuPage() {
     const socket = getSocket();
     joinRoom('clients');
     const onStock = (update: StockUpdate) => applyStockUpdate(update);
+    // inventario: se acabó (o se repuso) un insumo
+    const onRefresh = () => fetchMenu(true);
     socket.on('stock:updated', onStock);
+    socket.on('stock:refresh', onRefresh);
     return () => {
       socket.off('stock:updated', onStock);
+      socket.off('stock:refresh', onRefresh);
     };
-  }, [applyStockUpdate]);
+  }, [applyStockUpdate, fetchMenu]);
 
   const sections = categories
     .map((c) => ({
@@ -247,6 +258,30 @@ export default function MenuPage() {
           <h1 className="display text-[2.1rem] leading-[1.05] text-carbon sm:text-5xl">
             ¿Qué se te <em className="italic text-burger-dark">antoja</em> hoy?
           </h1>
+          {business && !business.open && (
+            <p className="mt-4 flex items-center gap-2 rounded-2xl border border-rose/30 bg-rose/10 px-4 py-3 text-sm font-semibold text-rose" role="status">
+              <Clock className="h-4 w-4 shrink-0" />
+              {business.message || 'Estamos cerrados por ahora'}. Puedes ver el menú, pero no enviar pedidos.
+            </p>
+          )}
+          {business?.open && business.promotions.length > 0 && (
+            <div className="mt-4 space-y-2">
+              {business.promotions.map((p) => {
+                const cat = p.categoryId ? categories.find((c) => c.id === p.categoryId)?.name : null;
+                return (
+                  <p key={p.id} className="flex items-center gap-2 rounded-2xl border border-burger/35 bg-burger/[0.08] px-4 py-3 text-sm text-carbon">
+                    <Sparkles className="h-4 w-4 shrink-0 text-burger" />
+                    <span>
+                      <b className="font-semibold text-burger-dark">{p.name}:</b>{' '}
+                      {p.type === 'PERCENT' ? `${p.value}% de descuento` : `$${p.value.toFixed(2)} de descuento`}
+                      {cat ? ` en ${sentenceCase(cat).toLowerCase()}` : ''}
+                      {p.minTotal > 0 ? ` desde $${p.minTotal.toFixed(2)}` : ''}
+                    </span>
+                  </p>
+                );
+              })}
+            </div>
+          )}
         </div>
         {loading && (
           <div aria-busy="true" aria-label="Cargando menú">

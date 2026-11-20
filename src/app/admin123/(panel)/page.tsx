@@ -23,19 +23,33 @@ import { Button } from '@/components/ui/Button';
 export default function AdminDashboard() {
   const [orders, setOrders] = useState<Order[] | null>(null);
   const [products, setProducts] = useState<Category[] | null>(null);
+  const [today, setToday] = useState<{ revenue: number; count: number; avgTicket: number; avgRating: number | null; ratingCount: number } | null>(null);
+  const [lowStock, setLowStock] = useState<{ name: string; quantity: number; unit: string }[]>([]);
   const [error, setError] = useState(false);
 
   const load = useCallback(() => {
-    Promise.all([fetch('/api/orders'), fetch('/api/products')])
-      .then(([ordersRes, productsRes]) =>
+    const start = new Date();
+    start.setHours(0, 0, 0, 0);
+    const end = new Date(start.getTime() + 86400000);
+    Promise.all([
+      fetch('/api/orders'),
+      fetch('/api/products'),
+      fetch(`/api/admin/report?start=${encodeURIComponent(start.toISOString())}&end=${encodeURIComponent(end.toISOString())}`),
+      fetch('/api/admin/inventory'),
+    ])
+      .then(([ordersRes, productsRes, reportRes, invRes]) =>
         Promise.all([
           ordersRes.ok ? ordersRes.json() : null,
           productsRes.ok ? productsRes.json() : null,
+          reportRes.ok ? reportRes.json() : null,
+          invRes.ok ? invRes.json() : [],
         ])
       )
-      .then(([ordersData, productsData]) => {
+      .then(([ordersData, productsData, reportData, invData]) => {
         setOrders(Array.isArray(ordersData) ? ordersData : []);
         setProducts(Array.isArray(productsData) ? productsData : []);
+        setToday(reportData);
+        setLowStock(Array.isArray(invData) ? invData.filter((i: { quantity: number; lowAt: number }) => i.quantity <= i.lowAt) : []);
         setError(false);
       })
       .catch(() => setError(true));
@@ -52,10 +66,9 @@ export default function AdminDashboard() {
 
   const loading = orders === null || products === null;
   const allProducts = products?.flatMap((c) => c.products) ?? [];
-  const isToday = (d: string) => new Date(d).toDateString() === new Date().toDateString();
-  const todayOrders = orders?.filter((o) => isToday(o.createdAt)) ?? [];
-  const revenue = todayOrders.reduce((sum, o) => sum + Number(o.totalAmount), 0);
-  const avgTicket = todayOrders.length > 0 ? revenue / todayOrders.length : 0;
+  // ventas de hoy: pedidos pagados (incluye los ya entregados)
+  const revenue = today?.revenue ?? 0;
+  const avgTicket = today?.avgTicket ?? 0;
   const inKitchen = orders?.filter((o) => o.status === 'PENDING' || o.status === 'IN_PREPARATION').length ?? 0;
   const unavailable = allProducts.filter((p) => !p.isAvailable).length;
   const recentOrders = (orders ?? [])
@@ -78,10 +91,10 @@ export default function AdminDashboard() {
     },
     {
       label: 'Pedidos de hoy',
-      value: String(todayOrders.length),
+      value: String(today?.count ?? 0),
       sub: `${formatPrice(avgTicket)} promedio`,
       icon: Receipt,
-      chip: 'bg-mustard/50 border-carbon/40 text-carbon',
+      chip: 'bg-burger/10 border-burger/40 text-burger',
     },
     {
       label: 'En cocina',
@@ -115,6 +128,20 @@ export default function AdminDashboard() {
           </Button>
         </div>
       )}
+
+      {lowStock.length > 0 && (
+        <Link href="/admin123/inventory" className="flex items-start gap-3 rounded-2xl border border-rose/35 bg-rose/10 px-4 py-3 text-sm text-rose transition-colors hover:bg-rose/15">
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+          <span>
+            <b>Inventario bajo:</b> {lowStock.map((i) => `${i.name} (${i.quantity} ${i.unit})`).join(', ')}
+          </span>
+        </Link>
+      )}
+      {today?.avgRating ? (
+        <p className="text-sm text-carbon/65">
+          Calificación de hoy: <b className="text-burger-dark">{today.avgRating.toFixed(1)} / 5</b> ({today.ratingCount} opinión(es))
+        </p>
+      ) : null}
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {loading

@@ -16,6 +16,10 @@ export interface Product {
   hasVariation: boolean;
   /** Destacado en el escaparate de arriba del menú. */
   isFeatured?: boolean;
+  /** Alérgenos que contiene ("Gluten", "Lácteos"...). */
+  allergens?: string[];
+  /** Agotado porque se acabó un insumo del inventario. */
+  outOfStock?: boolean;
   variations: ProductVariation[];
   defaultIngredients: DefaultIngredient[];
   extraIngredients: ExtraIngredient[];
@@ -72,7 +76,7 @@ export interface CartItem {
   note?: string | null;
 }
 
-export type OrderStatus = 'WAITING_PAYMENT' | 'PENDING' | 'IN_PREPARATION' | 'READY' | 'DELIVERED';
+export type OrderStatus = 'WAITING_PAYMENT' | 'PENDING' | 'IN_PREPARATION' | 'READY' | 'DELIVERED' | 'CANCELLED';
 export type PaymentMethod = 'CASH' | 'MOBILE_PAYMENT' | 'CARD';
 
 export interface Order {
@@ -85,6 +89,15 @@ export interface Order {
   totalAmount: number;
   tip?: number;
   waiter?: string | null;
+  /** Referencia del Pago Móvil */
+  paymentReference?: string | null;
+  discount?: number;
+  promoLabel?: string | null;
+  /** Tasa Bs/$ del momento del pedido */
+  exchangeRate?: number | null;
+  rating?: number | null;
+  ratingComment?: string | null;
+  cancelReason?: string | null;
   createdAt: string;
   updatedAt: string;
   items: OrderItem[];
@@ -92,6 +105,7 @@ export interface Order {
 
 export interface OrderItem {
   id: string;
+  productId?: string;
   productName: string;
   quantity: number;
   unitPrice: number;
@@ -134,4 +148,21 @@ export interface BusinessSettings {
   name: string;
   logoUrl: string | null;
   tableCount: number;
+  exchangeRate: number;
+  rateUpdatedAt: string | null;
+  isOpen: boolean;
+  openTime: string | null;
+  closeTime: string | null;
+  timezone: string;
+  pagoMovilBank: string | null;
+  pagoMovilPhone: string | null;
+  pagoMovilId: string | null;
+}
+
+/** Ajustes públicos que recibe el cliente (/api/settings). */
+export interface PublicSettings extends BusinessSettings {
+  /** ¿Se reciben pedidos ahora? */
+  open: boolean;
+  message: string | null;
+  promotions: { id: string; name: string; type: 'PERCENT' | 'FIXED'; value: number; categoryId: string | null; minTotal: number }[];
 }

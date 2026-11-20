@@ -9,6 +9,13 @@ export function formatPrice(price: number): string {
   return `$${price.toFixed(2)}`;
 }
 
+const bsFormat = new Intl.NumberFormat('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+/** Monto en bolívares: "Bs 1.234,56". */
+export function formatBs(amount: number): string {
+  return `Bs ${bsFormat.format(Math.round(amount * 100) / 100)}`;
+}
+
 export function generateId(): string {
   return Math.random().toString(36).substring(2, 11);
 }

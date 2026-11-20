@@ -10,6 +10,7 @@ import { flyToCart } from '@/lib/fly-to-cart';
 import { useCartStore } from '@/store/cart-store';
 import { Badge } from '@/components/ui/Badge';
 import { cldUrl } from '@/lib/cloudinary';
+import { PriceBs } from '@/components/ui/PriceBs';
 
 interface Props {
   product: Product;
@@ -96,8 +97,9 @@ export default function ProductCard({ product, isAvailable, onSelect, index, ent
               {!isAvailable && <span className="sr-only"> (agotado)</span>}
             </h3>
             <p className="mt-1 line-clamp-2 text-[13px] leading-relaxed text-carbon/55">{product.description}</p>
-            <p className="price mt-2 text-lg">
-              {formatPrice(Number(product.basePrice))}
+            <p className="mt-2 flex items-baseline gap-2">
+              <span className="price text-lg">{formatPrice(Number(product.basePrice))}</span>
+              <PriceBs usd={Number(product.basePrice)} className="text-[11px] font-medium text-carbon/45" />
             </p>
           </div>
         </div>

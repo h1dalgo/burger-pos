@@ -51,6 +51,13 @@ export const STATUS_META: Record<OrderStatus, StatusMeta> = {
     dot: '#6B7280',
     badge: 'bg-carbon/10 text-carbon/70',
   },
+  CANCELLED: {
+    title: 'Cancelado',
+    actionLabel: 'Cancelado',
+    next: null,
+    dot: '#9E1B32',
+    badge: 'bg-rose/12 text-rose',
+  },
 };
 
 export function getStatusMeta(status: string): StatusMeta {

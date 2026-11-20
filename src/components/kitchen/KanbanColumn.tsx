@@ -14,9 +14,10 @@ interface Props {
   loading: boolean;
   pendingId: string | null;
   onAction: (orderId: string, action: string) => void;
+  onCancel?: (order: Order) => void;
 }
 
-export default function KanbanColumn({ status, title, orders, newIds, loading, pendingId, onAction }: Props) {
+export default function KanbanColumn({ status, title, orders, newIds, loading, pendingId, onAction, onCancel }: Props) {
   const meta = getStatusMeta(status);
   const hasNew = orders.some((o) => newIds.has(o.id));
 
@@ -75,6 +76,7 @@ export default function KanbanColumn({ status, title, orders, newIds, loading, p
                   isNew={newIds.has(order.id)}
                   pending={pendingId === order.id}
                   onAction={onAction}
+                onCancel={onCancel}
                 />
               ))
             )}

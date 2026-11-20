@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence, useMotionValue, useTransform, type PanInfo } from 'framer-motion';
-import { X, Trash2, Minus, Plus, ShoppingBag, StickyNote, Pencil, Table2, Check, ImageIcon } from 'lucide-react';
+import { X, Trash2, Minus, Plus, ShoppingBag, StickyNote, Pencil, Table2, Check, ImageIcon, Tag as TagIcon, RotateCcw, Clock } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import type { CartItem, Product } from '@/types';
 import { useCartStore } from '@/store/cart-store';
@@ -17,6 +17,12 @@ import PaymentSelector from './PaymentSelector';
 import { canQuickAdd } from './ProductCard';
 import { savePreview, type PreviewVariant } from '@/lib/order-preview';
 import { cldUrl } from '@/lib/cloudinary';
+import { useBusinessStore } from '@/store/business-store';
+import { PriceBs } from '@/components/ui/PriceBs';
+import PagoMovilPanel from './PagoMovilPanel';
+import SplitBill from './SplitBill';
+import { reorder } from '@/lib/reorder';
+import type { Order } from '@/types';
 
 interface Props {
   isOpen: boolean;
@@ -48,12 +54,68 @@ export default function CartDrawer({ isOpen, onClose, onRequireTable, onEditItem
   const [name, setName] = useState<string | null>(null); // null = usar el guardado
   const [nameError, setNameError] = useState('');
   const nameValue = name ?? savedName;
+  const [reference, setReference] = useState('');
+  const [refError, setRefError] = useState('');
+  const [couponInput, setCouponInput] = useState('');
+  const [coupon, setCoupon] = useState('');
+  const [quote, setQuote] = useState<{ discount: number; label: string | null; couponError?: string }>({ discount: 0, label: null });
+  const [reordering, setReordering] = useState(false);
+  const business = useBusinessStore((s) => s.settings);
+  const loadBusiness = useBusinessStore((s) => s.load);
+  const lastOrderId = useSessionStore((s) => s.lastOrderId);
+  const closed = business ? !business.open : false;
 
   const subtotal = getTotalAmount();
+  const discount = Math.min(quote.discount, subtotal);
   const tipAmount = Math.round(subtotal * tipPct) / 100;
+  const grandTotal = Math.max(0, subtotal - discount) + tipAmount;
   const totalCount = items.reduce((n, i) => n + i.quantity, 0);
   const inCart = new Set(items.map((i) => i.product.id));
   const offers = suggestions.filter((p) => !inCart.has(p.id)).slice(0, 6);
+
+  useEffect(() => {
+    if (isOpen) void loadBusiness(true);
+  }, [isOpen, loadBusiness]);
+
+  // Descuento vigente (happy hour) o cupón: lo calcula el servidor
+  const quoteKey = items.map((i) => `${i.product.id}:${getItemPrice(i) * i.quantity}`).join('|') + '#' + coupon;
+  useEffect(() => {
+    if (!isOpen || !items.length) return;
+    const ctrl = new AbortController();
+    const t = setTimeout(() => {
+      fetch('/api/promotions/quote', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ items: items.map((i) => ({ productId: i.product.id, subtotal: getItemPrice(i) * i.quantity })), code: coupon || null }),
+        signal: ctrl.signal,
+      })
+        .then((r) => r.json())
+        .then((q) => setQuote({ discount: Number(q.discount) || 0, label: q.label ?? null, couponError: q.couponError }))
+        .catch(() => {});
+    }, 250);
+    return () => {
+      clearTimeout(t);
+      ctrl.abort();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, quoteKey]);
+
+  const repeatLast = async () => {
+    if (!lastOrderId) return;
+    setReordering(true);
+    try {
+      const res = await fetch(`/api/orders?displayId=${lastOrderId}`, { cache: 'no-store' });
+      const order: Order | null = res.ok ? await res.json() : null;
+      if (!order) throw new Error();
+      const r = await reorder(order);
+      if (r.added) toast.success(r.skipped.length ? `Agregado. Ya no hay: ${r.skipped.join(', ')}` : 'Tu último pedido está en el carrito');
+      else toast.error('Esos productos ya no están disponibles');
+    } catch {
+      toast.error('No se pudo cargar tu último pedido');
+    } finally {
+      setReordering(false);
+    }
+  };
 
   useEffect(() => {
     if (!isOpen) return;
@@ -113,6 +175,18 @@ export default function CartDrawer({ isOpen, onClose, onRequireTable, onEditItem
       onRequireTable?.(); // el selector se abre encima del carrito
       return;
     }
+    if (closed) {
+      setError(business?.message || 'Estamos cerrados por ahora');
+      return;
+    }
+    if (paymentMethod === 'MOBILE_PAYMENT' && reference.length < 4) {
+      setRefError('Escribe al menos los últimos 4 dígitos de la referencia');
+      return;
+    }
+    if (coupon && quote.couponError) {
+      setError(quote.couponError);
+      return;
+    }
     setError('');
     setSubmitting(true);
 
@@ -121,6 +195,8 @@ export default function CartDrawer({ isOpen, onClose, onRequireTable, onEditItem
         customerName: cleanName,
         tableNumber,
         paymentMethod,
+        paymentReference: paymentMethod === 'MOBILE_PAYMENT' ? reference : undefined,
+        couponCode: coupon || undefined,
         tip: tipAmount,
         items: items.map((item) => ({
           productId: item.product.id,
@@ -159,6 +235,9 @@ export default function CartDrawer({ isOpen, onClose, onRequireTable, onEditItem
       if (typeof navigator !== 'undefined') navigator.vibrate?.([12, 40, 12]);
       await new Promise((r) => setTimeout(r, 550));
       clearCart();
+      setReference('');
+      setCoupon('');
+      setCouponInput('');
       router.push(`/success?orderId=${order.displayId}`);
     } catch (err) {
       setError(err instanceof Error && err.message ? err.message : 'Error al enviar el pedido. Intenta de nuevo.');
@@ -230,9 +309,17 @@ export default function CartDrawer({ isOpen, onClose, onRequireTable, onEditItem
                   description="Agrega productos desde el menú"
                   compact
                   action={
-                    <Button variant="solid" onClick={onClose}>
-                      Ver menú
-                    </Button>
+                    <div className="flex flex-col items-center gap-2">
+                      {lastOrderId && (
+                        <Button variant="outline" onClick={repeatLast} loading={reordering}>
+                          <RotateCcw className="h-4 w-4" />
+                          Repetir mi último pedido
+                        </Button>
+                      )}
+                      <Button variant="solid" onClick={onClose}>
+                        Ver menú
+                      </Button>
+                    </div>
                   }
                 />
               ) : (
@@ -285,6 +372,47 @@ export default function CartDrawer({ isOpen, onClose, onRequireTable, onEditItem
                 </div>
 
                 <div>
+                  <p className="text-sm font-semibold text-carbon mb-2">¿Tienes un cupón?</p>
+                  <form
+                    className="flex gap-2"
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      setCoupon(couponInput.trim().toUpperCase());
+                      setError('');
+                    }}
+                  >
+                    <input
+                      value={couponInput}
+                      onChange={(e) => setCouponInput(e.target.value.toUpperCase().replace(/\s/g, '').slice(0, 20))}
+                      placeholder="Código"
+                      aria-label="Código de cupón"
+                      className="field flex-1 uppercase tracking-wider"
+                    />
+                    {coupon ? (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => {
+                          setCoupon('');
+                          setCouponInput('');
+                        }}
+                      >
+                        Quitar
+                      </Button>
+                    ) : (
+                      <Button type="submit" variant="outline" disabled={!couponInput.trim()}>
+                        Aplicar
+                      </Button>
+                    )}
+                  </form>
+                  {coupon && quote.couponError && (
+                    <p className="mt-1.5 text-[12px] font-medium text-rose" role="alert">
+                      {quote.couponError}
+                    </p>
+                  )}
+                </div>
+
+                <div>
                   <p className="text-sm font-semibold text-carbon mb-2">Método de pago</p>
                   <PaymentSelector
                     value={paymentMethod}
@@ -293,6 +421,19 @@ export default function CartDrawer({ isOpen, onClose, onRequireTable, onEditItem
                       setError('');
                     }}
                   />
+                  {paymentMethod === 'MOBILE_PAYMENT' && (
+                    <div className="mt-3">
+                      <PagoMovilPanel
+                        amount={grandTotal}
+                        reference={reference}
+                        onReference={(v) => {
+                          setReference(v);
+                          setRefError('');
+                        }}
+                        error={refError || undefined}
+                      />
+                    </div>
+                  )}
                 </div>
 
                 <div className="pb-4">
@@ -324,6 +465,9 @@ export default function CartDrawer({ isOpen, onClose, onRequireTable, onEditItem
                     })}
                   </div>
                 </div>
+                <div className="pb-4">
+                  <SplitBill total={grandTotal} />
+                </div>
               </div>
             )}
 
@@ -338,12 +482,25 @@ export default function CartDrawer({ isOpen, onClose, onRequireTable, onEditItem
                     {error}
                   </motion.p>
                 )}
+                {closed && (
+                  <p className="mb-2 flex items-center gap-1.5 text-[12px] font-semibold text-rose" role="status">
+                    <Clock className="h-3.5 w-3.5" />
+                    {business?.message || 'Estamos cerrados por ahora'}
+                  </p>
+                )}
+                {discount > 0 && (
+                  <p className="mb-1 flex items-center gap-1.5 text-[11px] font-semibold text-mint-ink tabular-nums">
+                    <TagIcon className="h-3 w-3" />
+                    {quote.label || 'Descuento'}: −{formatPrice(discount)}
+                  </p>
+                )}
                 {tipAmount > 0 && (
                   <p className="mb-1.5 text-[11px] font-semibold text-mint-ink tabular-nums">Incluye propina de {formatPrice(tipAmount)}</p>
                 )}
                 <Button
                   onClick={handleSubmit}
                   loading={submitting && !sent}
+                  disabled={closed}
                   fullWidth
                   size="lg"
                   style={sent ? { background: 'var(--color-mint)' } : undefined}
@@ -353,7 +510,10 @@ export default function CartDrawer({ isOpen, onClose, onRequireTable, onEditItem
                       {sent && <Check className="h-5 w-5" />}
                       {sent ? '¡Pedido enviado!' : submitting ? 'Enviando…' : 'Enviar pedido'}
                     </span>
-                    <AnimatedPrice value={subtotal + tipAmount} className="shrink-0" />
+                    <span className="flex shrink-0 flex-col items-end leading-tight">
+                      <AnimatedPrice value={grandTotal} />
+                      <PriceBs usd={grandTotal} className="text-[10px] font-semibold opacity-65" />
+                    </span>
                   </span>
                 </Button>
               </div>

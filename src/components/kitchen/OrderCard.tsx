@@ -23,9 +23,10 @@ interface Props {
   isNew: boolean;
   pending: boolean;
   onAction: (orderId: string, action: string) => void;
+  onCancel?: (order: Order) => void;
 }
 
-export default function OrderCard({ order, isNew, pending, onAction }: Props) {
+export default function OrderCard({ order, isNew, pending, onAction, onCancel }: Props) {
   const PaymentIcon = paymentIcons[order.paymentMethod];
   const meta = getStatusMeta(order.status);
   const totalAmount = Number(order.totalAmount).toFixed(2);
@@ -143,7 +144,7 @@ export default function OrderCard({ order, isNew, pending, onAction }: Props) {
 
       <div className="flex items-baseline justify-between gap-3">
         <span className="text-xs font-semibold uppercase tracking-wider text-carbon/60">Total</span>
-        <span className="bg-mustard border-2 border-carbon rounded-lg px-2 py-0.5 text-lg font-bold text-carbon tabular-nums">${totalAmount}</span>
+        <span className="price text-xl">${totalAmount}</span>
       </div>
 
       {tapAdvance ? (
@@ -176,6 +177,19 @@ export default function OrderCard({ order, isNew, pending, onAction }: Props) {
           ) : (
             meta.actionLabel
           )}
+        </button>
+      )}
+      {onCancel && order.status !== 'READY' && (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onCancel(order);
+          }}
+          onKeyDown={(e) => e.stopPropagation()}
+          className="w-full text-center text-[12px] font-semibold text-carbon/45 transition-colors hover:text-rose"
+        >
+          Cancelar pedido
         </button>
       )}
     </motion.div>

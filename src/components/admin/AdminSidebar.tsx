@@ -15,6 +15,9 @@ import {
   X,
   QrCode,
   Receipt,
+  ClipboardList,
+  Boxes,
+  BadgePercent,
 } from 'lucide-react';
 import { useAdminStore } from '@/store/admin-store';
 
@@ -26,7 +29,10 @@ export default function AdminSidebar() {
 
   const links = [
     { href: '/admin123', label: 'Dashboard', icon: LayoutDashboard },
+    { href: '/admin123/orders', label: 'Pedidos', icon: ClipboardList },
     { href: '/admin123/products', label: 'Productos', icon: ShoppingBag },
+    { href: '/admin123/inventory', label: 'Inventario', icon: Boxes },
+    { href: '/admin123/promotions', label: 'Promociones', icon: BadgePercent },
     { href: '/admin123/report', label: 'Corte de Caja', icon: Receipt },
     { href: '/admin123/qr', label: 'Códigos QR', icon: QrCode },
     { href: '/admin123/settings', label: 'Configuración', icon: SettingsIcon },

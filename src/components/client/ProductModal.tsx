@@ -10,6 +10,7 @@ import { useCartStore } from '@/store/cart-store';
 import { useStockStore } from '@/store/stock-store';
 import { Button } from '@/components/ui/Button';
 import { AnimatedPrice } from '@/components/ui/AnimatedPrice';
+import { PriceBs } from '@/components/ui/PriceBs';
 import { flyToCart } from '@/lib/fly-to-cart';
 import ProductVisual3D, { variantFromCategory } from './ProductVisual3D';
 
@@ -212,6 +213,16 @@ export default function ProductModal({ product, categoryName, onClose, editItem 
           <div className="min-w-0">
             <h2 className="display text-[1.75rem] leading-[1.1] text-carbon">{product.name}</h2>
             <p className="mt-1.5 text-[13px] leading-relaxed text-carbon/60">{product.description}</p>
+            {!!product.allergens?.length && (
+              <p className="mt-2 flex flex-wrap items-center gap-1.5 text-[11px] text-carbon/60">
+                <span className="font-semibold text-carbon/75">Contiene:</span>
+                {product.allergens.map((a) => (
+                  <span key={a} className="rounded-full border border-carbon/15 px-2 py-0.5">
+                    {a}
+                  </span>
+                ))}
+              </p>
+            )}
           </div>
           <button
             ref={closeRef}
@@ -440,7 +451,10 @@ export default function ProductModal({ product, categoryName, onClose, editItem 
                             </>
                           )}
                 </span>
-                <AnimatedPrice value={previewPrice * quantity} className="shrink-0" />
+                <span className="flex shrink-0 flex-col items-end leading-tight">
+                  <AnimatedPrice value={previewPrice * quantity} />
+                  <PriceBs usd={previewPrice * quantity} className="text-[10px] font-semibold opacity-65" />
+                </span>
               </span>
             </Button>
           </div>

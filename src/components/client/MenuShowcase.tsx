@@ -10,6 +10,7 @@ import { formatPrice } from '@/lib/utils';
 import { flyToCart } from '@/lib/fly-to-cart';
 import { useCartStore } from '@/store/cart-store';
 import { sentenceCase } from '@/lib/category-copy';
+import { PriceBs } from '@/components/ui/PriceBs';
 import { canQuickAdd } from './ProductCard';
 import { SHOWCASE_BG, type FoodVariant } from './ProductVisual3D';
 
@@ -169,8 +170,9 @@ export default function MenuShowcase({ slides, onOpen, paused = false }: Props) 
                 </p>
                 <h2 className="display mt-2 text-[2rem] leading-[1.05] text-carbon">{p.name}</h2>
                 <p className="mt-2 line-clamp-2 text-[13px] leading-relaxed text-carbon/60">{p.description}</p>
-                <p className="price mt-3 text-2xl">
-                  {formatPrice(Number(p.basePrice))}
+                <p className="mt-3 flex items-baseline gap-2.5">
+                  <span className="price text-2xl">{formatPrice(Number(p.basePrice))}</span>
+                  <PriceBs usd={Number(p.basePrice)} className="text-xs font-medium text-carbon/45" />
                 </p>
                 <div className="mt-4 flex gap-2">
                   <button type="button" onClick={() => {

@@ -16,6 +16,7 @@ export interface ProductLike {
   category?: { id?: string; name?: string };
   hasVariation?: boolean;
   isFeatured?: boolean;
+  allergens?: string[];
   variations?: { name: string; additionalPrice: number | string }[];
   defaultIngredients?: { name: string }[];
   extraIngredients?: { name: string; basePrice: number | string }[];
@@ -25,6 +26,9 @@ export interface ProductLike {
     options: { name: string; additionalPrice: number | string }[];
   }[];
 }
+
+/** Alérgenos más comunes en comida rápida */
+const ALLERGENS = ['Gluten', 'Lácteos', 'Huevo', 'Soya', 'Maní', 'Frutos secos', 'Pescado', 'Mariscos', 'Mostaza', 'Sésamo', 'Picante'];
 
 interface Props {
   product?: ProductLike;
@@ -47,6 +51,7 @@ export default function ProductForm({ product }: Props) {
   const [imagePreview, setImagePreview] = useState(product?.imageUrl || '');
   const [hasVariation, setHasVariation] = useState(product?.hasVariation || false);
   const [isFeatured, setIsFeatured] = useState(product?.isFeatured || false);
+  const [allergens, setAllergens] = useState<string[]>(product?.allergens ?? []);
 
   const [variationKeys, setVariationKeys] = useState<number[]>(product?.variations?.map((_: unknown, i: number) => i) || [0]);
   const varNameRefs = useRef<(HTMLInputElement | null)[]>([]);
@@ -167,6 +172,7 @@ export default function ProductForm({ product }: Props) {
       imageUrl: finalImageUrl,
       hasVariation,
       isFeatured,
+      allergens,
       variations: collectVariations(),
       defaultIngredients: collectIngredients(),
       extraIngredients: collectExtras(),
@@ -231,6 +237,25 @@ export default function ProductForm({ product }: Props) {
           <span className="font-semibold">Destacar en el escaparate</span>
           <span className="block text-xs text-carbon/65">Aparece arriba del menú, en el carrusel 3D que se arma solo.</span>
         </label>
+      </div>
+
+      <div>
+        <span className="block text-sm font-semibold text-carbon/75 mb-1.5">Alérgenos</span>
+        <span className="block text-xs text-carbon/55 mb-2">El cliente los ve en el detalle del producto como “Contiene: …”.</span>
+        <div className="flex flex-wrap gap-1.5">
+          {ALLERGENS.map((a) => (
+            <button
+              key={a}
+              type="button"
+              data-tone="brand"
+              aria-pressed={allergens.includes(a)}
+              onClick={() => setAllergens((list) => (list.includes(a) ? list.filter((x) => x !== a) : [...list, a]))}
+              className="chip px-3 py-1.5 text-[13px]"
+            >
+              {a}
+            </button>
+          ))}
+        </div>
       </div>
 
       <div className="flex items-center gap-2">

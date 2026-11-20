@@ -18,9 +18,16 @@ import {
   WifiOff,
   ConciergeBell,
   StickyNote,
+  RotateCcw,
 } from 'lucide-react';
 import type { Order } from '@/types';
 import { formatPrice } from '@/lib/utils';
+import { PriceBs } from '@/components/ui/PriceBs';
+import SplitBill from './SplitBill';
+import OrderRating from './OrderRating';
+import { reorder } from '@/lib/reorder';
+import { subscribePush } from '@/lib/push-client';
+import { toast } from 'react-hot-toast';
 import { loadPreview, type OrderPreview } from '@/lib/order-preview';
 import ServiceSheet from './ServiceSheet';
 import { SHOWCASE_BG } from './ProductVisual3D';
@@ -266,14 +273,42 @@ export default function SuccessScreen({ orderId }: Props) {
       await Notification.requestPermission();
     } catch {}
     setPermTick((t) => t + 1);
+    if (order) void subscribePush('order', order.id);
+  };
+
+  // con permiso ya dado, el aviso de "listo" llega aunque se cierre la app
+  const orderUuid = order?.id;
+  useEffect(() => {
+    if (orderUuid && notifPerm === 'granted') void subscribePush('order', orderUuid);
+  }, [orderUuid, notifPerm]);
+
+  const [repeating, setRepeating] = useState(false);
+  const repeatOrder = async () => {
+    if (!order) return;
+    setRepeating(true);
+    try {
+      const r = await reorder(order);
+      if (!r.added) {
+        toast.error('Esos productos ya no están disponibles');
+        return;
+      }
+      if (r.skipped.length) toast(`Ya no hay: ${r.skipped.join(', ')}`);
+      router.push('/menu?cart=1');
+    } catch {
+      toast.error('No se pudo repetir el pedido');
+    } finally {
+      setRepeating(false);
+    }
   };
 
   // la vista previa vive en el navegador (sessionStorage): solo después de montar
   const preview = useMemo<OrderPreview | null>(() => (mounted ? loadPreview(orderId, order) : null), [mounted, orderId, order]);
-  const stageIndex = status ? Math.max(0, STAGES.findIndex((s) => s.key === status)) : -1;
+  const stageIndex = status && status !== 'CANCELLED' ? Math.max(0, STAGES.findIndex((s) => s.key === status)) : -1;
   const current = stageIndex >= 0 ? STAGES[stageIndex] : null;
   const isReady = status === 'READY';
   const isDone = status === 'DELIVERED';
+  const isCancelled = status === 'CANCELLED';
+  const orderRate = order?.exchangeRate ? Number(order.exchangeRate) : null;
   const eta = etaMinutes(order, status, now);
   const itemsCount = order?.items.reduce((n, i) => n + i.quantity, 0) ?? 0;
   const showSummary = summaryOpen ?? status === 'WAITING_PAYMENT';
@@ -302,7 +337,7 @@ export default function SuccessScreen({ orderId }: Props) {
             animate={{ opacity: 1, y: 0 }}
             className={`display text-3xl mt-4 ${isReady ? 'text-mint-ink sign' : 'text-carbon sign-yellow'}`}
           >
-            {current?.title || 'Pedido registrado'}
+            {status === 'CANCELLED' ? 'Pedido cancelado' : current?.title || 'Pedido registrado'}
           </motion.h1>
           {/* anuncia cada cambio de etapa a lectores de pantalla */}
           <p className="sr-only" aria-live="polite" role="status">
@@ -418,7 +453,10 @@ export default function SuccessScreen({ orderId }: Props) {
                 Tu pedido · {itemsCount} {itemsCount === 1 ? 'producto' : 'productos'}
               </span>
               <span className="flex items-center gap-2 text-sm font-bold tabular-nums text-carbon">
-                {formatPrice(Number(order.totalAmount))}
+                <span className="flex flex-col items-end leading-tight">
+                  {formatPrice(Number(order.totalAmount) + Number(order.tip ?? 0))}
+                  <PriceBs usd={Number(order.totalAmount) + Number(order.tip ?? 0)} rate={orderRate} className="text-[10px] font-medium text-carbon/50" />
+                </span>
                 <ChevronDown className={`h-4 w-4 transition-transform ${showSummary ? 'rotate-180' : ''}`} />
               </span>
             </button>
@@ -469,8 +507,17 @@ export default function SuccessScreen({ orderId }: Props) {
                   <div className="space-y-1 border-t border-carbon/10 px-3.5 py-2.5 text-xs text-carbon/75">
                     <p className="flex justify-between">
                       <span>Pago</span>
-                      <span className="font-semibold text-carbon">{PAYMENT_LABEL[order.paymentMethod] ?? order.paymentMethod}</span>
+                      <span className="font-semibold text-carbon">
+                        {PAYMENT_LABEL[order.paymentMethod] ?? order.paymentMethod}
+                        {order.paymentReference ? ` · Ref. ${order.paymentReference}` : ''}
+                      </span>
                     </p>
+                    {Number(order.discount ?? 0) > 0 && (
+                      <p className="flex justify-between text-mint-ink">
+                        <span>{order.promoLabel || 'Descuento'}</span>
+                        <span className="font-semibold tabular-nums">−{formatPrice(Number(order.discount))}</span>
+                      </p>
+                    )}
                     {Number(order.tip ?? 0) > 0 && (
                       <p className="flex justify-between">
                         <span>Propina</span>
@@ -490,8 +537,29 @@ export default function SuccessScreen({ orderId }: Props) {
           </div>
         )}
 
+        {isCancelled && (
+          <p className="mt-4 rounded-2xl border border-rose/35 bg-rose/10 px-4 py-3 text-center text-sm text-rose" role="status">
+            Este pedido fue cancelado{order?.cancelReason ? `: ${order.cancelReason}` : ''}. Si es un error, llama al mesero.
+          </p>
+        )}
+
+        {order && !isCancelled && (
+          <div className="mt-4">
+            <SplitBill total={Number(order.totalAmount) + Number(order.tip ?? 0)} rate={orderRate} />
+          </div>
+        )}
+
+        {order && (isReady || isDone) && <OrderRating orderId={order.id} initial={order.rating} />}
+
+        {order && (
+          <button type="button" onClick={repeatOrder} disabled={repeating} className="mt-4 flex w-full items-center justify-center gap-2 rounded-full border border-burger/40 bg-burger/[0.08] px-3 py-2.5 text-sm font-semibold text-burger-dark transition-colors hover:bg-burger/15 disabled:opacity-60">
+            <RotateCcw className="h-4 w-4" />
+            {repeating ? 'Agregando…' : 'Pedir lo mismo otra vez'}
+          </button>
+        )}
+
         {/* Acciones */}
-        <div className="mt-5 grid grid-cols-2 gap-2">
+        <div className="mt-3 grid grid-cols-2 gap-2">
           <motion.button whileTap={{ scale: 0.97 }} onClick={() => router.push('/menu')} className="btn btn-outline">
             <Plus className="w-4 h-4" />
             Pedir algo más

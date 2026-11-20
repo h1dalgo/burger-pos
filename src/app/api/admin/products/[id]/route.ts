@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
+const cleanAllergens = (v: unknown) => (Array.isArray(v) ? [...new Set(v.filter((x): x is string => typeof x === 'string' && !!x.trim()).map((x) => x.trim().slice(0, 30)))].slice(0, 15) : undefined);
+
 /** Datos del formulario de productos (los precios pueden llegar como texto o número). */
 type PriceInput = string | number | null | undefined;
 interface VariationInput { name: string; additionalPrice?: PriceInput }
@@ -43,7 +45,7 @@ export async function PATCH(
   const { id } = await params;
   try {
     const body = await request.json();
-    const { name, description, basePrice, categoryId, imageUrl, hasVariation, isFeatured, variations, defaultIngredients, extraIngredients, requiredSelections } = body;
+    const { name, description, basePrice, categoryId, imageUrl, hasVariation, isFeatured, allergens, variations, defaultIngredients, extraIngredients, requiredSelections } = body;
 
     const product = await prisma.$transaction(async (tx) => {
       await tx.productVariation.deleteMany({ where: { productId: id } });
@@ -66,6 +68,7 @@ export async function PATCH(
           imageUrl: imageUrl !== undefined ? (imageUrl || null) : undefined,
           hasVariation: hasVariation !== undefined ? hasVariation : undefined,
           isFeatured: typeof isFeatured === 'boolean' ? isFeatured : undefined,
+          allergens: cleanAllergens(allergens),
           variations: variations?.length
             ? { create: variations.map((v: VariationInput) => ({ name: v.name, additionalPrice: toPrice(v.additionalPrice, 0) })) }
             : undefined,

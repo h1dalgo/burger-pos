@@ -26,6 +26,7 @@ model Product {
   isAvailable    Boolean   @default(true) @map("is_available")
   hasVariation   Boolean   @default(false) @map("has_variation")
   isFeatured     Boolean   @default(false) @map("is_featured") // sale en el escaparate del menú
+  allergens      String[]  @default([]) // "Gluten", "Lácteos"... se muestran al cliente
   createdAt      DateTime  @default(now()) @map("created_at")
 
   category          Category              @relation(fields: [categoryId], references: [id])
@@ -34,6 +35,7 @@ model Product {
   extraIngredients   ExtraIngredient[]
   requiredSelections RequiredSelection[]
   orderItems         OrderItem[]
+  inventoryUsages    InventoryUsage[]
 
   @@map("products")
 }
@@ -102,6 +104,7 @@ enum OrderStatus {
   IN_PREPARATION
   READY
   DELIVERED
+  CANCELLED
 }
 
 enum PaymentMethod {
@@ -120,11 +123,22 @@ model Order {
   totalAmount   Decimal       @map("total_amount") @db.Decimal(10, 2)
   tip           Decimal       @default(0) @db.Decimal(10, 2)
   waiter        String?
+  /// Número de referencia del Pago Móvil (lo escribe el cliente)
+  paymentReference String?    @map("payment_reference")
+  /// Descuento aplicado (promociones / cupón), ya restado de totalAmount
+  discount      Decimal       @default(0) @db.Decimal(10, 2)
+  promoLabel    String?       @map("promo_label")
+  /// Tasa Bs/$ del momento del pedido
+  exchangeRate  Decimal?      @map("exchange_rate") @db.Decimal(14, 4)
+  rating        Int?
+  ratingComment String?       @map("rating_comment")
+  cancelReason  String?       @map("cancel_reason")
   createdAt     DateTime      @default(now()) @map("created_at")
   updatedAt     DateTime      @updatedAt @map("updated_at")
 
   items OrderItem[]
 
+  @@index([createdAt])
   @@map("orders")
 }
 
@@ -217,6 +231,88 @@ model BusinessSettings {
   name       String  @default("Burger POS")
   logoUrl    String? @map("logo_url")
   tableCount Int     @default(10) @map("table_count")
+  /// Bolívares por dólar (0 = no mostrar bolívares)
+  exchangeRate   Decimal   @default(0) @map("exchange_rate") @db.Decimal(14, 4)
+  rateUpdatedAt  DateTime? @map("rate_updated_at")
+  /// Interruptor manual: false = cerrado aunque esté en horario
+  isOpen         Boolean   @default(true) @map("is_open")
+  /// "HH:MM" en la hora local del negocio; vacío = sin horario
+  openTime       String?   @map("open_time")
+  closeTime      String?   @map("close_time")
+  timezone       String    @default("America/Caracas")
+  /// Datos para que el cliente haga el Pago Móvil
+  pagoMovilBank  String?   @map("pago_movil_bank")
+  pagoMovilPhone String?   @map("pago_movil_phone")
+  pagoMovilId    String?   @map("pago_movil_id")
 
   @@map("business_settings")
+}
+
+enum PromotionType {
+  PERCENT
+  FIXED
+}
+
+/// Promoción automática (happy hour, día) o cupón (con code)
+model Promotion {
+  id         String        @id @default(uuid()) @db.Uuid
+  name       String
+  /// Si tiene código es un cupón; si no, se aplica sola cuando corresponde
+  code       String?       @unique
+  type       PromotionType @default(PERCENT)
+  value      Decimal       @db.Decimal(10, 2)
+  /// Solo productos de esta categoría (vacío = todo el pedido)
+  categoryId String?       @map("category_id") @db.Uuid
+  minTotal   Decimal       @default(0) @map("min_total") @db.Decimal(10, 2)
+  /// Días 0-6 (domingo=0); vacío = todos
+  days       Int[]         @default([])
+  /// Hora inicio/fin (0-24, hora local); null = todo el día
+  startHour  Int?          @map("start_hour")
+  endHour    Int?          @map("end_hour")
+  active     Boolean       @default(true)
+  createdAt  DateTime      @default(now()) @map("created_at")
+
+  @@map("promotions")
+}
+
+/// Insumo con existencia (ej. "Pan brioche": 40 u)
+model InventoryItem {
+  id        String           @id @default(uuid()) @db.Uuid
+  name      String           @unique
+  quantity  Decimal          @default(0) @db.Decimal(12, 2)
+  unit      String           @default("u")
+  /// Avisar cuando quede esta cantidad o menos
+  lowAt     Decimal          @default(5) @map("low_at") @db.Decimal(12, 2)
+  updatedAt DateTime         @updatedAt @map("updated_at")
+  usages    InventoryUsage[]
+
+  @@map("inventory_items")
+}
+
+/// Cuánto de un insumo usa cada unidad de un producto
+model InventoryUsage {
+  id              String        @id @default(uuid()) @db.Uuid
+  inventoryItemId String        @map("inventory_item_id") @db.Uuid
+  productId       String        @map("product_id") @db.Uuid
+  amount          Decimal       @default(1) @db.Decimal(10, 2)
+
+  inventoryItem InventoryItem @relation(fields: [inventoryItemId], references: [id], onDelete: Cascade)
+  product       Product       @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([inventoryItemId, productId])
+  @@map("inventory_usages")
+}
+
+/// Suscripción a notificaciones push (meseros o el cliente de un pedido)
+model PushSubscription {
+  id        String   @id @default(uuid()) @db.Uuid
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  /// "waiter" o "order"
+  role      String
+  orderId   String?  @map("order_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("push_subscriptions")
 }
