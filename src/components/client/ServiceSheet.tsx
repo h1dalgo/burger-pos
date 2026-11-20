@@ -1,11 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { X, Bell, DollarSign, Table2, Users } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { useSessionStore } from '@/store/session-store';
 import { Button } from '@/components/ui/Button';
+import { useEscapeClose } from '@/hooks/use-escape-close';
 
 interface Props {
   onClose: () => void;
@@ -13,6 +14,8 @@ interface Props {
 }
 
 export default function ServiceSheet({ onClose, onPickTable }: Props) {
+  const sheetRef = useRef<HTMLDivElement>(null);
+  useEscapeClose(sheetRef, onClose);
   const tableNumber = useSessionStore((s) => s.tableNumber);
   const [sending, setSending] = useState<'call' | 'bill' | null>(null);
   const hasTable = !!tableNumber.trim();
@@ -52,6 +55,7 @@ export default function ServiceSheet({ onClose, onPickTable }: Props) {
       onClick={onClose}
     >
       <motion.div
+        ref={sheetRef}
         initial={{ y: '100%' }}
         animate={{ y: 0 }}
         exit={{ y: '100%' }}

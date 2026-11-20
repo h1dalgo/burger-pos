@@ -1,7 +1,9 @@
 'use client';
 
+import { useRef } from 'react';
 import { motion } from 'framer-motion';
 import { X, Table2 } from 'lucide-react';
+import { useEscapeClose } from '@/hooks/use-escape-close';
 
 interface Props {
   onClose: () => void;
@@ -11,6 +13,9 @@ interface Props {
 }
 
 export default function TablePickerSheet({ onClose, tableCount, current, onSelect }: Props) {
+  const sheetRef = useRef<HTMLDivElement>(null);
+  useEscapeClose(sheetRef, onClose);
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -20,6 +25,7 @@ export default function TablePickerSheet({ onClose, tableCount, current, onSelec
       onClick={onClose}
     >
       <motion.div
+        ref={sheetRef}
         initial={{ y: '100%' }}
         animate={{ y: 0 }}
         exit={{ y: '100%' }}
