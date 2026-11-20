@@ -2,6 +2,8 @@ export type ItemVariant = 'drink' | 'starter' | 'dessert';
 export type ItemKind = 'bottle' | 'pitcher' | 'glass' | 'basket' | 'popsicle';
 
 export interface ItemSceneOptions {
+  /** 'dark' = vitrina oscura con el producto iluminado. */
+  theme?: 'light' | 'dark';
   /** false = sin girar con el dedo (modo escaparate). */
   interactive?: boolean;
   /** Se llama cuando el primer cuadro ya está dibujado. */

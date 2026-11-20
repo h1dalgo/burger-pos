@@ -483,6 +483,16 @@ export const TEXTURES = {
       },
       { srgb: true }
     ),
+  /** Charco de luz en el piso (tema oscuro): blanco al centro, transparente al borde. */
+  pool: () =>
+    canvasTex(256, 256, (g, s) => {
+      const grd = g.createRadialGradient(s / 2, s / 2, 0, s / 2, s / 2, s / 2);
+      grd.addColorStop(0, 'rgba(255,255,255,1)');
+      grd.addColorStop(0.45, 'rgba(255,255,255,0.55)');
+      grd.addColorStop(1, 'rgba(255,255,255,0)');
+      g.fillStyle = grd;
+      g.fillRect(0, 0, s, s);
+    }),
   blob: () =>
     canvasTex(256, 256, (g, s) => {
       const grd = g.createRadialGradient(s / 2, s / 2, 0, s / 2, s / 2, s / 2);
@@ -750,14 +760,16 @@ export class Stage {
     r.shadowMap.enabled = this.q.shadow > 0;
     r.shadowMap.type = THREE.PCFShadowMap; // admite radio de desenfoque → sombras más suaves
     r.shadowMap.autoUpdate = false; // solo se recalcula cuando algo se mueve
-    r.setClearColor(0x000000, 0);
+    // Tema oscuro: "vitrina" negra cálida con el producto iluminado por un foco
+    this._dark = this.opts.theme === 'dark';
+    r.setClearColor(this._dark ? 0x17130f : 0x000000, this._dark ? 1 : 0);
     const cv = r.domElement;
     Object.assign(cv.style, { display: 'block', width: '100%', height: '100%', outline: 'none', cursor: 'grab' });
     if (getComputedStyle(container).position === 'static') container.style.position = 'relative';
     container.appendChild(cv);
 
     const scene = (this.scene = new THREE.Scene());
-    scene.add(new THREE.HemisphereLight(0xfff1dc, 0x4a2e18, 0.25));
+    scene.add(new THREE.HemisphereLight(0xfff1dc, 0x4a2e18, this._dark ? 0.06 : 0.25));
     const key = (this._key = new THREE.DirectionalLight(0xffe6c8, 1.7));
     key.position.set(-2.5, 7, 4);
     key.target.position.set(0, 0.8, 0);
@@ -771,12 +783,33 @@ export class Stage {
       key.shadow.blurSamples = 12;
     }
     scene.add(key, key.target);
-    const rim = new THREE.DirectionalLight(0xffd9a8, 0.9);
-    rim.position.set(4, 3, -5);
+    const rim = new THREE.DirectionalLight(0xffd9a8, this._dark ? 3.6 : 0.9);
+    rim.position.set(this._dark ? 3.2 : 4, this._dark ? 5 : 3, -5);
     scene.add(rim);
+    if (this._dark) {
+      // contraluz fría del otro lado: dibuja el borde del producto contra el fondo negro
+      const rim2 = new THREE.DirectionalLight(0xc8d6ff, 1.8);
+      rim2.position.set(-4.5, 3, -3.5);
+      scene.add(rim2);
+      // charco de luz cálida en el piso bajo el producto
+      const pool = new THREE.Mesh(
+        new THREE.PlaneGeometry(5.2, 5.2),
+        new THREE.MeshBasicMaterial({ map: tex('pool'), color: 0x9a7048, transparent: true, opacity: 0.9, depthWrite: false })
+      );
+      pool.rotation.x = -Math.PI / 2;
+      pool.position.y = 0.001;
+      scene.add(pool);
+      // viñeta: los bordes caen a oscuro (solo decorativa, no recibe toques)
+      const vignette = (this._vignette = document.createElement('div'));
+      Object.assign(vignette.style, {
+        position: 'absolute', inset: '0', pointerEvents: 'none',
+        background: 'radial-gradient(ellipse 72% 68% at 50% 46%, rgba(0,0,0,0) 40%, rgba(0,0,0,0.62) 100%)',
+      });
+      container.appendChild(vignette);
+    }
 
     if (this.q.shadow > 0) {
-      const ground = new THREE.Mesh(new THREE.PlaneGeometry(10, 10), new THREE.ShadowMaterial({ opacity: 0.2 }));
+      const ground = new THREE.Mesh(new THREE.PlaneGeometry(10, 10), new THREE.ShadowMaterial({ opacity: this._dark ? 0.45 : 0.2 }));
       ground.rotation.x = -Math.PI / 2;
       ground.receiveShadow = true;
       scene.add(ground);
@@ -842,7 +875,7 @@ export class Stage {
       h.lastChild.textContent = this.opts.hint;
       Object.assign(h.style, {
         position: 'absolute', left: '50%', bottom: '8px', transform: 'translateX(-50%)', display: 'flex', alignItems: 'center', gap: '6px',
-        padding: '4px 10px', borderRadius: '999px', background: 'rgba(28,18,10,0.6)', color: '#fff', fontFamily: 'inherit', fontSize: '11px',
+        padding: '4px 10px', borderRadius: '999px', background: this._dark ? 'rgba(253,246,227,0.16)' : 'rgba(28,18,10,0.6)', color: '#fff', fontFamily: 'inherit', fontSize: '11px',
         fontWeight: '600', lineHeight: '1.4', pointerEvents: 'none', transition: 'opacity .5s', opacity: '0', whiteSpace: 'nowrap',
       });
       container.appendChild(h);
@@ -959,6 +992,7 @@ export class Stage {
       if (o.material) (Array.isArray(o.material) ? o.material : [o.material]).forEach((m) => m.dispose());
     });
     cv.remove();
+    this._vignette?.remove();
     const finish = () => {
       this._warmMats?.forEach((m) => m.dispose());
       this._envRT?.dispose();
@@ -1031,9 +1065,10 @@ export class Stage {
     this._envRT = rt;
     this.scene.environment = rt.texture;
     // el HDRI ya trae la luz del estudio: se baja un poco la luz directa
-    this.scene.environmentIntensity = hdr ? 0.85 : 1;
+    // en el tema oscuro manda el foco: menos luz ambiente y más luz directa
+    this.scene.environmentIntensity = (hdr ? 0.85 : 1) * (this._dark ? 0.42 : 1);
     this.scene.environmentRotation.set(0, hdr ? -0.9 : 0, 0);
-    this._key.intensity = hdr ? 1.25 : 1.7;
+    this._key.intensity = (hdr ? 1.25 : 1.7) * (this._dark ? 1.8 : 1);
     if (old && old !== rt) old.dispose();
     this._dirty = true;
     this._shadowDirty = true;

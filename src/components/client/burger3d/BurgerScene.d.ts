@@ -12,6 +12,8 @@ export interface LayerInfo {
 }
 
 export interface BurgerSceneOptions {
+  /** 'dark' = vitrina oscura con el producto iluminado. */
+  theme?: 'light' | 'dark';
   /** Tabla de madera bajo la hamburguesa. */
   board?: boolean;
   /** false = sin girar con el dedo (modo escaparate). */

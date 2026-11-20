@@ -18,6 +18,8 @@ export interface Burger3DProps {
   snapshotRef?: MutableRefObject<(() => string | null) | null>;
   /** Nombre del ingrediente a resaltar (ej. el chip bajo el mouse). */
   highlight?: string | null;
+  /** 'dark' = vitrina oscura con el producto iluminado. */
+  theme?: 'light' | 'dark';
   /** false = no se gira con el dedo (escaparate). */
   interactive?: boolean;
   /** Tabla de madera bajo la hamburguesa. */
@@ -30,7 +32,7 @@ export interface Burger3DProps {
   rebuildKey?: string | number;
 }
 
-export default function Burger3D({ ingredients, height = 280, className, autoRotate = true, onLayerClick, onReady, snapshotRef, highlight = null, interactive = true, board = false, hint, paused = false, rebuildKey }: Burger3DProps) {
+export default function Burger3D({ ingredients, height = 280, className, autoRotate = true, onLayerClick, onReady, snapshotRef, highlight = null, interactive = true, theme = 'light', board = false, hint, paused = false, rebuildKey }: Burger3DProps) {
   const ref = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<BurgerScene | null>(null);
   const clickRef = useRef(onLayerClick);
@@ -49,6 +51,7 @@ export default function Burger3D({ ingredients, height = 280, className, autoRot
       onLayerClick: onLayerClick ? (label: string) => clickRef.current?.(label) : null,
       onReady: () => readyRef.current?.(),
       interactive,
+      theme,
       board,
       ...(hint !== undefined ? { hint } : {}),
     });

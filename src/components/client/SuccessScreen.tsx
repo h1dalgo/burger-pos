@@ -23,6 +23,7 @@ import type { Order } from '@/types';
 import { formatPrice } from '@/lib/utils';
 import { loadPreview, type OrderPreview } from '@/lib/order-preview';
 import ServiceSheet from './ServiceSheet';
+import { SHOWCASE_BG } from './ProductVisual3D';
 
 const Burger3D = dynamic(() => import('./burger3d/Burger3D'), { ssr: false });
 const Item3D = dynamic(() => import('./burger3d/Item3D'), { ssr: false });
@@ -582,14 +583,14 @@ function OrderHero3D({ preview, status }: { preview: OrderPreview; status: strin
     <motion.div
       animate={isReady && !reduced ? { y: [0, -12, 0], scale: [1, 1.05, 1] } : { y: 0, scale: 1 }}
       transition={isReady && !reduced ? { duration: 0.8, repeat: Infinity, repeatDelay: 1.4, ease: 'easeOut' } : { duration: 0.3 }}
-      className={`relative overflow-hidden rounded-2xl border-2 border-carbon shadow-card ${isReady ? 'bg-mint/15' : 'bg-card'}`}
-      style={{ height: H }}
+      className={`relative overflow-hidden rounded-2xl border-2 border-carbon shadow-card ${isReady ? 'ring-4 ring-mint' : ''}`}
+      style={{ height: H, background: SHOWCASE_BG }}
       aria-hidden="true"
     >
       {preview.variant === 'burger' ? (
-        <Burger3D ingredients={ingredients} height={H} />
+        <Burger3D ingredients={ingredients} height={H} theme="dark" />
       ) : (
-        <Item3D variant={preview.variant} name={preview.name} description={preview.description} choices={preview.choices} height={H} />
+        <Item3D variant={preview.variant} name={preview.name} description={preview.description} choices={preview.choices} height={H} theme="dark" />
       )}
     </motion.div>
   );

@@ -160,6 +160,7 @@ const glassMat = (opacity = 0.22) => {
   m.depthWrite = false;
   m.opacity = opacity;
   m.userData.baseOpacity = opacity;
+  m.userData.glass = true;
   return m;
 };
 
@@ -569,7 +570,17 @@ class Model {
   add(key, build, parent = this.group) {
     const obj = fromTemplate(key + '|' + this.stage.q.name, build);
     parent.add(obj);
-    this.mats.push(...materialsOf(obj));
+    const mats = materialsOf(obj);
+    if (this.stage._dark) {
+      // sobre fondo oscuro el vidrio se veía lechoso: más transparente y con menos reflejo
+      for (const m of mats)
+        if (m.userData.glass) {
+          m.userData.baseOpacity *= 0.5;
+          m.opacity = m.userData.baseOpacity;
+          m.envMapIntensity *= 0.75;
+        }
+    }
+    this.mats.push(...mats);
     return obj;
   }
 

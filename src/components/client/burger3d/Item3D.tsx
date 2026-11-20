@@ -17,6 +17,8 @@ export interface Item3DProps {
   onReady?: () => void;
   /** Recibe una función que devuelve un PNG del cuadro actual. */
   snapshotRef?: MutableRefObject<(() => string | null) | null>;
+  /** 'dark' = vitrina oscura con el producto iluminado. */
+  theme?: 'light' | 'dark';
   /** false = no se gira con el dedo (escaparate). */
   interactive?: boolean;
   /** Texto de ayuda (false para ocultarlo). */
@@ -25,7 +27,7 @@ export interface Item3DProps {
   paused?: boolean;
 }
 
-export default function Item3D({ variant, name, description = '', choices = [], height = 240, className, autoRotate = true, onReady, snapshotRef, interactive = true, hint, paused = false }: Item3DProps) {
+export default function Item3D({ variant, name, description = '', choices = [], height = 240, className, autoRotate = true, onReady, snapshotRef, interactive = true, theme = 'light', hint, paused = false }: Item3DProps) {
   const ref = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<ItemScene | null>(null);
   const readyRef = useRef(onReady);
@@ -41,6 +43,7 @@ export default function Item3D({ variant, name, description = '', choices = [], 
       autoRotate,
       onReady: () => readyRef.current?.(),
       interactive,
+      theme,
       ...(hint !== undefined ? { hint } : {}),
     });
     sceneRef.current = scene;

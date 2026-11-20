@@ -21,6 +21,9 @@ import { cldUrl } from '@/lib/cloudinary';
 const Burger3D = dynamic(() => import('./burger3d/Burger3D'), { ssr: false });
 const Item3D = dynamic(() => import('./burger3d/Item3D'), { ssr: false });
 
+/** Fondo de la vitrina oscura de los 3D (igual al color de fondo del render). */
+export const SHOWCASE_BG = '#17130f';
+
 export type FoodVariant = 'burger' | 'drink' | 'starter' | 'dessert';
 
 const norm = (s: string) =>
@@ -118,8 +121,8 @@ export default function ProductVisual3D({
 
   return (
     <div
-      className="relative overflow-hidden rounded-2xl border-2 border-carbon bg-card shadow-card"
-      style={{ height }}
+      className="relative overflow-hidden rounded-2xl border-2 border-carbon shadow-card"
+      style={{ height, background: SHOWCASE_BG }}
       aria-hidden="true"
     >
       {/* Marcador mientras carga el 3D */}
@@ -142,8 +145,8 @@ export default function ProductVisual3D({
               />
             ) : (
               <div className="flex flex-col items-center gap-2">
-                <div className="h-20 w-36 animate-pulse rounded-[45%] bg-carbon/10" />
-                <div className="h-3 w-28 animate-pulse rounded-full bg-carbon/10" />
+                <div className="h-20 w-36 animate-pulse rounded-[45%] bg-cream/10" />
+                <div className="h-3 w-28 animate-pulse rounded-full bg-cream/10" />
               </div>
             )}
           </motion.div>
@@ -163,6 +166,7 @@ export default function ProductVisual3D({
             snapshotRef={snapshotRef}
             highlight={highlight}
             onLayerClick={onIngredientTap}
+            theme="dark"
           />
         ) : (
           <Item3D
@@ -173,6 +177,7 @@ export default function ProductVisual3D({
             height={height}
             onReady={onReady}
             snapshotRef={snapshotRef}
+            theme="dark"
           />
         )}
       </motion.div>

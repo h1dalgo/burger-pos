@@ -11,7 +11,7 @@ import { flyToCart } from '@/lib/fly-to-cart';
 import { useCartStore } from '@/store/cart-store';
 import { sentenceCase } from '@/lib/category-copy';
 import { canQuickAdd } from './ProductCard';
-import type { FoodVariant } from './ProductVisual3D';
+import { SHOWCASE_BG, type FoodVariant } from './ProductVisual3D';
 
 const Burger3D = dynamic(() => import('./burger3d/Burger3D'), { ssr: false });
 const Item3D = dynamic(() => import('./burger3d/Item3D'), { ssr: false });
@@ -120,8 +120,8 @@ export default function MenuShowcase({ slides, onOpen, paused = false }: Props) 
         <div className="absolute inset-x-0 top-0 z-10 h-1.5 bg-burger" />
         <div className="grid sm:grid-cols-2">
           {/* Producto en 3D */}
-          <div ref={viewRef} className="relative bg-cream/60" style={{ height: VIEW_H }} aria-hidden="true">
-            {!ready && <div className="absolute inset-0 m-auto h-24 w-40 animate-pulse rounded-[45%] bg-carbon/10" />}
+          <div ref={viewRef} className="relative" style={{ height: VIEW_H, background: SHOWCASE_BG }} aria-hidden="true">
+            {!ready && <div className="absolute inset-0 m-auto h-24 w-40 animate-pulse rounded-[45%] bg-cream/10" />}
             {slide.variant === 'burger' ? (
               <Burger3D
                 key="burger"
@@ -132,6 +132,7 @@ export default function MenuShowcase({ slides, onOpen, paused = false }: Props) 
                 interactive={false}
                 hint={false}
                 paused={paused}
+                theme="dark"
                 onReady={() => setReady(true)}
                 snapshotRef={snapshotRef}
               />
@@ -145,6 +146,7 @@ export default function MenuShowcase({ slides, onOpen, paused = false }: Props) 
                 interactive={false}
                 hint={false}
                 paused={paused}
+                theme="dark"
                 onReady={() => setReady(true)}
                 snapshotRef={snapshotRef}
               />
