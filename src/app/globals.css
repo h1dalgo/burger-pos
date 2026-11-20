@@ -415,19 +415,3 @@
     scroll-behavior: auto !important;
   }
 }
-
-/* Transición de entrada entre pantallas (app/template.tsx). Solo desplazamiento, sin
-   opacidad: el contenido es visible desde el primer cuadro (si arrancara transparente,
-   el navegador retrasa el "primer contenido pintado"). Termina en transform: none para
-   no afectar a los elementos position: fixed (modales, carrito). */
-@keyframes page-enter {
-  from {
-    transform: translateY(10px);
-  }
-  to {
-    transform: none;
-  }
-}
-.page-enter {
-  animation: page-enter 0.32s cubic-bezier(0.2, 0.8, 0.2, 1) both;
-}
