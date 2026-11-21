@@ -5,6 +5,7 @@ import { QrCode, Printer, Loader2 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Button } from '@/components/ui/Button';
+import StaffApps from '@/components/admin/StaffApps';
 
 interface QrItem {
   table: string;
@@ -64,6 +65,8 @@ export default function QrPage() {
           Imprimir códigos
         </Button>
       </div>
+
+      <StaffApps />
 
       {error ? (
         <EmptyState
