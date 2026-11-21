@@ -10,6 +10,7 @@ import { formatPrice } from '@/lib/utils';
 import { flyToCart } from '@/lib/fly-to-cart';
 import { useCartStore } from '@/store/cart-store';
 import { sentenceCase } from '@/lib/category-copy';
+import { cldUrl } from '@/lib/cloudinary';
 import { PriceBs } from '@/components/ui/PriceBs';
 import { canQuickAdd } from './ProductCard';
 import { SHOWCASE_BG, type FoodVariant } from './ProductVisual3D';
@@ -45,6 +46,7 @@ export default function MenuShowcase({ slides, onOpen, paused = false }: Props) 
   const [dir, setDir] = useState(1);
   const [hold, setHold] = useState(false); // el usuario está mirando/tocando
   const [ready, setReady] = useState(false);
+  const [no3d, setNo3d] = useState(false);
   const viewRef = useRef<HTMLDivElement>(null);
   const snapshotRef = useRef<(() => string | null) | null>(null);
   const holdTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -121,8 +123,17 @@ export default function MenuShowcase({ slides, onOpen, paused = false }: Props) 
         <div className="grid sm:grid-cols-2">
           {/* Producto en 3D */}
           <div ref={viewRef} className="relative h-[270px] sm:h-auto sm:min-h-[300px]" style={{ background: SHOWCASE_BG }} aria-hidden="true">
-            {!ready && <div className="absolute inset-0 m-auto h-24 w-40 animate-pulse rounded-[45%] bg-cream/10" />}
-            {slide.variant === 'burger' ? (
+            {no3d ? (
+              p.imageUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img key={p.id} src={cldUrl(p.imageUrl, { w: 720 })} alt="" className="absolute inset-0 h-full w-full object-cover" />
+              ) : (
+                <p className="display absolute inset-0 flex items-center justify-center px-6 text-center text-3xl text-carbon/80">{p.name}</p>
+              )
+            ) : (
+              !ready && <div className="absolute inset-0 m-auto h-24 w-40 animate-pulse rounded-[45%] bg-cream/10" />
+            )}
+            {no3d ? null : slide.variant === 'burger' ? (
               <Burger3D
                 key="burger"
                 ingredients={ingredients}
@@ -134,6 +145,7 @@ export default function MenuShowcase({ slides, onOpen, paused = false }: Props) 
                 paused={paused}
                 theme="dark"
                 onReady={() => setReady(true)}
+                onFail={() => setNo3d(true)}
                 snapshotRef={snapshotRef}
               />
             ) : (
@@ -148,6 +160,7 @@ export default function MenuShowcase({ slides, onOpen, paused = false }: Props) 
                 paused={paused}
                 theme="dark"
                 onReady={() => setReady(true)}
+                onFail={() => setNo3d(true)}
                 snapshotRef={snapshotRef}
               />
             )}

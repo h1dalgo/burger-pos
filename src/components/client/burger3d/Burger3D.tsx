@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useRef, type MutableRefObject } from 'react';
-import { BurgerScene } from './BurgerScene';
+import { BurgerScene, webglAvailable } from './BurgerScene';
+import { useStageLifecycle } from './useStageLifecycle';
 
 export interface Burger3DProps {
   /** Ingredientes activos (los base que no se quitaron + los extras elegidos). Ej: ['Queso Cheddar', '+Tocino ($1.00)'] */
@@ -30,42 +31,62 @@ export interface Burger3DProps {
   paused?: boolean;
   /** Al cambiar, la hamburguesa se vuelve a armar desde cero. */
   rebuildKey?: string | number;
+  /** No se pudo mostrar el 3D en este dispositivo (sin WebGL o falla repetida): mostrar la foto. */
+  onFail?: () => void;
 }
 
-export default function Burger3D({ ingredients, height = 280, className, autoRotate = true, onLayerClick, onReady, snapshotRef, highlight = null, interactive = true, theme = 'light', board = false, hint, paused = false, rebuildKey }: Burger3DProps) {
+export default function Burger3D({ ingredients, height = 280, className, autoRotate = true, onLayerClick, onReady, snapshotRef, highlight = null, interactive = true, theme = 'light', board = false, hint, paused = false, rebuildKey, onFail }: Burger3DProps) {
   const ref = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<BurgerScene | null>(null);
   const clickRef = useRef(onLayerClick);
   const readyRef = useRef(onReady);
   const key = ingredients.join('|');
+  const { gen, failed, fail, lost } = useStageLifecycle(onFail);
+  // lo último que se pidió, para rearmar la escena si el sistema la borra
+  const latest = useRef({ ingredients, paused, highlight, autoRotate });
 
   useEffect(() => {
     clickRef.current = onLayerClick;
     readyRef.current = onReady;
-  }, [onLayerClick, onReady]);
+    latest.current = { ingredients, paused, highlight, autoRotate };
+  });
 
   useEffect(() => {
-    if (!ref.current) return;
-    const scene = new BurgerScene(ref.current, {
-      autoRotate,
-      onLayerClick: onLayerClick ? (label: string) => clickRef.current?.(label) : null,
-      onReady: () => readyRef.current?.(),
-      interactive,
-      theme,
-      board,
-      ...(hint !== undefined ? { hint } : {}),
-    });
+    if (!ref.current || failed) return;
+    if (!webglAvailable()) {
+      fail();
+      return;
+    }
+    let scene: BurgerScene;
+    try {
+      scene = new BurgerScene(ref.current, {
+        autoRotate: latest.current.autoRotate,
+        onLayerClick: onLayerClick ? (label: string) => clickRef.current?.(label) : null,
+        onReady: () => readyRef.current?.(),
+        onContextLost: lost,
+        interactive,
+        theme,
+        board,
+        ...(hint !== undefined ? { hint } : {}),
+      });
+    } catch {
+      fail();
+      return;
+    }
     sceneRef.current = scene;
     if (snapshotRef) snapshotRef.current = () => scene.snapshot();
-    scene.setIngredients(ingredients);
+    scene.setIngredients(latest.current.ingredients);
+    if (latest.current.paused) scene.setPaused(true);
+    if (latest.current.highlight) scene.setHighlight(latest.current.highlight);
     return () => {
       if (snapshotRef) snapshotRef.current = null;
       scene.dispose();
       sceneRef.current = null;
     };
-    // Se crea una sola vez; los cambios de ingredientes se animan en el efecto de abajo.
+    // Se crea una vez (y de nuevo solo si el sistema borró el lienzo: `gen`);
+    // los cambios de ingredientes se animan en el efecto de abajo.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [gen, failed]);
 
   // Reconstrucción desde cero (va antes que el cambio normal de ingredientes)
   const lastRebuild = useRef(rebuildKey);

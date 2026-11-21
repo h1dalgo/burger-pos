@@ -8,6 +8,8 @@ export interface ItemSceneOptions {
   interactive?: boolean;
   /** Se llama cuando el primer cuadro ya está dibujado. */
   onReady?: () => void;
+  /** El sistema liberó la memoria gráfica: hay que crear la escena de nuevo. */
+  onContextLost?: () => void;
   autoRotate?: boolean;
   /** Texto de ayuda. false para ocultarlo. */
   hint?: string | false;

@@ -677,6 +677,22 @@ export function materialsOf(obj) {
   return out;
 }
 
+let WEBGL_OK = null;
+/** true si el navegador puede dibujar 3D (WebGL). Se consulta una sola vez. */
+export function webglAvailable() {
+  if (WEBGL_OK !== null) return WEBGL_OK;
+  if (typeof document === 'undefined') return false;
+  try {
+    const c = document.createElement('canvas');
+    const gl = c.getContext('webgl2') || c.getContext('webgl');
+    WEBGL_OK = !!gl;
+    gl?.getExtension('WEBGL_lose_context')?.loseContext(); // libera el contexto de prueba
+  } catch {
+    WEBGL_OK = false;
+  }
+  return WEBGL_OK;
+}
+
 export function getTier(option = 'auto') {
   if (option !== 'auto' && TIERS[option]) return TIERS[option];
   return TIERS[TIER_CACHE || (TIER_CACHE = detectTier())];
@@ -758,6 +774,17 @@ export class Stage {
     this._dpr = this._maxDpr;
     r.setPixelRatio(this._dpr);
     r.outputColorSpace = THREE.SRGBColorSpace;
+    // Si el teléfono libera la memoria gráfica, el lienzo queda en negro: se avisa
+    // al componente para que arme el 3D de nuevo con un lienzo nuevo.
+    this._onLost = (e) => {
+      e.preventDefault();
+      if (this._disposed || this._lost) return;
+      this._lost = true;
+      cancelAnimationFrame(this._raf);
+      this._raf = 0;
+      this.opts.onContextLost?.();
+    };
+    r.domElement.addEventListener('webglcontextlost', this._onLost);
     r.toneMapping = THREE.ACESFilmicToneMapping;
     r.toneMappingExposure = 1.1;
     r.shadowMap.enabled = this.q.shadow > 0;
@@ -980,6 +1007,7 @@ export class Stage {
     this._io?.disconnect();
     document.removeEventListener('visibilitychange', this._onVis);
     const cv = this.renderer.domElement;
+    cv.removeEventListener('webglcontextlost', this._onLost);
     cv.removeEventListener('pointermove', this._onMove);
     cv.removeEventListener('pointerleave', this._onLeave);
     cv.removeEventListener('pointerdown', this._onDown);
@@ -999,8 +1027,12 @@ export class Stage {
     const finish = () => {
       this._warmMats?.forEach((m) => m.dispose());
       this._envRT?.dispose();
-      this.renderer.dispose();
-      this.renderer.forceContextLoss();
+      try {
+        this.renderer.dispose();
+        if (!this._lost) this.renderer.forceContextLoss();
+      } catch {
+        /* el contexto ya se había perdido */
+      }
     };
     // Si aún se están compilando shaders, se libera al terminar (three falla si se libera antes).
     if (this._compiling) this._compiling.then(finish, finish);
@@ -1101,7 +1133,7 @@ export class Stage {
 
   _kick() {
     this._idleFrames = 0;
-    if (!this._disposed && !this._raf) {
+    if (!this._disposed && !this._lost && !this._raf) {
       this._clock.getDelta();
       this._raf = requestAnimationFrame(this._loop);
     }
@@ -1145,7 +1177,7 @@ export class Stage {
 
   _loop() {
     this._raf = 0;
-    if (this._disposed) return;
+    if (this._disposed || this._lost) return;
     if (this._paused || !this._visible || (typeof document !== 'undefined' && document.hidden)) return; // se reanuda con _kick()
     const raw = this._clock.getDelta();
     if (!this._ready) {

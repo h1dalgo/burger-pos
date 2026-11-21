@@ -20,6 +20,8 @@ export interface BurgerSceneOptions {
   interactive?: boolean;
   /** Se llama cuando el primer cuadro ya está dibujado. */
   onReady?: () => void;
+  /** El sistema liberó la memoria gráfica: hay que crear la escena de nuevo. */
+  onContextLost?: () => void;
   autoRotate?: boolean;
   /** Agrega una carne base si la lista no trae proteína. Default true. */
   autoPatty?: boolean;
@@ -54,3 +56,6 @@ export declare class BurgerScene {
 }
 
 export default BurgerScene;
+
+/** true si el navegador puede dibujar 3D (WebGL). */
+export declare function webglAvailable(): boolean;

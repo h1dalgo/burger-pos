@@ -665,6 +665,8 @@ function OrderHero3D({ preview, status }: { preview: OrderPreview; status: strin
   const ingredients = useMemo(() => (cooking ? all.slice(0, step % (all.length + 2)) : all), [cooking, all, step]);
   const isReady = status === 'READY';
   const H = 210;
+  const [no3d, setNo3d] = useState(false);
+  if (no3d) return null;
 
   return (
     <motion.div
@@ -675,9 +677,9 @@ function OrderHero3D({ preview, status }: { preview: OrderPreview; status: strin
       aria-hidden="true"
     >
       {preview.variant === 'burger' ? (
-        <Burger3D ingredients={ingredients} height={H} theme="dark" />
+        <Burger3D ingredients={ingredients} height={H} theme="dark" onFail={() => setNo3d(true)} />
       ) : (
-        <Item3D variant={preview.variant} name={preview.name} description={preview.description} choices={preview.choices} height={H} theme="dark" />
+        <Item3D variant={preview.variant} name={preview.name} description={preview.description} choices={preview.choices} height={H} theme="dark" onFail={() => setNo3d(true)} />
       )}
     </motion.div>
   );

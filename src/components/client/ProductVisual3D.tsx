@@ -79,6 +79,8 @@ export default function ProductVisual3D({
   const pulse = useAnimationControls();
   const prevQty = useRef(quantity);
   const [ready, setReady] = useState(false);
+  /** Este dispositivo no puede mostrar el 3D: se queda la foto. */
+  const [no3d, setNo3d] = useState(false);
   const [photoFailed, setPhotoFailed] = useState(false);
 
   const choicesKey = choiceLabels.join('|');
@@ -138,11 +140,13 @@ export default function ProductVisual3D({
             {showPhoto ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
-                src={cldUrl(imageUrl, { w: 320, quality: 'auto:low' })}
+                src={cldUrl(imageUrl, { w: no3d ? 720 : 320, quality: no3d ? 'auto' : 'auto:low' })}
                 alt=""
                 onError={() => setPhotoFailed(true)}
-                className="h-full w-full scale-110 object-cover opacity-70 blur-md"
+                className={`h-full w-full object-cover transition-[filter,opacity,transform] duration-300 ${no3d ? '' : 'scale-110 opacity-70 blur-md'}`}
               />
+            ) : no3d ? (
+              <p className="display px-6 text-center text-2xl text-carbon/80">{productName}</p>
             ) : (
               <div className="flex flex-col items-center gap-2">
                 <div className="h-20 w-36 animate-pulse rounded-[45%] bg-cream/10" />
@@ -163,6 +167,7 @@ export default function ProductVisual3D({
             ingredients={burgerIngredients}
             height={height}
             onReady={onReady}
+            onFail={() => setNo3d(true)}
             snapshotRef={snapshotRef}
             highlight={highlight}
             onLayerClick={onIngredientTap}
@@ -176,6 +181,7 @@ export default function ProductVisual3D({
             choices={choices}
             height={height}
             onReady={onReady}
+            onFail={() => setNo3d(true)}
             snapshotRef={snapshotRef}
             theme="dark"
           />

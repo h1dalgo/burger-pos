@@ -1027,3 +1027,6 @@ export class BurgerScene extends Stage {
 }
 
 export default BurgerScene;
+
+// ¿el navegador puede dibujar 3D? (lo usan los componentes para mostrar la foto si no)
+export { webglAvailable } from './core.js';
