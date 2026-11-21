@@ -42,7 +42,7 @@ function buildBunTop(ctx) {
     c.multiplyScalar(lerp(0.55, 1, smooth(0.0, 0.14, v.y)));
   });
   const group = new THREE.Group();
-  group.add(mesh(g, food({ map: 'crust', bump: 'crust', bumpScale: 2.5, roughness: 0.45, clearcoat: 0.5, clearcoatRoughness: 0.28 })));
+  group.add(mesh(g, food({ map: 'crust', bump: 'crust', bumpScale: 2.5, roughness: 0.42, clearcoat: 0.5, clearcoatRoughness: 0.32, sheen: 0.45, sheenRoughness: 0.55 })));
 
   // Ajonjolí (instanciado: 1 sola llamada de dibujo)
   const dome = side.filter((p) => p.y > 0.3);
@@ -96,7 +96,7 @@ function buildBunBottom(ctx) {
     if (n.y <= 0.6) c.multiplyScalar(lerp(1, 0.7, smooth(0.26, 0.36, v.y)));
   });
   const group = new THREE.Group();
-  group.add(mesh(g, food({ map: 'crust', bump: 'crust', bumpScale: 2.2, roughness: 0.55, clearcoat: 0.2, clearcoatRoughness: 0.5 })));
+  group.add(mesh(g, food({ map: 'crust', bump: 'crust', bumpScale: 2.2, roughness: 0.55, clearcoat: 0.2, clearcoatRoughness: 0.5, sheen: 0.35 })));
   const disk = new THREE.CircleGeometry(0.995, Math.round(q.seg * 0.75));
   disk.rotateX(-Math.PI / 2);
   const crumbMesh = mesh(disk, food({ map: 'crumb', bump: 'crumb', bumpScale: 1.2, roughness: 0.92 }));
@@ -164,12 +164,15 @@ function buildCheese(ctx, variant) {
   g.computeVertexNormals();
   const white = variant === 'white';
   const mat = food({
-    color: white ? '#f0d48a' : '#f39a14',
+    color: white ? '#efd596' : '#ec9d2e',
     bumpScale: 0.25,
     roughness: white ? 0.5 : 0.36,
     clearcoat: 0.35,
     clearcoatRoughness: 0.35,
     env: 0.7,
+    sheen: 0.5,
+    sheenColor: white ? '#fff0c8' : '#ffcf72',
+    sheenRoughness: 0.45,
   });
   const group = new THREE.Group();
   group.add(mesh(g, mat));
@@ -204,7 +207,7 @@ function leafGeo(ctx, radius, seedOff, colors, ruffleAmp = 0.065, freq = 13) {
 
 function buildLettuce(ctx) {
   const group = new THREE.Group();
-  const mat = food({ map: 'leaf', bump: 'leaf', bumpScale: 1.2, roughness: 0.45, clearcoat: 0.3, clearcoatRoughness: 0.3, side: THREE.DoubleSide });
+  const mat = food({ color: '#dfe8cf', map: 'leaf', bump: 'leaf', bumpScale: 1.2, roughness: 0.45, clearcoat: 0.3, clearcoatRoughness: 0.3, sheen: 0.3, sheenColor: '#e9ffc4', side: THREE.DoubleSide });
   const a = mesh(leafGeo(ctx, 1.24, 0, ['#4f8f2a', '#a3d65e']), mat);
   a.position.y = 0.012;
   const b = mesh(leafGeo(ctx, 1.16, 50, ['#5a9a30', '#b6e270']), mat);

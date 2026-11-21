@@ -14,6 +14,10 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { mergeVertices, mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { RGBELoader } from 'three/examples/jsm/loaders/RGBELoader.js';
+import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
+import { GTAOPass } from 'three/examples/jsm/postprocessing/GTAOPass.js';
+import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 
 export { THREE, mergeGeometries };
 
@@ -511,21 +515,51 @@ export const tex = (name) => TEX_CACHE[name] || (TEX_CACHE[name] = TEXTURES[name
  * Material único para toda la comida. Siempre lleva color por vértice, relieve
  * y barniz (clearcoat): así hay muy pocas variantes de shader que compilar.
  */
+/** Mapa de rugosidad a partir del relieve: valores 0.55–1 (el brillo se "rompe" como en la comida real). */
+const ROUGH_CACHE = {};
+function roughTex(name) {
+  if (ROUGH_CACHE[name]) return ROUGH_CACHE[name];
+  const src = tex(name);
+  const img = src.image;
+  const t = canvasTex(img.width, img.height, (g, w, h) => {
+    g.fillStyle = '#fff';
+    g.fillRect(0, 0, w, h);
+    g.globalAlpha = 0.45;
+    g.drawImage(img, 0, 0, w, h);
+  });
+  t.wrapS = src.wrapS;
+  t.wrapT = src.wrapT;
+  t.repeat.copy(src.repeat);
+  return (ROUGH_CACHE[name] = t);
+}
+
 export function food(p = {}) {
-  return new THREE.MeshPhysicalMaterial({
+  const rough = p.roughness ?? 0.55;
+  // lo húmedo (salsas, tomate, líquidos) conserva su barniz; lo seco casi no brilla
+  const wet = rough <= 0.25;
+  const m = new THREE.MeshPhysicalMaterial({
     vertexColors: true,
     color: p.color ? col(p.color) : new THREE.Color(1, 1, 1),
     map: p.map ? tex(p.map) : null,
     bumpMap: tex(p.bump || 'fine'),
     bumpScale: p.bumpScale ?? 0.5,
-    roughness: p.roughness ?? 0.55,
+    roughness: wet ? rough : Math.min(1, rough * 1.25),
+    roughnessMap: wet ? null : roughTex(p.bump || 'fine'),
     metalness: 0,
-    clearcoat: Math.max(0.03, p.clearcoat ?? 0.03),
+    clearcoat: Math.max(0.03, (p.clearcoat ?? 0.03) * (wet ? 1 : 0.45)),
     clearcoatRoughness: p.clearcoatRoughness ?? 0.4,
     envMapIntensity: p.env ?? 1,
+    // "piel" suave en el borde (pan, queso): imita la luz que entra en la comida
+    sheen: p.sheen ?? 0,
+    sheenColor: p.sheenColor ? col(p.sheenColor) : new THREE.Color(1, 0.86, 0.66),
+    sheenRoughness: p.sheenRoughness ?? 0.6,
+    transmission: p.transmission ?? 0,
+    thickness: p.thickness ?? 0,
+    ior: p.ior ?? 1.5,
     side: p.side ?? THREE.FrontSide,
     transparent: true, // fijo: cambiarlo al hacer fade obligaría a recompilar el shader
   });
+  return m;
 }
 
 export const TIERS = {
@@ -677,6 +711,9 @@ export function materialsOf(obj) {
   return out;
 }
 
+const GRAIN_URL =
+  "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E\")";
+
 let WEBGL_OK = null;
 /** true si el navegador puede dibujar 3D (WebGL). Se consulta una sola vez. */
 export function webglAvailable() {
@@ -785,8 +822,10 @@ export class Stage {
       this.opts.onContextLost?.();
     };
     r.domElement.addEventListener('webglcontextlost', this._onLost);
-    r.toneMapping = THREE.ACESFilmicToneMapping;
-    r.toneMappingExposure = 1.1;
+    // Neutral (Khronos PBR): pensado para fotografía de producto; respeta los colores
+    // reales de la comida sin el contraste saturado "de videojuego" de ACES
+    r.toneMapping = THREE.NeutralToneMapping;
+    r.toneMappingExposure = this.opts.theme === 'dark' ? 1.05 : 0.95;
     r.shadowMap.enabled = this.q.shadow > 0;
     r.shadowMap.type = THREE.PCFShadowMap; // admite radio de desenfoque → sombras más suaves
     r.shadowMap.autoUpdate = false; // solo se recalcula cuando algo se mueve
@@ -824,7 +863,7 @@ export class Stage {
       // charco de luz cálida en el piso bajo el producto
       const pool = new THREE.Mesh(
         new THREE.PlaneGeometry(5.2, 5.2),
-        new THREE.MeshBasicMaterial({ map: tex('pool'), color: 0x9a7048, transparent: true, opacity: 0.9, depthWrite: false })
+        new THREE.MeshBasicMaterial({ map: tex('pool'), color: 0x6a4a2e, transparent: true, opacity: 0.62, depthWrite: false, toneMapped: false })
       );
       pool.rotation.x = -Math.PI / 2;
       pool.position.y = 0.001;
@@ -836,6 +875,13 @@ export class Stage {
         background: 'radial-gradient(ellipse 72% 68% at 50% 46%, rgba(0,0,0,0) 40%, rgba(0,0,0,0.62) 100%)',
       });
       container.appendChild(vignette);
+      // grano fino de película: quita el aspecto "limpio de computadora"
+      const grain = (this._grain = document.createElement('div'));
+      Object.assign(grain.style, {
+        position: 'absolute', inset: '0', pointerEvents: 'none', opacity: '0.07', mixBlendMode: 'overlay',
+        backgroundImage: GRAIN_URL, backgroundSize: '160px 160px',
+      });
+      container.appendChild(grain);
     }
 
     if (this.q.shadow > 0) {
@@ -941,8 +987,44 @@ export class Stage {
     }
     this._onVis = () => !document.hidden && this._kick();
     document.addEventListener('visibilitychange', this._onVis);
+    this._setupPost();
     this._resize();
     this._warmup();
+  }
+
+  /**
+   * Postproceso tipo cámara en equipos potentes (calidad alta + vitrina oscura):
+   * oclusión ambiental GTAO = sombra suave donde las capas se tocan (pan sobre
+   * carne, queso sobre la carne), que es lo que más delata lo "dibujado".
+   * En equipos medios y bajos se dibuja directo, sin costo extra.
+   */
+  _setupPost() {
+    if (this.q.name !== 'high' || !this._dark || this.opts.post === false) return;
+    try {
+      const w = this.container.clientWidth || 1, h = this.container.clientHeight || 1;
+      const rt = new THREE.WebGLRenderTarget(w, h, { type: THREE.HalfFloatType, samples: 4 });
+      const composer = new EffectComposer(this.renderer, rt);
+      composer.addPass(new RenderPass(this.scene, this.camera));
+      const ao = new GTAOPass(this.scene, this.camera, w, h);
+      ao.output = GTAOPass.OUTPUT.Default;
+      ao.blendIntensity = 1;
+      ao.updateGtaoMaterial({ radius: 0.34, distanceExponent: 1.4, thickness: 1.4, scale: 1.45, samples: 16, distanceFallOff: 1, screenSpaceRadius: false });
+      ao.updatePdMaterial({ lumaPhi: 10, depthPhi: 2, normalPhi: 3, radius: 6, rings: 2, samples: 16 });
+      composer.addPass(ao);
+      composer.addPass(new OutputPass());
+      // el fondo de la vitrina lo pone el contenedor (color exacto, sin pasar por el revelado)
+      this.renderer.setClearColor(0x000000, 0);
+      this._composer = composer;
+      this._ao = ao;
+    } catch {
+      this._composer = null; // si algo falla, se dibuja directo
+    }
+  }
+
+  /** Dibuja un cuadro (con postproceso si está activo). */
+  _draw() {
+    if (this._composer) this._composer.render();
+    else this.renderer.render(this.scene, this.camera);
   }
 
   /* ---- hooks para subclases ---- */
@@ -1024,6 +1106,13 @@ export class Stage {
     });
     cv.remove();
     this._vignette?.remove();
+    this._grain?.remove();
+    try {
+      this._ao?.dispose();
+      this._composer?.dispose();
+    } catch {
+      /* ya liberado */
+    }
     const finish = () => {
       this._warmMats?.forEach((m) => m.dispose());
       this._envRT?.dispose();
@@ -1125,6 +1214,10 @@ export class Stage {
   _resize() {
     const w = this.container.clientWidth || 1, h = this.container.clientHeight || 1;
     this.renderer.setSize(w, h, false);
+    if (this._composer) {
+      this._composer.setPixelRatio(this._dpr);
+      this._composer.setSize(w, h);
+    }
     this.camera.aspect = w / h;
     this.camera.updateProjectionMatrix();
     this._dirty = true;
@@ -1220,7 +1313,7 @@ export class Stage {
     if (render) {
       if (active || built || this._shadowDirty) this.renderer.shadowMap.needsUpdate = true;
       this._shadowDirty = false;
-      this.renderer.render(this.scene, this.camera);
+      this._draw();
       this._dirty = false;
       this._idleFrames = 0;
     } else {

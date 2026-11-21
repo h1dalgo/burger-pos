@@ -221,8 +221,10 @@ function buildPitcher(q, glass) {
     straw.name = 'straw';
     group.add(straw);
   }
-  const liqMat = food({ color: '#f0913f', bumpScale: 0, roughness: 0.12, clearcoat: 0.6, clearcoatRoughness: 0.1, env: 0.9 });
-  liqMat.opacity = liqMat.userData.baseOpacity = 0.92;
+  const liqMat = food({ color: '#f0913f', bumpScale: 0, roughness: 0.08, clearcoat: 0.6, clearcoatRoughness: 0.1, env: 0.9, transmission: 0.82, thickness: 1.6, ior: 1.34 });
+  liqMat.attenuationColor = liqMat.color; // mismo color: al cambiar de sabor cambia todo
+  liqMat.attenuationDistance = 2.4;
+  liqMat.opacity = liqMat.userData.baseOpacity = 1;
   const side = mesh(liquidSide(R - 0.06, q), liqMat);
   side.name = 'liquid';
   side.position.y = 0.105;
@@ -253,7 +255,7 @@ function buildPitcher(q, glass) {
   }
   group.add(ice);
   // chorro que cae al rellenar con un sabor nuevo
-  const streamMat = food({ color: '#f0913f', bumpScale: 0, roughness: 0.1, clearcoat: 0.8, env: 1 });
+  const streamMat = food({ color: '#f0913f', bumpScale: 0, roughness: 0.1, clearcoat: 0.8, env: 1, transmission: 0.45, thickness: 0.3, ior: 1.34 });
   streamMat.opacity = streamMat.userData.baseOpacity = 0.9;
   const sg = new THREE.CylinderGeometry(0.045, 0.06, 1, 14, 8, true);
   sg.translate(0, -0.5, 0);
@@ -298,8 +300,10 @@ function buildBottle(q) {
     }
     inner.push(new THREE.Vector2(p.x * 0.95, Math.max(0.035, p.y)));
   }
-  const liqMat = food({ color: '#160501', bumpScale: 0, roughness: 0.1, clearcoat: 0.8, env: 1.1 });
-  liqMat.opacity = liqMat.userData.baseOpacity = 0.94;
+  const liqMat = food({ color: '#2a0c04', bumpScale: 0, roughness: 0.1, clearcoat: 0.8, env: 1.1, transmission: 0.35, thickness: 2, ior: 1.34 });
+  liqMat.attenuationColor = new THREE.Color('#1a0602');
+  liqMat.attenuationDistance = 0.35;
+  liqMat.opacity = liqMat.userData.baseOpacity = 1;
   const liquid = mesh(latheGeo(joinProfiles(flatLine(0, 0.28, 0.035, 3), inner, flatLine(inner[inner.length - 1].x, 0, fill, 3)), Math.round(q.seg * 0.75)), liqMat);
   liquid.geometry.computeVertexNormals();
   liquid.renderOrder = 1;
@@ -459,7 +463,7 @@ function wing(q, seed) {
     c.lerp(col('#6b2a0c'), smooth(0.2, 0.5, fbm(v.x * 12, v.y * 12, v.z * 12, seed + 7, 2)) * 0.5);
   });
   const group = new THREE.Group();
-  group.add(mesh(g, food({ map: 'crust', bump: 'crust', bumpScale: 3, roughness: 0.35, clearcoat: 0.8, clearcoatRoughness: 0.25 })));
+  group.add(mesh(g, food({ map: 'crust', bump: 'crust', bumpScale: 3, roughness: 0.4, clearcoat: 0.8, clearcoatRoughness: 0.3, sheen: 0.35, sheenColor: '#ffb066', sheenRoughness: 0.5 })));
   const bone = mesh(new THREE.SphereGeometry(0.05, 10, 8), food({ color: '#efe4d0', bumpScale: 0, roughness: 0.6 }));
   bone.scale.set(1, 0.6, 1);
   bone.position.y = 0.62;
