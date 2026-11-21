@@ -43,7 +43,7 @@ export default function CartFloatingButton({ onClick }: Props) {
       onClick={onClick}
       data-cart-target
       aria-label={`Ver pedido: ${totalItems} productos, ${formatPrice(totalAmount)}`}
-      className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 rounded-full py-3.5 pl-5 pr-6 font-semibold text-[#17110a] [background:var(--gold-grad)] shadow-[0_1px_0_rgb(255_255_255/0.35)_inset,0_22px_44px_-18px_rgb(216_173_102/0.6),0_10px_30px_-10px_rgb(0_0_0/0.8)]"
+      className="fixed bottom-[calc(1.5rem+env(safe-area-inset-bottom))] left-1/2 -translate-x-1/2 z-40 rounded-full py-3.5 pl-5 pr-6 font-semibold text-[#17110a] [background:var(--gold-grad)] shadow-[0_1px_0_rgb(255_255_255/0.35)_inset,0_22px_44px_-18px_rgb(216_173_102/0.6),0_10px_30px_-10px_rgb(0_0_0/0.8)]"
     >
       <motion.span animate={bump} className="flex items-center gap-3">
         <span className="relative">

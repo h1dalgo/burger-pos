@@ -128,7 +128,7 @@ function ItemForm({ initial, cats, onClose, onSaved }: { initial: Draft; cats: C
             </div>
           </div>
         </div>
-        <div className="flex gap-2 border-t border-carbon/10 px-6 py-4">
+        <div className="flex gap-2 border-t border-carbon/10 px-6 pt-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
           <button type="button" onClick={onClose} className="btn btn-outline flex-1">
             Cancelar
           </button>

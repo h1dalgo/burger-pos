@@ -75,7 +75,7 @@ function PromoForm({ initial, cats, onClose, onSaved }: { initial: Draft; cats: 
         animate={{ y: 0, opacity: 1 }}
         exit={{ y: 30, opacity: 0 }}
         onClick={(e) => e.stopPropagation()}
-        className="max-h-[92vh] w-full max-w-lg overflow-y-auto rounded-t-[1.75rem] border border-carbon/10 bg-card p-6 sm:rounded-[1.75rem]"
+        className="max-h-[92vh] w-full max-w-lg overflow-y-auto rounded-t-[1.75rem] border border-carbon/10 bg-card p-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))] sm:rounded-[1.75rem]"
       >
         <div className="flex items-center justify-between">
           <h2 className="display text-2xl text-carbon">{d.id ? 'Editar promoción' : 'Nueva promoción'}</h2>

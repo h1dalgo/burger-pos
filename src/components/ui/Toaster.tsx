@@ -6,6 +6,8 @@ export function Toaster() {
   return (
     <HotToaster
       position="top-center"
+      // debajo del notch / Dynamic Island cuando la app está instalada
+      containerStyle={{ top: 'calc(16px + env(safe-area-inset-top, 0px))' }}
       toastOptions={{
         duration: 3500,
         style: {

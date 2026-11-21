@@ -314,7 +314,7 @@ export default function SuccessScreen({ orderId }: Props) {
   const showSummary = summaryOpen ?? status === 'WAITING_PAYMENT';
 
   return (
-    <div className="min-h-screen flex items-start sm:items-center justify-center p-4">
+    <div className="min-h-screen flex items-start sm:items-center justify-center px-4 page-safe">
       <motion.div
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}

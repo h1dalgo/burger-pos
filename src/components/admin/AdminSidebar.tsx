@@ -112,11 +112,11 @@ export default function AdminSidebar() {
 
   return (
     <>
-      <aside className="hidden md:flex w-64 shrink-0 min-h-screen bg-card text-carbon flex-col border-r border-carbon/10 sticky top-0 h-screen print:hidden">
+      <aside className="hidden md:flex w-64 shrink-0 min-h-screen safe-top safe-bottom bg-card text-carbon flex-col border-r border-carbon/10 sticky top-0 h-screen print:hidden">
         {navContent}
       </aside>
 
-      <header className="md:hidden sticky top-0 z-40 flex items-center justify-between px-4 py-3 bg-cream/80 backdrop-blur-xl border-b border-carbon/10 print:hidden">
+      <header className="md:hidden sticky top-0 z-40 flex items-center justify-between px-4 pb-3 safe-header bg-cream/80 backdrop-blur-xl border-b border-carbon/10 print:hidden">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-lg border border-burger/40 bg-burger/10 flex items-center justify-center">
             <LayoutDashboard className="w-4 h-4 text-burger" />
@@ -150,7 +150,7 @@ export default function AdminSidebar() {
               exit={{ x: -280 }}
               transition={{ type: 'spring', damping: 25, stiffness: 300 }}
               onClick={(e) => e.stopPropagation()}
-              className="absolute left-0 top-0 bottom-0 w-64 bg-card text-carbon border-r border-carbon/10 flex flex-col shadow-pop"
+              className="absolute left-0 top-0 bottom-0 w-64 safe-top safe-bottom bg-card text-carbon border-r border-carbon/10 flex flex-col shadow-pop"
             >
               <button
                 type="button"

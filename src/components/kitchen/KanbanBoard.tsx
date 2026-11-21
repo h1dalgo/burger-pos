@@ -314,8 +314,8 @@ export default function KanbanBoard() {
   })();
 
   return (
-    <div className="h-screen flex flex-col">
-      <header className="relative bg-cream/80 backdrop-blur-xl px-4 sm:px-6 py-3 flex items-center justify-between gap-3 border-b border-carbon/10">
+    <div className="h-dvh flex flex-col safe-bottom">
+      <header className="relative bg-cream/80 backdrop-blur-xl px-4 sm:px-6 pb-3 safe-header flex items-center justify-between gap-3 border-b border-carbon/10">
         <div className="flex items-center gap-3 min-w-0">
           <div className="w-10 h-10 shrink-0 rounded-xl border border-burger/40 bg-burger/10 flex items-center justify-center">
             <ChefHat className="w-5 h-5 text-burger" strokeWidth={1.6} />

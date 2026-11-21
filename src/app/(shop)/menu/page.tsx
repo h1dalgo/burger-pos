@@ -210,8 +210,8 @@ export default function MenuPage() {
   })();
 
   return (
-    <div className="min-h-screen pb-32">
-      <div ref={headerRef} className="sticky top-0 z-30 border-b border-carbon/10 bg-cream/75 backdrop-blur-xl backdrop-saturate-150">
+    <div className="min-h-screen pb-[calc(8rem+env(safe-area-inset-bottom))]">
+      <div ref={headerRef} className="safe-top sticky top-0 z-30 border-b border-carbon/10 bg-cream/75 backdrop-blur-xl backdrop-saturate-150">
         <div className="max-w-5xl mx-auto">
           <header className="px-4 py-3 flex items-center gap-3">
             <button

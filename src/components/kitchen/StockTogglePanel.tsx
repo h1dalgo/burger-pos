@@ -82,7 +82,7 @@ export default function StockTogglePanel({ onClose }: Props) {
       animate={{ x: 0, opacity: 1 }}
       exit={{ x: 360, opacity: 0 }}
       transition={{ type: 'spring', damping: 25, stiffness: 250 }}
-      className="fixed right-0 top-0 bottom-0 w-80 bg-card border-l-2 border-carbon z-40 overflow-y-auto shadow-pop"
+      className="fixed right-0 top-0 bottom-0 w-80 safe-top safe-bottom bg-card border-l-2 border-carbon z-40 overflow-y-auto shadow-pop"
       role="dialog"
       aria-label="Control de stock"
     >

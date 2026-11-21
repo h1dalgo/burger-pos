@@ -460,7 +460,7 @@ export default function WaiterPage() {
 
   if (!waiterName) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4">
+      <div className="min-h-screen flex items-center justify-center px-4 page-safe">
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
@@ -548,7 +548,7 @@ export default function WaiterPage() {
           })()}
       </AnimatePresence>
 
-      <header className="bg-cream/80 backdrop-blur-xl px-4 py-3 flex items-center justify-between gap-3 border-b border-carbon/10 sticky top-0 z-20">
+      <header className="bg-cream/80 backdrop-blur-xl px-4 pb-3 safe-header flex items-center justify-between gap-3 border-b border-carbon/10 sticky top-0 z-20">
         <div className="flex min-w-0 items-center gap-3">
           <div className="w-9 h-9 shrink-0 rounded-xl border border-burger/40 bg-burger/10 flex items-center justify-center">
             <ChefHat className="w-5 h-5 text-burger" strokeWidth={1.6} />

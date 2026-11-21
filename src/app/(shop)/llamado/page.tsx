@@ -41,7 +41,7 @@ export default function LlamadoPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-6">
+    <div className="min-h-screen flex flex-col items-center justify-center px-6 page-safe">
       <div className="w-full max-w-sm mx-auto space-y-8">
         <motion.div
           initial={{ opacity: 0, y: 24 }}
@@ -109,7 +109,7 @@ export default function LlamadoPage() {
             exit={{ opacity: 0, scale: 0.8 }}
             transition={{ type: 'spring', damping: 20, stiffness: 300 }}
             role="status"
-            className="fixed bottom-8 left-4 right-4 max-w-sm mx-auto bg-card text-carbon rounded-2xl p-5 border-2 border-carbon shadow-pop flex items-center gap-4"
+            className="fixed bottom-[calc(2rem+env(safe-area-inset-bottom))] left-4 right-4 max-w-sm mx-auto bg-card text-carbon rounded-2xl p-5 border-2 border-carbon shadow-pop flex items-center gap-4"
           >
             <CheckCircle2 className="w-8 h-8 shrink-0 text-mint" />
             <div>

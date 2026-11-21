@@ -66,7 +66,7 @@ export default function MoveTableSheet({ from, tableCount, orders, onClose, onDo
         exit={{ y: '100%' }}
         transition={{ type: 'spring', damping: 26, stiffness: 300 }}
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-md rounded-t-[1.75rem] border border-carbon/10 bg-card p-6 sm:rounded-[1.75rem]"
+        className="w-full max-w-md rounded-t-[1.75rem] border border-carbon/10 bg-card p-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))] sm:rounded-[1.75rem]"
       >
         <div className="flex items-center gap-3">
           <span className="flex h-9 w-9 items-center justify-center rounded-xl border border-burger/40 bg-burger/10">

@@ -40,7 +40,7 @@ export default function PaymentsPanel({ orders, pendingId, onConfirm, onCancel, 
         exit={{ x: '100%' }}
         transition={{ type: 'spring', damping: 30, stiffness: 300 }}
         onClick={(e) => e.stopPropagation()}
-        className="absolute right-0 top-0 bottom-0 flex w-full max-w-md flex-col border-l border-carbon/10 bg-card"
+        className="absolute right-0 top-0 bottom-0 flex w-full max-w-md flex-col safe-top safe-bottom border-l border-carbon/10 bg-card"
       >
         <div className="flex items-center gap-3 border-b border-carbon/10 px-5 py-4">
           <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-burger/40 bg-burger/10">
