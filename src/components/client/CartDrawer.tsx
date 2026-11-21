@@ -60,6 +60,13 @@ export default function CartDrawer({ isOpen, onClose, onRequireTable, onEditItem
   const [coupon, setCoupon] = useState('');
   const [quote, setQuote] = useState<{ discount: number; label: string | null; couponError?: string }>({ discount: 0, label: null });
   const [reordering, setReordering] = useState(false);
+  const savedEmail = useSessionStore((s) => s.customerEmail);
+  const savedDoc = useSessionStore((s) => s.customerDoc);
+  const [email, setEmail] = useState<string | null>(null);
+  const [doc, setDoc] = useState<string | null>(null);
+  const [emailError, setEmailError] = useState('');
+  const emailValue = email ?? savedEmail;
+  const docValue = doc ?? savedDoc;
   const business = useBusinessStore((s) => s.settings);
   const loadBusiness = useBusinessStore((s) => s.load);
   const lastOrderId = useSessionStore((s) => s.lastOrderId);
@@ -187,6 +194,12 @@ export default function CartDrawer({ isOpen, onClose, onRequireTable, onEditItem
       setError(quote.couponError);
       return;
     }
+    const cleanEmail = emailValue.trim().toLowerCase();
+    if (cleanEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(cleanEmail)) {
+      setEmailError('Revisa el correo (ej. nombre@gmail.com)');
+      return;
+    }
+    useSessionStore.getState().setReceiptData(cleanEmail, docValue.trim().toUpperCase());
     setError('');
     setSubmitting(true);
 
@@ -197,6 +210,8 @@ export default function CartDrawer({ isOpen, onClose, onRequireTable, onEditItem
         paymentMethod,
         paymentReference: paymentMethod === 'MOBILE_PAYMENT' ? reference : undefined,
         couponCode: coupon || undefined,
+        customerEmail: cleanEmail || undefined,
+        customerDoc: docValue.trim() || undefined,
         tip: tipAmount,
         items: items.map((item) => ({
           productId: item.product.id,
@@ -370,6 +385,37 @@ export default function CartDrawer({ isOpen, onClose, onRequireTable, onEditItem
                     error={nameError || undefined}
                   />
                 </div>
+
+                <details className="group rounded-2xl border border-carbon/10 px-4 py-3" open={!!(emailValue || docValue) || undefined}>
+                  <summary className="flex cursor-pointer list-none items-center justify-between text-sm font-semibold text-carbon">
+                    Recibo digital por correo
+                    <span className="text-[12px] font-normal text-carbon/50 group-open:hidden">Opcional</span>
+                  </summary>
+                  <div className="mt-3 space-y-3">
+                    <TextField
+                      label="Correo"
+                      type="email"
+                      inputMode="email"
+                      autoComplete="email"
+                      value={emailValue}
+                      onChange={(e) => {
+                        setEmail(e.target.value);
+                        setEmailError('');
+                      }}
+                      placeholder="nombre@gmail.com"
+                      maxLength={120}
+                      error={emailError || undefined}
+                    />
+                    <TextField
+                      label="Cédula o RIF (opcional)"
+                      value={docValue}
+                      onChange={(e) => setDoc(e.target.value.toUpperCase().slice(0, 20))}
+                      placeholder="V-12345678"
+                      autoComplete="off"
+                    />
+                    <p className="text-[11px] text-carbon/50">Cuando se confirme el pago te llega el recibo con el detalle de tu pedido.</p>
+                  </div>
+                </details>
 
                 <div>
                   <p className="text-sm font-semibold text-carbon mb-2">¿Tienes un cupón?</p>

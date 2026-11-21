@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { X, Loader2, Check, Store, DollarSign, Clock, Smartphone } from 'lucide-react';
+import { X, Loader2, Check, Store, DollarSign, Clock, Smartphone, ReceiptText } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { Button } from '@/components/ui/Button';
 import { TextField } from '@/components/ui/TextField';
@@ -42,6 +42,12 @@ export default function AdminSettingsPage() {
   const [bank, setBank] = useState('');
   const [phone, setPhone] = useState('');
   const [idDoc, setIdDoc] = useState('');
+  const [legalName, setLegalName] = useState('');
+  const [rif, setRif] = useState('');
+  const [address, setAddress] = useState('');
+  const [bizPhone, setBizPhone] = useState('');
+  const [taxRate, setTaxRate] = useState('');
+  const [footer, setFooter] = useState('');
   const [status, setStatus] = useState<{ open: boolean; message: string | null } | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -58,6 +64,12 @@ export default function AdminSettingsPage() {
     setBank(data.pagoMovilBank ?? '');
     setPhone(data.pagoMovilPhone ?? '');
     setIdDoc(data.pagoMovilId ?? '');
+    setLegalName(data.legalName ?? '');
+    setRif(data.rif ?? '');
+    setAddress(data.address ?? '');
+    setBizPhone(data.phone ?? '');
+    setTaxRate(data.taxRate ? String(data.taxRate) : '');
+    setFooter(data.receiptFooter ?? '');
     setStatus({ open: data.open, message: data.message });
     if (data.logoUrl) {
       setLogoUrl(data.logoUrl);
@@ -108,6 +120,12 @@ export default function AdminSettingsPage() {
           pagoMovilBank: bank,
           pagoMovilPhone: phone,
           pagoMovilId: idDoc,
+          legalName,
+          rif,
+          address,
+          phone: bizPhone,
+          taxRate: taxRate.trim() ? Number(taxRate.replace(',', '.')) : 0,
+          receiptFooter: footer,
         }),
       });
       const body = await res.json().catch(() => null);
@@ -187,6 +205,41 @@ export default function AdminSettingsPage() {
                 <TextField value={idDoc} onChange={(e) => setIdDoc(e.target.value)} placeholder="V-12345678" />
               </label>
             </div>
+          </Section>
+
+          <Section icon={ReceiptText} title="Recibo digital" hint="Aparece en el recibo que recibe el cliente al confirmarse el pago.">
+            <label className="block">
+              <Label>Razón social</Label>
+              <TextField value={legalName} onChange={(e) => setLegalName(e.target.value)} placeholder="Ej: Inversiones Burger House C.A." />
+            </label>
+            <div className="grid grid-cols-2 gap-3">
+              <label>
+                <Label>RIF</Label>
+                <TextField value={rif} onChange={(e) => setRif(e.target.value.toUpperCase())} placeholder="J-12345678-9" />
+              </label>
+              <label>
+                <Label>Teléfono</Label>
+                <TextField inputMode="tel" value={bizPhone} onChange={(e) => setBizPhone(e.target.value)} placeholder="0212-1234567" />
+              </label>
+            </div>
+            <label className="block">
+              <Label>Dirección</Label>
+              <TextField value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Av. Principal, Local 3, Caracas" />
+            </label>
+            <div className="grid grid-cols-2 gap-3">
+              <label>
+                <Label>IVA incluido (%)</Label>
+                <TextField inputMode="decimal" value={taxRate} onChange={(e) => setTaxRate(e.target.value.replace(/[^\d.,]/g, ''))} placeholder="Ej: 16" />
+              </label>
+              <label>
+                <Label>Mensaje al pie</Label>
+                <TextField value={footer} onChange={(e) => setFooter(e.target.value)} placeholder="¡Gracias por tu visita!" />
+              </label>
+            </div>
+            <p className="text-[12px] text-carbon/50">
+              Con IVA, el recibo separa base imponible e impuesto (los precios ya lo incluyen). Es un comprobante no fiscal: no reemplaza la factura de una máquina fiscal o
+              imprenta digital autorizada por el SENIAT.
+            </p>
           </Section>
 
           <Section icon={Store} title="Negocio">

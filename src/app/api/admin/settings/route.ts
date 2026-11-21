@@ -43,6 +43,17 @@ export async function PATCH(request: NextRequest) {
     if (body.pagoMovilBank !== undefined) data.pagoMovilBank = text(body.pagoMovilBank, 60);
     if (body.pagoMovilPhone !== undefined) data.pagoMovilPhone = text(body.pagoMovilPhone, 20);
     if (body.pagoMovilId !== undefined) data.pagoMovilId = text(body.pagoMovilId, 20);
+    // Datos del emisor para el recibo digital
+    if (body.legalName !== undefined) data.legalName = text(body.legalName, 120);
+    if (body.rif !== undefined) data.rif = text(body.rif, 20)?.toUpperCase() ?? null;
+    if (body.address !== undefined) data.address = text(body.address, 200);
+    if (body.phone !== undefined) data.phone = text(body.phone, 30);
+    if (body.receiptFooter !== undefined) data.receiptFooter = text(body.receiptFooter, 160);
+    if (body.taxRate !== undefined) {
+      const t = Number(body.taxRate);
+      if (!Number.isFinite(t) || t < 0 || t > 50) return NextResponse.json({ error: 'IVA inválido' }, { status: 400 });
+      data.taxRate = t;
+    }
 
     const settings = await prisma.businessSettings.update({ where: { id: current.id }, data });
     // el menú abierto en los teléfonos se entera (tasa, horario)

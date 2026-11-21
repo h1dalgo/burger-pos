@@ -98,6 +98,13 @@ export interface Order {
   rating?: number | null;
   ratingComment?: string | null;
   cancelReason?: string | null;
+  /** Recibo digital (se asigna al confirmarse el pago) */
+  receiptNumber?: number | null;
+  paidAt?: string | null;
+  customerDoc?: string | null;
+  /** Correo enmascarado (solo en el recibo) */
+  maskedEmail?: string | null;
+  receiptSentAt?: string | null;
   createdAt: string;
   updatedAt: string;
   items: OrderItem[];
@@ -157,6 +164,12 @@ export interface BusinessSettings {
   pagoMovilBank: string | null;
   pagoMovilPhone: string | null;
   pagoMovilId: string | null;
+  legalName?: string | null;
+  rif?: string | null;
+  address?: string | null;
+  phone?: string | null;
+  taxRate?: number;
+  receiptFooter?: string | null;
 }
 
 /** Ajustes públicos que recibe el cliente (/api/settings). */

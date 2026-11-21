@@ -51,13 +51,14 @@ export async function GET(request: NextRequest) {
 
     // Exportar a Excel (CSV con ; y BOM para que Excel respete los acentos)
     if (params.get('format') === 'csv') {
-      const head = ['Pedido', 'Fecha', 'Hora', 'Estado', 'Cliente', 'Mesa', 'Mesero', 'Pago', 'Referencia', 'Productos', 'Descuento $', 'Total $', 'Propina $', 'Tasa Bs/$', 'Total Bs', 'Calificación', 'Motivo de cancelación'];
+      const head = ['Pedido', 'Recibo', 'Fecha', 'Hora', 'Estado', 'Cliente', 'Mesa', 'Mesero', 'Pago', 'Referencia', 'Cédula/RIF', 'Productos', 'Descuento $', 'Total $', 'Propina $', 'Tasa Bs/$', 'Total Bs', 'Calificación', 'Motivo de cancelación'];
       const fmtDate = new Intl.DateTimeFormat('es-VE', { timeZone: settings.timezone, day: '2-digit', month: '2-digit', year: 'numeric' });
       const fmtTime = new Intl.DateTimeFormat('es-VE', { timeZone: settings.timezone, hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
       const rows = all.map((o) => {
         const rate = Number(o.exchangeRate ?? 0);
         return [
           String(o.displayId).padStart(4, '0'),
+          o.receiptNumber ? String(o.receiptNumber).padStart(6, '0') : '',
           fmtDate.format(o.createdAt),
           fmtTime.format(o.createdAt),
           STATUS[o.status] ?? o.status,
@@ -66,6 +67,7 @@ export async function GET(request: NextRequest) {
           o.waiter ?? '',
           METHOD[o.paymentMethod] ?? o.paymentMethod,
           o.paymentReference ?? '',
+          o.customerDoc ?? '',
           o.items.map((i) => `${i.quantity}x ${i.productName}`).join(', '),
           Number(o.discount).toFixed(2).replace('.', ','),
           Number(o.totalAmount).toFixed(2).replace('.', ','),

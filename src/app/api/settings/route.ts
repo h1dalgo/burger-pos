@@ -12,6 +12,7 @@ export async function GET() {
       {
         ...s,
         exchangeRate: Number(s.exchangeRate),
+        taxRate: Number(s.taxRate),
         ...openState(s),
         promotions: promos.map((p) => ({
           id: p.id,

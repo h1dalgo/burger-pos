@@ -133,6 +133,13 @@ model Order {
   rating        Int?
   ratingComment String?       @map("rating_comment")
   cancelReason  String?       @map("cancel_reason")
+  /// Recibo digital: número correlativo asignado al confirmarse el pago
+  receiptNumber Int?          @map("receipt_number")
+  paidAt        DateTime?     @map("paid_at")
+  /// Datos opcionales del cliente para el recibo
+  customerDoc   String?       @map("customer_doc")
+  customerEmail String?       @map("customer_email")
+  receiptSentAt DateTime?     @map("receipt_sent_at")
   createdAt     DateTime      @default(now()) @map("created_at")
   updatedAt     DateTime      @updatedAt @map("updated_at")
 
@@ -244,6 +251,16 @@ model BusinessSettings {
   pagoMovilBank  String?   @map("pago_movil_bank")
   pagoMovilPhone String?   @map("pago_movil_phone")
   pagoMovilId    String?   @map("pago_movil_id")
+  /// Datos del emisor para el recibo digital
+  legalName      String?   @map("legal_name")
+  rif            String?
+  address        String?
+  phone          String?
+  /// IVA incluido en los precios (ej. 16). 0 = no desglosar
+  taxRate        Decimal   @default(0) @map("tax_rate") @db.Decimal(5, 2)
+  receiptFooter  String?   @map("receipt_footer")
+  /// Próximo número de recibo
+  nextReceipt    Int       @default(1) @map("next_receipt")
 
   @@map("business_settings")
 }

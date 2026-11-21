@@ -19,6 +19,8 @@ import {
   ConciergeBell,
   StickyNote,
   RotateCcw,
+  ReceiptText,
+  ChevronRight,
 } from 'lucide-react';
 import type { Order } from '@/types';
 import { formatPrice } from '@/lib/utils';
@@ -542,6 +544,23 @@ export default function SuccessScreen({ orderId }: Props) {
             Este pedido fue cancelado{order?.cancelReason ? `: ${order.cancelReason}` : ''}. Si es un error, llama al mesero.
           </p>
         )}
+
+        {order?.receiptNumber ? (
+          <motion.a
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, ease: [0.23, 1, 0.32, 1] }}
+            href={`/recibo/${order.id}`}
+            className="mt-4 flex items-center gap-3 rounded-2xl border border-mint/40 bg-mint/10 px-4 py-3 text-left transition-colors hover:bg-mint/15"
+          >
+            <ReceiptText className="h-5 w-5 shrink-0 text-mint-ink" />
+            <span className="min-w-0 flex-1">
+              <span className="block text-sm font-semibold text-carbon">Tu recibo digital</span>
+              <span className="block text-[12px] text-carbon/60">N.º {String(order.receiptNumber).padStart(6, '0')} · verlo, guardarlo en PDF o compartirlo</span>
+            </span>
+            <ChevronRight className="h-4 w-4 shrink-0 text-carbon/45" />
+          </motion.a>
+        ) : null}
 
         {order && !isCancelled && (
           <div className="mt-4">

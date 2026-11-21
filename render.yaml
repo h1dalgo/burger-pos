@@ -29,6 +29,11 @@ services:
         sync: false
       - key: VAPID_SUBJECT
         sync: false
+      # Recibo digital por correo (opcional): clave de resend.com y remitente verificado
+      - key: RESEND_API_KEY
+        sync: false
+      - key: RECEIPT_FROM
+        sync: false
 
 databases:
   - name: burger-pos-db

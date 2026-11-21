@@ -3,6 +3,7 @@ import type { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { bestDiscount, getSettings, moveInventory, openState, outOfStockProductIds } from '@/lib/business';
 import { sendPush } from '@/lib/push';
+import { baseUrlFrom, onPaid, redactOrder } from '@/lib/receipts';
 
 export const runtime = 'nodejs';
 
@@ -49,7 +50,7 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({ error: 'Invalid displayId' }, { status: 400 });
       }
       const order = await prisma.order.findFirst({ where: { displayId }, include: ORDER_INCLUDE });
-      return NextResponse.json(order);
+      return NextResponse.json(order ? redactOrder(order) : null);
     }
 
     await archiveStale().catch((e) => console.error('archiveStale', e));
@@ -60,7 +61,7 @@ export async function GET(request: NextRequest) {
       include: ORDER_INCLUDE,
     });
 
-    return NextResponse.json(orders);
+    return NextResponse.json(orders.map(redactOrder));
   } catch {
     return NextResponse.json({ error: 'Failed to fetch orders' }, { status: 500 });
   }
@@ -69,7 +70,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { customerName, tableNumber, paymentMethod, items, status, tip, waiter, paymentReference, couponCode } = body;
+    const { customerName, tableNumber, paymentMethod, items, status, tip, waiter, paymentReference, couponCode, customerEmail, customerDoc } = body;
 
     if (typeof customerName !== 'string' || !customerName.trim() || customerName.trim().length > 80) {
       return NextResponse.json({ error: 'Nombre inválido' }, { status: 400 });
@@ -114,6 +115,13 @@ export async function POST(request: NextRequest) {
     if (paymentMethod === 'MOBILE_PAYMENT' && !waiterName && reference.length < 4) {
       return NextResponse.json({ error: 'Escribe los últimos dígitos de la referencia del Pago Móvil' }, { status: 400 });
     }
+
+    // Datos opcionales para el recibo digital
+    const email = typeof customerEmail === 'string' ? customerEmail.trim().toLowerCase().slice(0, 120) : '';
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) {
+      return NextResponse.json({ error: 'Revisa el correo para el recibo' }, { status: 400 });
+    }
+    const doc = typeof customerDoc === 'string' ? customerDoc.trim().toUpperCase().replace(/\s+/g, '').slice(0, 20) : '';
 
     const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
     const productIds = [...new Set(items.map((item: { productId?: unknown }) => item?.productId).filter(Boolean))] as string[];
@@ -224,6 +232,8 @@ export async function POST(request: NextRequest) {
           promoLabel: discount > 0 ? promo.label : null,
           exchangeRate: rate > 0 ? rate : null,
           paymentReference: reference || null,
+          customerEmail: email || null,
+          customerDoc: doc || null,
           tip: tipAmount,
           waiter: waiterName,
           status: status || 'WAITING_PAYMENT',
@@ -235,9 +245,13 @@ export async function POST(request: NextRequest) {
       return created;
     });
 
+    // pedido cargado ya pagado (mesero): recibo de una vez
+    if (order.status !== 'WAITING_PAYMENT') await onPaid(order.id, baseUrlFrom(request));
+
     if (global.io) {
-      global.io.to('kitchen').emit('order:new', order);
-      global.io.to('waiter').emit('order:new', order);
+      const pub = redactOrder(order);
+      global.io.to('kitchen').emit('order:new', pub);
+      global.io.to('waiter').emit('order:new', pub);
       global.io.to('clients').emit('order:created', { displayId: order.displayId });
       // un insumo pudo agotarse: el menú se actualiza
       global.io.emit('stock:refresh');

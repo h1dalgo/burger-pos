@@ -6,6 +6,10 @@ interface SessionState {
   customerName: string;
   tableNumber: string;
   lastOrderId: string | null;
+  /** Para el recibo digital (opcionales) */
+  customerEmail: string;
+  customerDoc: string;
+  setReceiptData: (email: string, doc: string) => void;
   setCustomerName: (name: string) => void;
   setTableNumber: (table: string) => void;
   setLastOrderId: (orderId: string) => void;
@@ -18,6 +22,9 @@ export const useSessionStore = create<SessionState>()(
       customerName: '',
       tableNumber: '',
       lastOrderId: null,
+      customerEmail: '',
+      customerDoc: '',
+      setReceiptData: (customerEmail, customerDoc) => set({ customerEmail, customerDoc }),
       setCustomerName: (name) => set({ customerName: name }),
       setTableNumber: (table) => set({ tableNumber: table }),
       setLastOrderId: (orderId) => set({ lastOrderId: orderId }),

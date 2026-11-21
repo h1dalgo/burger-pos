@@ -713,6 +713,37 @@ body:has(.noir) {
   touch-action: manipulation;
 }
 
+/* Recibo digital: borde dentado de ticket y página limpia al imprimir */
+.receipt-edge {
+  background:
+    linear-gradient(-45deg, var(--color-cream) 5px, transparent 0),
+    linear-gradient(45deg, var(--color-cream) 5px, transparent 0);
+  background-size: 10px 10px;
+  background-position: left bottom;
+  background-repeat: repeat-x;
+}
+@media print {
+  .receipt-edge {
+    display: none;
+  }
+  html,
+  body,
+  body:has(.noir),
+  .noir {
+    background: #fff !important;
+  }
+  .receipt-paper {
+    background: #fff !important;
+    max-width: 100%;
+  }
+  .receipt-paper :is(table, dl, section, footer) {
+    break-inside: avoid;
+  }
+  @page {
+    margin: 12mm;
+  }
+}
+
 /* Detalles de marca */
 .noir .eyebrow {
   font-size: 0.6875rem;

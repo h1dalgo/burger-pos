@@ -3,6 +3,7 @@ import type { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { moveInventory } from '@/lib/business';
 import { sendPush } from '@/lib/push';
+import { baseUrlFrom, onPaid, PAID_STATUSES, redactOrder } from '@/lib/receipts';
 import type { OrderStatus } from '@/types';
 
 export const runtime = 'nodejs';
@@ -65,14 +66,21 @@ export async function PATCH(
       return updated;
     });
 
+    // pago confirmado: número de recibo + aviso y correo al cliente
+    if (data.status && (PAID_STATUSES as readonly string[]).includes(data.status as string) && !order.receiptNumber) {
+      const n = await onPaid(id, baseUrlFrom(request));
+      if (n) Object.assign(order, { receiptNumber: n, paidAt: new Date() });
+    }
+
+    const pub = redactOrder(order);
     if (global.io) {
       if (data.status === 'DELIVERED' || data.status === 'CANCELLED') {
         global.io.to('kitchen').emit('order:archived', id);
       } else {
-        global.io.to('kitchen').emit('order:updated', order);
+        global.io.to('kitchen').emit('order:updated', pub);
       }
-      global.io.to('waiter').emit('order:updated', order);
-      global.io.to('clients').emit('order:updated', order);
+      global.io.to('waiter').emit('order:updated', pub);
+      global.io.to('clients').emit('order:updated', pub);
       if (data.status === 'CANCELLED') global.io.emit('stock:refresh');
     }
 
@@ -82,7 +90,7 @@ export async function PATCH(
       void sendPush({ role: 'waiter' }, { title: `Pedido #${num} listo`, body: `Mesa ${order.tableNumber} · para servir`, url: '/meseros', tag: `ready-${id}` });
     }
 
-    return NextResponse.json(order);
+    return NextResponse.json(pub);
   } catch {
     return NextResponse.json({ error: 'Failed to update order' }, { status: 500 });
   }
@@ -100,7 +108,7 @@ export async function GET(
       return NextResponse.json({ error: 'Order not found' }, { status: 404 });
     }
 
-    return NextResponse.json(order);
+    return NextResponse.json(redactOrder(order));
   } catch {
     return NextResponse.json({ error: 'Failed to fetch order' }, { status: 500 });
   }

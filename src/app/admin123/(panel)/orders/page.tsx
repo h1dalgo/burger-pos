@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Search, ChevronDown, Star, Ban, Check, ChevronLeft, ChevronRight, ClipboardList } from 'lucide-react';
+import { Search, ChevronDown, Star, Ban, Check, ChevronLeft, ChevronRight, ClipboardList, ReceiptText, Mail } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import type { Order, OrderStatus } from '@/types';
 import { formatBs, formatPrice } from '@/lib/utils';
@@ -86,6 +86,24 @@ export default function OrdersHistoryPage() {
       load();
     } catch {
       toast.error('No se pudo actualizar el pedido');
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const emailReceipt = async (o: Order) => {
+    const current = (o as Order & { customerEmail?: string | null }).customerEmail ?? '';
+    const email = window.prompt('Correo del cliente para enviar el recibo', current);
+    if (email === null) return;
+    setBusy(o.id);
+    try {
+      const res = await fetch(`/api/admin/orders/${o.id}/receipt`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email }) });
+      const j = await res.json().catch(() => null);
+      if (!res.ok) throw new Error(j?.error);
+      toast.success('Recibo enviado');
+      load();
+    } catch (e) {
+      toast.error(e instanceof Error && e.message ? e.message : 'No se pudo enviar');
     } finally {
       setBusy(null);
     }
@@ -205,6 +223,19 @@ export default function OrdersHistoryPage() {
                               {o.cancelReason && <span className="text-rose">Motivo: {o.cancelReason}</span>}
                               {o.ratingComment && <span className="italic">“{o.ratingComment}”</span>}
                             </div>
+                            {o.receiptNumber ? (
+                              <div className="mt-3 flex flex-wrap items-center gap-2">
+                                <span className="text-[12px] text-carbon/60">Recibo N.º {String(o.receiptNumber).padStart(6, '0')}</span>
+                                <a href={`/recibo/${o.id}`} target="_blank" rel="noopener" className="btn btn-outline btn-sm">
+                                  <ReceiptText className="h-4 w-4" />
+                                  Ver recibo
+                                </a>
+                                <button type="button" disabled={busy === o.id} onClick={() => emailReceipt(o)} className="btn btn-outline btn-sm">
+                                  <Mail className="h-4 w-4" />
+                                  {o.receiptSentAt ? 'Reenviar por correo' : 'Enviar por correo'}
+                                </button>
+                              </div>
+                            ) : null}
                             {o.status !== 'CANCELLED' && o.status !== 'DELIVERED' && (
                               <div className="mt-3 flex gap-2">
                                 {o.status === 'WAITING_PAYMENT' && (
