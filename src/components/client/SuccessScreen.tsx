@@ -46,7 +46,7 @@ const STAGES = [
     key: 'WAITING_PAYMENT',
     title: 'Pedido registrado',
     label: 'Esperando confirmación de pago',
-    desc: 'Dirígete a caja para validar tu pago y activar tu orden.',
+    desc: 'Un mesero va a tu mesa a cobrarte. Apenas confirme el pago, tu pedido pasa a cocina.',
     icon: Wallet,
   },
   {

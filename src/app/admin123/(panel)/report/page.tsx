@@ -31,7 +31,7 @@ interface ReportData {
   tips: number;
   avgTicket: number;
   byMethod: Record<string, { count: number; total: number }>;
-  byWaiter: Record<string, { count: number; total: number }>;
+  byWaiter: Record<string, { count: number; total: number; cash?: number }>;
   topProducts: Array<{ productName: string; quantity: number; revenue: number }>;
 }
 
@@ -215,7 +215,7 @@ export default function ReportPage() {
             </section>
 
             <section className="card p-5 border-2 border-carbon/15">
-              <h2 className="font-bold text-carbon mb-3">Por mesero</h2>
+              <h2 className="font-bold text-carbon mb-3">Cobros por persona</h2>
               {!data ? (
                 <div className="space-y-2">{[0, 1, 2].map((i) => <Skeleton key={i} className="h-9 w-full rounded-lg" />)}</div>
               ) : Object.keys(data.byWaiter).length === 0 ? (
@@ -230,7 +230,10 @@ export default function ReportPage() {
                           {waiter}
                           <span className="text-carbon/45"> · {w.count} pedido(s)</span>
                         </span>
-                        <span className="text-sm font-bold text-carbon tabular-nums">{formatPrice(w.total)}</span>
+                        <span className="text-right">
+                          <span className="block text-sm font-bold text-carbon tabular-nums">{formatPrice(w.total)}</span>
+                          {(w.cash ?? 0) > 0 && <span className="block text-[11px] text-carbon/55 tabular-nums">Efectivo {formatPrice(w.cash ?? 0)}</span>}
+                        </span>
                       </div>
                     ))}
                 </div>

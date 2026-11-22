@@ -26,14 +26,14 @@ export const ROLE_APPS: Record<AppRole, RoleApp> = {
   meseros: {
     name: 'Burger POS · Meseros',
     shortName: 'Meseros',
-    description: 'Mesas, pedidos y llamados del salón',
+    description: 'Mesas, pedidos, cobros y llamados del salón',
     startUrl: '/meseros',
     orientation: 'portrait',
   },
   cocina: {
     name: 'Burger POS · Cocina',
     shortName: 'Cocina',
-    description: 'Comandas en vivo, caja y stock',
+    description: 'Comandas en vivo y stock',
     startUrl: '/kitchen',
     orientation: 'any',
   },

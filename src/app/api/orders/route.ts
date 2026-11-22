@@ -237,6 +237,8 @@ export async function POST(request: NextRequest) {
           tip: tipAmount,
           waiter: waiterName,
           status: status || 'WAITING_PAYMENT',
+          // el mesero carga el pedido ya cobrado: queda como quien cobró
+          paidBy: status && status !== 'WAITING_PAYMENT' ? waiterName : null,
           items: { create: orderItems },
         },
         include: ORDER_INCLUDE,
@@ -257,9 +259,10 @@ export async function POST(request: NextRequest) {
       global.io.emit('stock:refresh');
     }
     if (order.status === 'WAITING_PAYMENT') {
+      const how = { CASH: 'Efectivo', MOBILE_PAYMENT: 'Pago Móvil', CARD: 'Tarjeta' }[order.paymentMethod];
       void sendPush({ role: 'waiter' }, {
-        title: `Nuevo pedido #${String(order.displayId).padStart(4, '0')}`,
-        body: `Mesa ${order.tableNumber} · por confirmar el pago`,
+        title: `Cobrar mesa ${order.tableNumber}`,
+        body: `Pedido #${String(order.displayId).padStart(4, '0')} · $${Number(order.totalAmount).toFixed(2)} · ${how}`,
         url: '/meseros',
         tag: `new-${order.id}`,
       });

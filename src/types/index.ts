@@ -101,6 +101,8 @@ export interface Order {
   /** Recibo digital (se asigna al confirmarse el pago) */
   receiptNumber?: number | null;
   paidAt?: string | null;
+  /** Quién confirmó el pago (mesero o Admin). */
+  paidBy?: string | null;
   customerDoc?: string | null;
   /** Correo enmascarado (solo en el recibo) */
   maskedEmail?: string | null;

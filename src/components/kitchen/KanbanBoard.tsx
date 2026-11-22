@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Bell, ChefHat, Wifi, WifiOff, Package, AlertTriangle, Volume2, VolumeX, Wallet, Type } from 'lucide-react';
+import { Bell, ChefHat, Wifi, WifiOff, Package, AlertTriangle, Volume2, VolumeX, Type } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import type { Order, StockUpdate } from '@/types';
 import { getSocket, joinRoom } from '@/lib/socket-client';
@@ -10,11 +10,10 @@ import { useStockStore } from '@/store/stock-store';
 import { getStatusMeta, formatDisplayId } from '@/lib/order-status';
 import KanbanColumn from './KanbanColumn';
 import StockTogglePanel from './StockTogglePanel';
-import PaymentsPanel from './PaymentsPanel';
 import CancelOrderDialog from './CancelOrderDialog';
 import type { OrderStatus } from '@/types';
 
-/** La cocina ve solo lo que ya puede preparar; los pagos van en Caja. */
+/** La cocina ve solo lo que ya puede preparar: el pago lo confirma el mesero (o el admin). */
 const KITCHEN_STATUSES: OrderStatus[] = ['PENDING', 'IN_PREPARATION', 'READY'];
 
 function readBigText() {
@@ -85,7 +84,6 @@ export default function KanbanBoard() {
   const [newOrderIds, setNewOrderIds] = useState<Set<string>>(new Set());
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [muted, setMuted] = useState(() => isMuted());
-  const [showPayments, setShowPayments] = useState(false);
   const [cancelTarget, setCancelTarget] = useState<Order | null>(null);
   const [bigText, setBigText] = useState(() => readBigText());
   const applyStockUpdate = useStockStore((s) => s.applyStockUpdate);
@@ -120,14 +118,21 @@ export default function KanbanBoard() {
 
     const onConnect = () => setConnected(true);
     const onDisconnect = () => setConnected(false);
-    const onNew = (order: Order) => {
-      setOrders((prev) => [order, ...prev]);
+    const announce = (order: Order) => {
       setNewOrderIds((prev) => new Set(prev).add(order.id));
       playNotification('new');
       showAlert(`Nuevo pedido #${formatDisplayId(order.displayId)}`, 'new');
     };
+    const onNew = (order: Order) => {
+      setOrders((prev) => [order, ...prev]);
+      // sin pagar todavía: la cocina no lo ve hasta que el mesero lo cobre
+      if (order.status !== 'WAITING_PAYMENT') announce(order);
+    };
     const onUpdated = (order: Order) => {
-      setOrders((prev) => prev.map((o) => (o.id === order.id ? order : o)));
+      const before = ordersRef.current.find((o) => o.id === order.id);
+      setOrders((prev) => (prev.some((o) => o.id === order.id) ? prev.map((o) => (o.id === order.id ? order : o)) : [order, ...prev]));
+      // el mesero confirmó el pago: recién ahora es un pedido nuevo para cocina
+      if (order.status === 'PENDING' && (!before || before.status === 'WAITING_PAYMENT')) announce(order);
       if (order.status === 'READY') {
         playNotification('ready');
         showAlert(`Pedido #${formatDisplayId(order.displayId)} listo`, 'ready');
@@ -297,8 +302,6 @@ export default function KanbanBoard() {
   };
 
   const getOrdersByStatus = (status: string) => orders.filter((o) => o.status === status);
-  const waiting = getOrdersByStatus('WAITING_PAYMENT');
-  const waitingCount = waiting.length;
 
   // Resumen de producción: lo que hay que preparar sumando todas las comandas
   const production = (() => {
@@ -344,19 +347,6 @@ export default function KanbanBoard() {
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setShowPayments(true)}
-            aria-label={`Caja: ${waitingCount} pagos por confirmar`}
-            className={waitingCount ? 'border-status-waiting/60 text-status-waiting' : ''}
-          >
-            <Wallet className="w-4 h-4" />
-            <span className="hidden sm:inline">Caja</span>
-            {waitingCount > 0 && (
-              <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-status-waiting px-1 text-[11px] font-bold text-[#0f0d0a] tabular-nums">{waitingCount}</span>
-            )}
-          </Button>
           <Button variant="outline" size="sm" onClick={toggleBig} aria-pressed={bigText} title="Letra grande" className={bigText ? 'border-burger/60 bg-burger/10 text-burger-dark' : ''}>
             <Type className="w-4 h-4" />
             <span className="hidden sm:inline">Letra grande</span>
@@ -461,18 +451,6 @@ export default function KanbanBoard() {
 
       <AnimatePresence>
         {showStock && <StockTogglePanel onClose={() => setShowStock(false)} />}
-      </AnimatePresence>
-
-      <AnimatePresence>
-        {showPayments && (
-          <PaymentsPanel
-            orders={waiting}
-            pendingId={pendingId}
-            onConfirm={(o) => void handleAction(o.id, 'PENDING')}
-            onCancel={setCancelTarget}
-            onClose={() => setShowPayments(false)}
-          />
-        )}
       </AnimatePresence>
 
       <AnimatePresence>

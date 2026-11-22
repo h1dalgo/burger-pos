@@ -28,7 +28,7 @@ export async function PATCH(
   const { id } = await params;
   try {
     const body = await request.json();
-    const { status, tableNumber, cancelReason } = body;
+    const { status, tableNumber, cancelReason, paidBy } = body;
 
     if (status === undefined && tableNumber === undefined) {
       return NextResponse.json({ error: 'Status or tableNumber is required' }, { status: 400 });
@@ -47,6 +47,10 @@ export async function PATCH(
         return NextResponse.json({ error: 'El pedido está cancelado' }, { status: 409 });
       }
       data.status = status as OrderStatus;
+      // se confirma el pago: queda quién lo cobró (mesero o admin)
+      if (prev.status === 'WAITING_PAYMENT' && (PAID_STATUSES as readonly string[]).includes(status)) {
+        data.paidBy = typeof paidBy === 'string' && paidBy.trim() ? paidBy.trim().slice(0, 40) : null;
+      }
       if (status === 'CANCELLED') {
         data.cancelReason = typeof cancelReason === 'string' && cancelReason.trim() ? cancelReason.trim().slice(0, 200) : 'Cancelado';
       }

@@ -136,6 +136,8 @@ model Order {
   /// Recibo digital: número correlativo asignado al confirmarse el pago
   receiptNumber Int?          @map("receipt_number")
   paidAt        DateTime?     @map("paid_at")
+  /// Quién confirmó el pago (nombre del mesero o "Admin")
+  paidBy        String?       @map("paid_by")
   /// Datos opcionales del cliente para el recibo
   customerDoc   String?       @map("customer_doc")
   customerEmail String?       @map("customer_email")

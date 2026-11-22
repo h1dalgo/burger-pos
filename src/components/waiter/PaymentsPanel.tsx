@@ -20,8 +20,8 @@ interface Props {
 }
 
 /**
- * Caja: pedidos esperando que se confirme el pago. Va aparte del tablero
- * para que el cocinero vea solo lo que ya puede preparar.
+ * Cobros: pedidos que el mesero tiene que cobrar en la mesa. Al confirmar el
+ * pago el pedido pasa a cocina (la cocina solo ve lo que ya está pagado).
  */
 export default function PaymentsPanel({ orders, pendingId, onConfirm, onCancel, onClose }: Props) {
   const ref = useRef<HTMLDivElement>(null);
@@ -34,7 +34,7 @@ export default function PaymentsPanel({ orders, pendingId, onConfirm, onCancel, 
         ref={ref}
         role="dialog"
         aria-modal="true"
-        aria-label="Pagos por confirmar"
+        aria-label="Pedidos por cobrar"
         initial={{ x: '100%' }}
         animate={{ x: 0 }}
         exit={{ x: '100%' }}
@@ -47,16 +47,16 @@ export default function PaymentsPanel({ orders, pendingId, onConfirm, onCancel, 
             <Wallet className="h-4.5 w-4.5 text-burger" />
           </div>
           <div className="min-w-0">
-            <h2 className="display text-xl leading-none text-carbon">Caja</h2>
-            <p className="eyebrow mt-1">{orders.length} por confirmar</p>
+            <h2 className="display text-xl leading-none text-carbon">Cobros</h2>
+            <p className="eyebrow mt-1">{orders.length} por cobrar</p>
           </div>
-          <button type="button" onClick={onClose} aria-label="Cerrar caja" className="ml-auto flex h-9 w-9 items-center justify-center rounded-full border border-carbon/15 hover:bg-carbon/[0.06]">
+          <button type="button" onClick={onClose} aria-label="Cerrar cobros" className="ml-auto flex h-9 w-9 items-center justify-center rounded-full border border-carbon/15 hover:bg-carbon/[0.06]">
             <X className="h-4 w-4" />
           </button>
         </div>
 
         <div className="flex-1 space-y-3 overflow-y-auto p-4">
-          {sorted.length === 0 && <p className="py-12 text-center text-sm text-carbon/55">No hay pagos por confirmar</p>}
+          {sorted.length === 0 && <p className="py-12 text-center text-sm text-carbon/55">No hay pedidos por cobrar</p>}
           {sorted.map((o) => {
             const Icon = ICON[o.paymentMethod];
             const total = Number(o.totalAmount);
@@ -98,7 +98,7 @@ export default function PaymentsPanel({ orders, pendingId, onConfirm, onCancel, 
                   </button>
                   <button type="button" onClick={() => onConfirm(o)} disabled={busy} className="btn btn-primary btn-sm flex-1">
                     <Check className="h-4 w-4" />
-                    {busy ? 'Confirmando…' : 'Confirmar pago'}
+                    {busy ? 'Confirmando…' : 'Cobrado · enviar a cocina'}
                   </button>
                 </div>
               </div>

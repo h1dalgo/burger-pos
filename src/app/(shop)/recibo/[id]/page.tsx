@@ -57,7 +57,7 @@ export default function ReceiptPage({ params }: { params: Promise<{ id: string }
         })
         .catch((e) => alive && setError(e.message));
     void load();
-    // si aún no está pagado, se actualiza solo cuando caja confirma
+    // si aún no está pagado, se actualiza solo cuando el mesero confirma el cobro
     const t = setInterval(() => {
       if (!document.hidden) void load();
     }, 15000);

@@ -16,6 +16,7 @@ import {
   Loader2,
   UserRound,
   ArrowRightLeft,
+  Wallet,
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { formatPrice } from '@/lib/utils';
@@ -24,6 +25,10 @@ import type { Category, Product, CartItem, TableData, TableCall } from '@/compon
 import { calcItemPrice } from '@/components/waiter/shared';
 import WaiterProductModal from '@/components/waiter/WaiterProductModal';
 import MoveTableSheet from '@/components/waiter/MoveTableSheet';
+import PaymentsPanel from '@/components/waiter/PaymentsPanel';
+import CancelOrderDialog from '@/components/kitchen/CancelOrderDialog';
+import type { Order } from '@/types';
+import { formatDisplayId } from '@/lib/order-status';
 import { subscribePush } from '@/lib/push-client';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
@@ -44,6 +49,14 @@ const ALERT_PATTERNS: Record<string, { notes: Array<{ f: number; t: number; d: n
       { f: 800, t: 1.1, d: 0.25 }, { f: 600, t: 1.4, d: 0.25 }, { f: 450, t: 1.7, d: 0.35 },
     ],
     duration: 2.3,
+    volume: 0.65,
+  },
+  PAY: {
+    notes: [
+      { f: 1046, t: 0, d: 0.12 }, { f: 1318, t: 0.14, d: 0.12 }, { f: 1568, t: 0.28, d: 0.28 },
+      { f: 1046, t: 0.9, d: 0.12 }, { f: 1318, t: 1.04, d: 0.12 }, { f: 1568, t: 1.18, d: 0.28 },
+    ],
+    duration: 1.7,
     volume: 0.65,
   },
   READY: {
@@ -121,7 +134,7 @@ function stopAlertLoop() {
 
 const statusConfig: Record<string, { label: string; color: string; bg: string; border: string }> = {
   empty: { label: 'Libre', color: 'text-carbon/55', bg: 'bg-carbon/[0.04]', border: 'border-carbon/20' },
-  ordered: { label: 'Esperando Confirmación', color: 'text-status-waiting', bg: 'bg-status-waiting/10', border: 'border-status-waiting/40' },
+  ordered: { label: 'Por cobrar', color: 'text-status-waiting', bg: 'bg-status-waiting/10', border: 'border-status-waiting/40' },
   pending: { label: 'Pendiente', color: 'text-status-pending', bg: 'bg-status-pending/10', border: 'border-status-pending/40' },
   preparing: { label: 'Preparando', color: 'text-status-preparing', bg: 'bg-status-preparing/10', border: 'border-status-preparing/40' },
   ready: { label: 'Listo', color: 'text-mint-ink', bg: 'bg-mint/10', border: 'border-mint/40' },
@@ -131,6 +144,7 @@ const ALERT_LABELS: Record<string, string> = {
   CALL_WAITER: 'Llama al mesero',
   REQUEST_BILL: 'Pide la cuenta',
   READY: 'Pedido listo para servir',
+  PAY: 'Cobrar pedido',
 };
 
 export default function WaiterPage() {
@@ -140,7 +154,12 @@ export default function WaiterPage() {
   const [activeCalls, setActiveCalls] = useState<TableCall[]>([]);
   const [selectedTable, setSelectedTable] = useState<string | null>(null);
   const [showOrderPanel, setShowOrderPanel] = useState(false);
-  const [pendingAlerts, setPendingAlerts] = useState<Array<{ type: 'CALL_WAITER' | 'REQUEST_BILL' | 'READY'; tableNumber: string; waiter?: string | null }>>([]);
+  const [pendingAlerts, setPendingAlerts] = useState<Array<{ type: 'CALL_WAITER' | 'REQUEST_BILL' | 'READY' | 'PAY'; tableNumber: string; waiter?: string | null }>>([]);
+  /** Pedidos que el cliente hizo y falta cobrar en la mesa. */
+  const [toCollect, setToCollect] = useState<Order[]>([]);
+  const [showPayments, setShowPayments] = useState(false);
+  const [payBusy, setPayBusy] = useState<string | null>(null);
+  const [cancelTarget, setCancelTarget] = useState<Order | null>(null);
   const [liveOrders, setLiveOrders] = useState<Array<{ id: string; displayId: number; tableNumber: string; status: string; waiter: string | null }>>([]);
   const [waiterName, setWaiterName] = useState('');
   const [waiterDraft, setWaiterDraft] = useState('');
@@ -211,6 +230,7 @@ export default function WaiterPage() {
       )
       .then(([orders, calls]) => {
         if (Array.isArray(orders)) {
+          setToCollect(orders.filter((o: Order) => o.status === 'WAITING_PAYMENT'));
           setLiveOrders(
             orders.map(
               (o: { id: string; displayId: number; tableNumber: string; status: string; waiter?: string | null }) => ({
@@ -267,7 +287,14 @@ export default function WaiterPage() {
       setActiveCalls((prev) => prev.filter((c) => c.id !== call.id));
       loadTables();
     };
-    const onOrderNew = () => loadTables();
+    const onOrderNew = (order?: { status: string; tableNumber: string }) => {
+      // el cliente pidió desde la mesa: hay que ir a cobrar
+      if (order?.status === 'WAITING_PAYMENT') {
+        setPendingAlerts((prev) => [...prev, { type: 'PAY', tableNumber: order.tableNumber }]);
+        startAlertLoop('PAY');
+      }
+      loadTables();
+    };
     const onOrderUpdated = (order: { status: string; tableNumber: string; waiter?: string | null }) => {
       if (order?.status === 'READY') {
         setPendingAlerts((prev) => [...prev, { type: 'READY', tableNumber: order.tableNumber, waiter: order.waiter ?? null }]);
@@ -378,6 +405,65 @@ export default function WaiterPage() {
     } catch {
       toast.error('No se pudo marcar como entregado');
     }
+  };
+
+  const confirmPayment = async (o: Order) => {
+    if (payBusy) return;
+    setPayBusy(o.id);
+    try {
+      const res = await fetch(`/api/orders/${o.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'PENDING', paidBy: waiterName }),
+      });
+      if (!res.ok) throw new Error();
+      setToCollect((prev) => prev.filter((x) => x.id !== o.id));
+      setPendingAlerts((prev) => {
+        const rest = prev.filter((a) => !(a.type === 'PAY' && a.tableNumber === o.tableNumber));
+        if (rest.length === 0) stopAlertLoop();
+        return rest;
+      });
+      toast.success(`#${formatDisplayId(o.displayId)} cobrado · enviado a cocina`);
+      loadTables();
+    } catch {
+      toast.error('No se pudo confirmar el pago');
+    } finally {
+      setPayBusy(null);
+    }
+  };
+
+  const cancelUnpaid = async (reason: string) => {
+    const o = cancelTarget;
+    setCancelTarget(null);
+    if (!o) return;
+    try {
+      const res = await fetch(`/api/orders/${o.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'CANCELLED', cancelReason: reason }),
+      });
+      if (!res.ok) throw new Error();
+      setToCollect((prev) => prev.filter((x) => x.id !== o.id));
+      setPendingAlerts((prev) => {
+        const rest = prev.filter((a) => !(a.type === 'PAY' && a.tableNumber === o.tableNumber));
+        if (rest.length === 0) stopAlertLoop();
+        return rest;
+      });
+      toast.success(`Pedido #${formatDisplayId(o.displayId)} cancelado`);
+      loadTables();
+    } catch {
+      toast.error('No se pudo cancelar el pedido');
+    }
+  };
+
+  const openPayments = () => {
+    setPendingAlerts((prev) => {
+      const rest = prev.filter((a) => a.type !== 'PAY');
+      if (rest.length === 0) stopAlertLoop();
+      return rest;
+    });
+    setShowOrderPanel(false);
+    setShowPayments(true);
   };
 
   const readyOrderFor = (tableNum: string | null) =>
@@ -500,6 +586,7 @@ export default function WaiterPage() {
           (() => {
             const alert = pendingAlerts[pendingAlerts.length - 1];
             const isReady = alert.type === 'READY';
+            const isPay = alert.type === 'PAY';
             const readyOrder = isReady
               ? liveOrders.find((o) => o.tableNumber === alert.tableNumber && o.status === 'READY')
               : undefined;
@@ -511,18 +598,20 @@ export default function WaiterPage() {
                 animate={{ y: 0, opacity: 1 }}
                 exit={{ y: -80, opacity: 0 }}
                 transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-                className={`fixed top-4 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-4 py-3 rounded-2xl shadow-pop border-2 border-carbon text-sm font-bold ${
-                  isReady ? 'bg-mint text-cream' : 'bg-mustard text-carbon'
+                className={`fixed top-[calc(env(safe-area-inset-top)+0.75rem)] left-1/2 -translate-x-1/2 z-50 flex w-[calc(100%-2rem)] max-w-md items-center gap-3 px-4 py-3 rounded-2xl shadow-pop border-2 border-carbon text-sm font-bold ${
+                  isReady ? 'bg-mint text-cream' : isPay ? 'bg-burger text-[#0f0d0a]' : 'bg-mustard text-carbon'
                 }`}
               >
                 <button
                   type="button"
-                  onClick={() => acknowledgeAlerts(alert.tableNumber)}
+                  onClick={() => (isPay ? openPayments() : acknowledgeAlerts(alert.tableNumber))}
                   aria-label={`Abrir mesa ${alert.tableNumber}`}
                   className="flex items-center gap-3 flex-1 text-left min-w-0"
                 >
                   {isReady ? (
                     <CheckCircle2 className="w-5 h-5 animate-pulse shrink-0" />
+                  ) : isPay ? (
+                    <Wallet className="w-5 h-5 animate-pulse shrink-0" />
                   ) : alert.type === 'CALL_WAITER' ? (
                     <BellRing className="w-5 h-5 animate-pulse shrink-0" />
                   ) : (
@@ -532,7 +621,7 @@ export default function WaiterPage() {
                     Mesa {alert.tableNumber} — {ALERT_LABELS[alert.type]}
                     {alert.waiter ? ` · ${alert.waiter}` : ''}
                   </span>
-                  <span className="opacity-80 text-xs hidden sm:inline shrink-0">Toca para abrir</span>
+                  <span className="opacity-80 text-xs hidden sm:inline shrink-0">{isPay ? 'Toca para cobrar' : 'Toca para abrir'}</span>
                 </button>
                 {isReady && readyOrder && (
                   <button
@@ -566,6 +655,20 @@ export default function WaiterPage() {
             <span className={`w-1.5 h-1.5 rounded-full ${connected ? 'bg-mint' : 'bg-rose'} ${connected ? '' : 'animate-pulse'}`} />
             <span className="hidden sm:inline">{connected ? 'En línea' : 'Sin conexión'}</span>
           </div>
+          <button
+            type="button"
+            onClick={openPayments}
+            aria-label={`Cobrar: ${toCollect.length} pedido(s) por cobrar`}
+            className={`flex items-center gap-1.5 rounded-full border px-2.5 py-1.5 text-xs font-semibold transition-colors ${
+              toCollect.length ? 'border-burger/60 bg-burger/12 text-burger' : 'border-carbon/15 text-carbon hover:bg-carbon/[0.06]'
+            }`}
+          >
+            <Wallet className="h-3.5 w-3.5" />
+            <span>Cobrar</span>
+            {toCollect.length > 0 && (
+              <span className="flex h-4.5 min-w-4.5 items-center justify-center rounded-full bg-burger px-1 text-[10px] font-bold tabular-nums text-[#0f0d0a]">{toCollect.length}</span>
+            )}
+          </button>
           <button
             type="button"
             onClick={leaveService}
@@ -713,6 +816,25 @@ export default function WaiterPage() {
                   <X className="w-4 h-4 text-carbon/70" />
                 </button>
               </div>
+
+              {selectedTable && toCollect.some((o) => o.tableNumber === selectedTable) && (
+                <div className="bg-burger text-[#0f0d0a] border-b-2 border-carbon px-6 py-2.5 flex items-center justify-between gap-3 shrink-0">
+                  <span className="text-sm font-bold flex items-center gap-2 min-w-0">
+                    <Wallet className="w-4 h-4 shrink-0" />
+                    <span className="truncate">
+                      Por cobrar ·{' '}
+                      {formatPrice(toCollect.filter((o) => o.tableNumber === selectedTable).reduce((s, o) => s + Number(o.totalAmount), 0))}
+                    </span>
+                  </span>
+                  <button
+                    type="button"
+                    onClick={openPayments}
+                    className="px-3 py-1.5 rounded-lg bg-cream text-carbon border-2 border-carbon text-xs font-bold hover:bg-mustard transition-colors shrink-0"
+                  >
+                    Cobrar
+                  </button>
+                </div>
+              )}
 
               {selectedTable && readyOrder && (
                 <div className="bg-mint text-cream border-b-2 border-carbon px-6 py-2.5 flex items-center justify-between gap-3 shrink-0">
@@ -917,6 +1039,20 @@ export default function WaiterPage() {
             onAdd={addToCart}
           />
         )}
+      </AnimatePresence>
+      <AnimatePresence>
+        {showPayments && (
+          <PaymentsPanel
+            orders={toCollect}
+            pendingId={payBusy}
+            onConfirm={(o) => void confirmPayment(o)}
+            onCancel={setCancelTarget}
+            onClose={() => setShowPayments(false)}
+          />
+        )}
+      </AnimatePresence>
+      <AnimatePresence>
+        {cancelTarget && <CancelOrderDialog order={cancelTarget} onConfirm={(r) => void cancelUnpaid(r)} onClose={() => setCancelTarget(null)} />}
       </AnimatePresence>
       <AnimatePresence>
         {moveFrom && (

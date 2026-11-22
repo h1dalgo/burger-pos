@@ -51,7 +51,7 @@ export async function GET(request: NextRequest) {
 
     // Exportar a Excel (CSV con ; y BOM para que Excel respete los acentos)
     if (params.get('format') === 'csv') {
-      const head = ['Pedido', 'Recibo', 'Fecha', 'Hora', 'Estado', 'Cliente', 'Mesa', 'Mesero', 'Pago', 'Referencia', 'Cédula/RIF', 'Productos', 'Descuento $', 'Total $', 'Propina $', 'Tasa Bs/$', 'Total Bs', 'Calificación', 'Motivo de cancelación'];
+      const head = ['Pedido', 'Recibo', 'Fecha', 'Hora', 'Estado', 'Cliente', 'Mesa', 'Mesero', 'Cobró', 'Pago', 'Referencia', 'Cédula/RIF', 'Productos', 'Descuento $', 'Total $', 'Propina $', 'Tasa Bs/$', 'Total Bs', 'Calificación', 'Motivo de cancelación'];
       const fmtDate = new Intl.DateTimeFormat('es-VE', { timeZone: settings.timezone, day: '2-digit', month: '2-digit', year: 'numeric' });
       const fmtTime = new Intl.DateTimeFormat('es-VE', { timeZone: settings.timezone, hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
       const rows = all.map((o) => {
@@ -65,6 +65,7 @@ export async function GET(request: NextRequest) {
           o.customerName,
           o.tableNumber,
           o.waiter ?? '',
+          o.paidBy ?? '',
           METHOD[o.paymentMethod] ?? o.paymentMethod,
           o.paymentReference ?? '',
           o.customerDoc ?? '',
@@ -96,7 +97,7 @@ export async function GET(request: NextRequest) {
     let tips = 0;
     let discounts = 0;
     const byMethod: Record<string, { count: number; total: number }> = {};
-    const byWaiter: Record<string, { count: number; total: number }> = {};
+    const byWaiter: Record<string, { count: number; total: number; cash: number }> = {};
     const byHour = Array.from({ length: 24 }, (_, h) => ({ hour: h, count: 0, total: 0 }));
     const byWeekday = Array.from({ length: 7 }, (_, d) => ({ day: d, count: 0, total: 0 }));
     const productMap = new Map<string, ReportItem>();
@@ -120,10 +121,12 @@ export async function GET(request: NextRequest) {
       byMethod[method].count += 1;
       byMethod[method].total += total;
 
-      const waiterKey = order.waiter || 'Sin mesero';
-      if (!byWaiter[waiterKey]) byWaiter[waiterKey] = { count: 0, total: 0 };
+      // por quien cobró (mesero o admin): sirve para cuadrar la caja de cada uno
+      const waiterKey = order.paidBy || order.waiter || 'Sin registrar';
+      if (!byWaiter[waiterKey]) byWaiter[waiterKey] = { count: 0, total: 0, cash: 0 };
       byWaiter[waiterKey].count += 1;
       byWaiter[waiterKey].total += total;
+      if (method === 'CASH') byWaiter[waiterKey].cash += total;
 
       const { hour, day } = localNow(settings.timezone, order.createdAt);
       byHour[hour].count += 1;

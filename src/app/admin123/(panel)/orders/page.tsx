@@ -220,6 +220,7 @@ export default function OrdersHistoryPage() {
                               )}
                               {Number(o.tip ?? 0) > 0 && <span>Propina: {formatPrice(Number(o.tip))}</span>}
                               {rate > 0 && <span>Tasa: Bs {rate.toLocaleString('es-VE')}</span>}
+                              {o.paidBy && <span>Cobró: {o.paidBy}</span>}
                               {o.cancelReason && <span className="text-rose">Motivo: {o.cancelReason}</span>}
                               {o.ratingComment && <span className="italic">“{o.ratingComment}”</span>}
                             </div>
@@ -239,7 +240,7 @@ export default function OrdersHistoryPage() {
                             {o.status !== 'CANCELLED' && o.status !== 'DELIVERED' && (
                               <div className="mt-3 flex gap-2">
                                 {o.status === 'WAITING_PAYMENT' && (
-                                  <button type="button" disabled={busy === o.id} onClick={() => patch(o, { status: 'PENDING' }, `Pago del #${formatDisplayId(o.displayId)} confirmado`)} className="btn btn-primary btn-sm">
+                                  <button type="button" disabled={busy === o.id} onClick={() => patch(o, { status: 'PENDING', paidBy: 'Admin' }, `Pago del #${formatDisplayId(o.displayId)} confirmado`)} className="btn btn-primary btn-sm">
                                     <Check className="h-4 w-4" />
                                     Confirmar pago
                                   </button>
