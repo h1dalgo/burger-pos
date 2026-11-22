@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { preload } from 'react-dom';
 import { useRouter } from 'next/navigation';
 import { AnimatePresence } from 'framer-motion';
-import { AlertTriangle, UtensilsCrossed, Receipt, Table2, Bell, Clock, Sparkles } from 'lucide-react';
+import { AlertTriangle, UtensilsCrossed, Receipt, Table2, Bell, Clock, Sparkles, SearchX } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { useSessionStore } from '@/store/session-store';
 import { useStockStore } from '@/store/stock-store';
@@ -16,6 +16,7 @@ import { variantFromCategory } from '@/components/client/ProductVisual3D';
 import { categorySubtitle, sentenceCase, formatPersonName } from '@/lib/category-copy';
 import CategoryNav from '@/components/client/CategoryNav';
 import ProductCard from '@/components/client/ProductCard';
+import MenuSearch from '@/components/client/MenuSearch';
 import MenuShowcase, { type ShowcaseSlide } from '@/components/client/MenuShowcase';
 import ProductModal from '@/components/client/ProductModal';
 import CartFloatingButton from '@/components/client/CartFloatingButton';
@@ -28,11 +29,17 @@ import { Button } from '@/components/ui/Button';
 import ShinyText from '@/components/reactbits/ShinyText';
 import { useScrollReveal } from '@/hooks/use-scroll-reveal';
 
+/** Minúsculas y sin acentos (buscar "jamon" encuentra "jamón"). */
+const normText = (s: string) => s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+
 export default function MenuPage() {
   // El navegador pide el menú en paralelo con el JavaScript (el fetch de abajo reutiliza esta respuesta).
   preload('/api/products', { as: 'fetch', crossOrigin: 'anonymous' });
   const router = useRouter();
   const { customerName, tableNumber, lastOrderId, setTableNumber } = useSessionStore();
+  const [query, setQuery] = useState('');
+  /** Alérgenos a evitar (filtros "Sin gluten", "Sin lácteos"…). */
+  const [avoid, setAvoid] = useState<string[]>([]);
   const { isProductAvailable, applyStockUpdate, initializeFromProducts } = useStockStore();
   const cartItems = useCartStore((s) => s.items);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -188,13 +195,34 @@ export default function MenuPage() {
     }))
     .filter((c) => c.products.length > 0);
   const isEmptyMenu = !loading && !error && categories.length > 0 && sections.length === 0;
+
+  // ── Buscador y filtros "Sin …" ──
+  const q = normText(query.trim());
+  const searching = q.length > 0 || avoid.length > 0;
+  const matches = (p: Product, catName: string) => {
+    const al = (p.allergens ?? []).map(normText);
+    if (avoid.some((a) => al.includes(normText(a)))) return false;
+    if (!q) return true;
+    const hay = normText([p.name, p.description ?? '', catName, ...p.defaultIngredients.map((d) => d.name)].join(' '));
+    return q.split(/\s+/).every((w) => hay.includes(w));
+  };
+  const visibleSections = searching
+    ? sections.map((c) => ({ ...c, products: c.products.filter((p) => matches(p, c.name)) })).filter((c) => c.products.length > 0)
+    : sections;
+  const resultCount = visibleSections.reduce((n, c) => n + c.products.length, 0);
+  // alérgenos más comunes del menú → filtros rápidos (máx. 5)
+  const allergenOptions = (() => {
+    const count = new Map<string, number>();
+    for (const c of sections) for (const p of c.products) for (const a of p.allergens ?? []) count.set(a, (count.get(a) ?? 0) + 1);
+    return [...count.entries()].sort((a, b) => b[1] - a[1]).slice(0, 5).map(([a]) => a);
+  })();
   // piezas 3D de todas las hamburguesas: se preparan en ratos libres (cambios y detalle sin tirones)
   const burgerPrewarm = categories
     .filter((c) => variantFromCategory(c.name) === 'burger')
     .flatMap((c) => c.products)
     .map((p) => [...p.variations.map((v) => v.name), ...p.defaultIngredients.map((d) => d.name)]);
   // secciones y tarjetas aparecen al entrar en pantalla (GSAP + ScrollTrigger)
-  useScrollReveal(contentRef, [loading, sections.length, sections.reduce((n, c) => n + c.products.length, 0)]);
+  useScrollReveal(contentRef, [loading, visibleSections.length, resultCount, searching]);
   // "¿Le agregas algo?" en el carrito: bebidas y postres disponibles
   const suggestions = categories
     .filter((c) => ['drink', 'dessert'].includes(variantFromCategory(c.name)))
@@ -339,7 +367,42 @@ export default function MenuPage() {
           />
         )}
 
-        {!loading && !error && showcase.length > 0 && (
+        {!loading && !error && sections.length > 0 && (
+          <MenuSearch
+            query={query}
+            onQuery={setQuery}
+            allergens={allergenOptions}
+            avoid={avoid}
+            onToggleAvoid={(a) => setAvoid((prev) => (prev.includes(a) ? prev.filter((x) => x !== a) : [...prev, a]))}
+          />
+        )}
+
+        {searching && !loading && !error && (
+          resultCount > 0 ? (
+            <p className="mb-5 text-sm text-carbon/60" role="status">
+              {resultCount} {resultCount === 1 ? 'resultado' : 'resultados'}
+            </p>
+          ) : (
+            <EmptyState
+              icon={<SearchX className="w-7 h-7" />}
+              title="No encontramos eso"
+              description={avoid.length ? 'Prueba con otra palabra o quita algún filtro.' : 'Prueba con otra palabra.'}
+              action={
+                <Button
+                  variant="solid"
+                  onClick={() => {
+                    setQuery('');
+                    setAvoid([]);
+                  }}
+                >
+                  Ver todo el menú
+                </Button>
+              }
+            />
+          )
+        )}
+
+        {!loading && !error && !searching && showcase.length > 0 && (
           <MenuShowcase
             slides={showcase}
             onOpen={setSelectedProduct}
@@ -350,7 +413,7 @@ export default function MenuPage() {
 
         {!loading &&
           !error &&
-          sections.map((cat, ci) => (
+          visibleSections.map((cat, ci) => (
             <section
               key={cat.id}
               ref={(el) => {

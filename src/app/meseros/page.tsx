@@ -118,13 +118,22 @@ function playLoudAlert(pattern: typeof ALERT_PATTERNS[string]) {
   } catch {}
 }
 
+/** Vibra junto con el sonido: en un local ruidoso el sonido no siempre se oye. */
+function buzz(type: string) {
+  try {
+    navigator.vibrate?.(type === 'READY' ? [250, 120, 250, 120, 250] : [220, 110, 220]);
+  } catch {}
+}
+
 function startAlertLoop(type: string) {
   stopAlertLoop();
   const pattern = ALERT_PATTERNS[type];
   if (!pattern) return;
   playLoudAlert(pattern);
+  buzz(type);
   alertLoopTimer = setInterval(() => {
     playLoudAlert(pattern);
+    buzz(type);
   }, (pattern.duration + 0.8) * 1000);
 }
 
@@ -163,6 +172,12 @@ export default function WaiterPage() {
   const [showPayments, setShowPayments] = useState(false);
   const [payBusy, setPayBusy] = useState<string | null>(null);
   const [cancelTarget, setCancelTarget] = useState<Order | null>(null);
+  /** Hora actual (se refresca cada 20 s) para los minutos de espera de cada mesa. */
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const t = setInterval(() => setNow(Date.now()), 20_000);
+    return () => clearInterval(t);
+  }, []);
   /** Turno de caja abierto de este mesero (null = caja cerrada). */
   const [shift, setShift] = useState<OpenShift | null>(null);
   const [shiftCobros, setShiftCobros] = useState(0);
@@ -275,17 +290,21 @@ export default function WaiterPage() {
             )
           );
           const tableMap = new Map<string, TableData['status']>();
+          const sinceMap = new Map<string, string>();
           for (const o of orders) {
             const tn = o.tableNumber;
-            if (o.status === 'WAITING_PAYMENT') tableMap.set(tn, 'ordered');
-            else if (o.status === 'PENDING') tableMap.set(tn, 'pending');
-            else if (o.status === 'IN_PREPARATION') tableMap.set(tn, 'preparing');
-            else if (o.status === 'READY') tableMap.set(tn, 'ready');
+            const st: TableData['status'] | null =
+              o.status === 'WAITING_PAYMENT' ? 'ordered' : o.status === 'PENDING' ? 'pending' : o.status === 'IN_PREPARATION' ? 'preparing' : o.status === 'READY' ? 'ready' : null;
+            if (!st) continue;
+            tableMap.set(tn, st);
+            // por cobrar: desde que pidió; lo demás: desde el último cambio de estado
+            sinceMap.set(tn, st === 'ordered' ? o.createdAt : o.updatedAt || o.createdAt);
           }
           setTables(
             Array.from({ length: tableCount }, (_, i) => ({
               number: String(i + 1),
               status: tableMap.get(String(i + 1)) || 'empty',
+              since: sinceMap.get(String(i + 1)),
             }))
           );
         }
@@ -631,11 +650,11 @@ export default function WaiterPage() {
               <motion.div
                 key={alert.tableNumber + alert.type + pendingAlerts.length}
                 role="alert"
-                initial={{ y: -80, opacity: 0 }}
+                initial={{ y: 80, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
-                exit={{ y: -80, opacity: 0 }}
+                exit={{ y: 80, opacity: 0 }}
                 transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-                className={`fixed top-[calc(env(safe-area-inset-top)+0.75rem)] left-1/2 -translate-x-1/2 z-50 flex w-[calc(100%-2rem)] max-w-md items-center gap-3 px-4 py-3 rounded-2xl shadow-pop border-2 border-carbon text-sm font-bold ${
+                className={`fixed bottom-[calc(env(safe-area-inset-bottom)+5.25rem)] left-1/2 -translate-x-1/2 z-50 flex w-[calc(100%-2rem)] max-w-md items-center gap-3 px-4 py-3 rounded-2xl shadow-pop border-2 border-carbon text-sm font-bold ${
                   isReady ? 'bg-mint text-cream' : isPay ? 'bg-burger text-[#0f0d0a]' : 'bg-mustard text-carbon'
                 }`}
               >
@@ -694,32 +713,6 @@ export default function WaiterPage() {
           </div>
           <button
             type="button"
-            onClick={() => setShiftSheet({ reason: null })}
-            aria-label={shift ? 'Caja abierta. Toca para cerrarla' : 'Caja cerrada. Toca para abrirla'}
-            title={shift ? 'Caja abierta' : 'Abrir caja'}
-            className={`flex items-center gap-1.5 rounded-full border px-2.5 py-1.5 text-xs font-semibold transition-colors ${
-              shift ? 'border-mint/50 text-mint-ink hover:bg-mint/10' : 'border-carbon/15 text-carbon/70 hover:bg-carbon/[0.06]'
-            }`}
-          >
-            {shift ? <LockOpen className="h-3.5 w-3.5" /> : <Lock className="h-3.5 w-3.5" />}
-            <span className="hidden min-[400px]:inline">Caja</span>
-          </button>
-          <button
-            type="button"
-            onClick={openPayments}
-            aria-label={`Cobrar: ${toCollect.length} pedido(s) por cobrar`}
-            className={`flex items-center gap-1.5 rounded-full border px-2.5 py-1.5 text-xs font-semibold transition-colors ${
-              toCollect.length ? 'border-burger/60 bg-burger/12 text-burger' : 'border-carbon/15 text-carbon hover:bg-carbon/[0.06]'
-            }`}
-          >
-            <Wallet className="h-3.5 w-3.5" />
-            <span>Cobrar</span>
-            {toCollect.length > 0 && (
-              <span className="flex h-4.5 min-w-4.5 items-center justify-center rounded-full bg-burger px-1 text-[10px] font-bold tabular-nums text-[#0f0d0a]">{toCollect.length}</span>
-            )}
-          </button>
-          <button
-            type="button"
             onClick={leaveService}
             title="Cambiar mesero"
             aria-label={`Mesero en servicio: ${waiterName}. Toca para cambiar`}
@@ -728,20 +721,10 @@ export default function WaiterPage() {
             <UserRound className="w-3.5 h-3.5" />
             <span className="max-w-24 truncate">{waiterName}</span>
           </button>
-          {activeCalls.length > 0 && (
-            <div
-              aria-label={`${activeCalls.length} notificación(es)`}
-              className="flex items-center gap-1.5 text-rose text-xs font-bold px-3 py-1.5 rounded-full border border-rose/40 bg-rose/10"
-            >
-              <span className="w-1.5 h-1.5 rounded-full bg-rose animate-pulse" />
-              {activeCalls.length}
-              <span className="hidden sm:inline">notificación(es)</span>
-            </div>
-          )}
         </div>
       </header>
 
-      <div className="p-4">
+      <div className="p-4 pb-[calc(env(safe-area-inset-bottom)+6.5rem)]">
         {!tablesReady ? (
           <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3 max-w-3xl mx-auto">
             {Array.from({ length: Math.min(tableCount, 10) }).map((_, i) => (
@@ -760,6 +743,12 @@ export default function WaiterPage() {
               const cfg = statusConfig[table.status];
               const calls = activeCalls.filter((c) => c.tableNumber === table.number);
               const hasCall = calls.length > 0;
+              // lo que más urge en la mesa: un llamado o su estado, con los minutos que lleva
+              const callSince = hasCall ? Math.min(...calls.map((c) => +new Date(c.createdAt))) : null;
+              const since = callSince ?? (table.since ? +new Date(table.since) : null);
+              const mins = since ? Math.max(0, Math.floor((now - since) / 60000)) : null;
+              const limits = hasCall ? [2, 4] : table.status === 'ready' ? [2, 5] : table.status === 'ordered' ? [3, 6] : [12, 20];
+              const level = mins == null ? 0 : mins >= limits[1] ? 2 : mins >= limits[0] ? 1 : 0;
               return (
                 <motion.button
                   key={table.number}
@@ -767,7 +756,7 @@ export default function WaiterPage() {
                   whileTap={{ scale: 0.95 }}
                   aria-label={`Mesa ${table.number}, ${cfg.label}${hasCall ? ', llamada activa' : ''}`}
                   className={`relative rounded-2xl p-4 border-2 transition-[border-color,box-shadow,background-color] duration-200 ${cfg.bg} ${cfg.border} ${
-                    hasCall ? 'ring-2 ring-burger shadow-pop' : 'hover:shadow-card'
+                    level === 2 ? 'ring-2 ring-rose shadow-pop' : hasCall ? 'ring-2 ring-burger shadow-pop' : 'hover:shadow-card'
                   }`}
                 >
                   {hasCall && (
@@ -788,6 +777,14 @@ export default function WaiterPage() {
                     <span className={`text-[10px] font-semibold uppercase tracking-wider text-center ${cfg.color}`}>
                       {cfg.label}
                     </span>
+                    {mins != null && table.status !== 'empty' || hasCall ? (
+                      <span
+                        className={`text-[11px] font-bold tabular-nums ${level === 2 ? 'text-rose animate-pulse' : level === 1 ? 'text-burger' : 'text-carbon/50'}`}
+                        aria-label={`hace ${mins ?? 0} minutos`}
+                      >
+                        {mins != null && mins < 1 ? 'ahora' : `${mins ?? 0} min`}
+                      </span>
+                    ) : null}
                   </div>
                   {hasCall && (
                     <div className="mt-2 space-y-0.5 text-center">
@@ -1100,6 +1097,59 @@ export default function WaiterPage() {
           />
         )}
       </AnimatePresence>
+      {/* Acciones al alcance del pulgar */}
+      <nav
+        aria-label="Acciones del mesero"
+        className="fixed inset-x-0 bottom-0 z-20 border-t border-carbon/10 bg-cream/90 px-3 pt-2 pb-[calc(env(safe-area-inset-bottom)+0.5rem)] backdrop-blur-xl"
+      >
+        <div className="mx-auto grid max-w-md grid-cols-3 gap-2">
+          <button
+            type="button"
+            onClick={() => setShiftSheet({ reason: null })}
+            aria-label={shift ? 'Caja abierta. Toca para cerrarla' : 'Caja cerrada. Toca para abrirla'}
+            className={`flex h-14 flex-col items-center justify-center gap-0.5 rounded-2xl border text-[11px] font-semibold transition-colors active:scale-[0.97] ${
+              shift ? 'border-mint/40 text-mint-ink' : 'border-carbon/15 text-carbon/70'
+            }`}
+          >
+            {shift ? <LockOpen className="h-5 w-5" /> : <Lock className="h-5 w-5" />}
+            {shift ? 'Caja abierta' : 'Abrir caja'}
+          </button>
+          <button
+            type="button"
+            onClick={openPayments}
+            aria-label={`Cobrar: ${toCollect.length} pedido(s) por cobrar`}
+            className={`relative flex h-14 flex-col items-center justify-center gap-0.5 rounded-2xl border text-[11px] font-bold transition-colors active:scale-[0.97] ${
+              toCollect.length ? 'border-burger bg-burger text-[#0f0d0a]' : 'border-carbon/15 text-carbon'
+            }`}
+          >
+            <Wallet className="h-5 w-5" />
+            Cobrar
+            {toCollect.length > 0 && (
+              <span className="absolute right-2 top-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-[#0f0d0a] px-1 text-[11px] font-bold tabular-nums text-burger">{toCollect.length}</span>
+            )}
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              // abre la mesa que lleva más tiempo llamando
+              const first = [...activeCalls].sort((a, b) => +new Date(a.createdAt) - +new Date(b.createdAt))[0];
+              if (first) handleTableClick(first.tableNumber);
+            }}
+            disabled={activeCalls.length === 0}
+            aria-label={`Llamados: ${activeCalls.length}`}
+            className={`relative flex h-14 flex-col items-center justify-center gap-0.5 rounded-2xl border text-[11px] font-semibold transition-colors active:scale-[0.97] ${
+              activeCalls.length ? 'border-rose/50 bg-rose/10 text-rose' : 'border-carbon/15 text-carbon/40'
+            }`}
+          >
+            <BellRing className={`h-5 w-5 ${activeCalls.length ? 'animate-pulse' : ''}`} />
+            Llamados
+            {activeCalls.length > 0 && (
+              <span className="absolute right-2 top-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-rose px-1 text-[11px] font-bold tabular-nums text-white">{activeCalls.length}</span>
+            )}
+          </button>
+        </div>
+      </nav>
+
       <AnimatePresence>
         {shiftSheet && (
           <ShiftSheet

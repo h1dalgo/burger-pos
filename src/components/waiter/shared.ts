@@ -57,6 +57,8 @@ export interface CartItem {
 export interface TableData {
   number: string;
   status: 'empty' | 'pending' | 'preparing' | 'ready' | 'ordered';
+  /** Desde cuándo la mesa está en ese estado (ISO). */
+  since?: string;
 }
 
 export interface TableCall {
