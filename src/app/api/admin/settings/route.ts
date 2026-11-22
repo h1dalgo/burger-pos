@@ -34,6 +34,7 @@ export async function PATCH(request: NextRequest) {
       }
     }
     if (body.isOpen !== undefined) data.isOpen = !!body.isOpen;
+    if (body.cashShiftsEnabled !== undefined) data.cashShiftsEnabled = !!body.cashShiftsEnabled;
     for (const key of ['openTime', 'closeTime'] as const) {
       if (body[key] !== undefined) {
         const v = text(body[key], 5);

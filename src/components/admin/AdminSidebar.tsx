@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -28,6 +28,18 @@ export default function AdminSidebar() {
   const router = useRouter();
   const logout = useAdminStore((s) => s.logout);
   const [open, setOpen] = useState(false);
+  // "Turnos de caja" solo aparece si el negocio los usa (Configuración)
+  const [shiftsOn, setShiftsOn] = useState(false);
+  useEffect(() => {
+    let alive = true;
+    fetch('/api/settings')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => alive && d && setShiftsOn(!!d.cashShiftsEnabled))
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, [pathname]);
 
   const links = [
     { href: '/admin123', label: 'Dashboard', icon: LayoutDashboard },
@@ -36,7 +48,7 @@ export default function AdminSidebar() {
     { href: '/admin123/inventory', label: 'Inventario', icon: Boxes },
     { href: '/admin123/promotions', label: 'Promociones', icon: BadgePercent },
     { href: '/admin123/report', label: 'Corte de Caja', icon: Receipt },
-    { href: '/admin123/caja', label: 'Turnos de caja', icon: Wallet },
+    ...(shiftsOn ? [{ href: '/admin123/caja', label: 'Turnos de caja', icon: Wallet }] : []),
     { href: '/admin123/registro', label: 'Registro', icon: History },
     { href: '/admin123/qr', label: 'Códigos QR', icon: QrCode },
     { href: '/admin123/settings', label: 'Configuración', icon: SettingsIcon },

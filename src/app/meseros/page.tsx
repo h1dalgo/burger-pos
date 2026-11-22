@@ -178,6 +178,8 @@ export default function WaiterPage() {
     const t = setInterval(() => setNow(Date.now()), 20_000);
     return () => clearInterval(t);
   }, []);
+  /** El negocio usa turnos de caja (Configuración). Apagado: se cobra efectivo sin abrir caja. */
+  const [shiftsOn, setShiftsOn] = useState(false);
   /** Turno de caja abierto de este mesero (null = caja cerrada). */
   const [shift, setShift] = useState<OpenShift | null>(null);
   const [shiftCobros, setShiftCobros] = useState(0);
@@ -201,7 +203,10 @@ export default function WaiterPage() {
   useEffect(() => {
     fetch('/api/settings')
       .then((r) => r.json())
-      .then((data) => setTableCount(data.tableCount ?? 10))
+      .then((data) => {
+        setTableCount(data.tableCount ?? 10);
+        setShiftsOn(!!data.cashShiftsEnabled);
+      })
       .catch(() => {});
     const savedWaiter = localStorage.getItem('waiter_name');
     if (savedWaiter && typeof Notification !== 'undefined' && Notification.permission === 'granted') void subscribePush('waiter');
@@ -225,7 +230,7 @@ export default function WaiterPage() {
   };
 
   const loadShift = useCallback(() => {
-    if (!waiterName) return;
+    if (!waiterName || !shiftsOn) return;
     fetch(`/api/shifts?person=${encodeURIComponent(waiterName)}`)
       .then((r) => (r.ok ? r.json() : null))
       .then((d) => {
@@ -234,7 +239,7 @@ export default function WaiterPage() {
         setShiftCobros(d.cobros ?? 0);
       })
       .catch(() => {});
-  }, [waiterName]);
+  }, [waiterName, shiftsOn]);
 
   useEffect(() => {
     const t = setTimeout(loadShift, 0);
@@ -243,7 +248,7 @@ export default function WaiterPage() {
 
   /** El efectivo se cobra con la caja abierta (para cuadrarla al final del turno). */
   const needShiftForCash = () => {
-    if (shift) return false;
+    if (!shiftsOn || shift) return false;
     setShowPayments(false);
     setShiftSheet({ reason: 'Abre tu caja antes de cobrar en efectivo: así se cuadra al final del turno.' });
     return true;
@@ -1102,7 +1107,8 @@ export default function WaiterPage() {
         aria-label="Acciones del mesero"
         className="fixed inset-x-0 bottom-0 z-20 border-t border-carbon/10 bg-cream/90 px-3 pt-2 pb-[calc(env(safe-area-inset-bottom)+0.5rem)] backdrop-blur-xl"
       >
-        <div className="mx-auto grid max-w-md grid-cols-3 gap-2">
+        <div className={`mx-auto grid max-w-md gap-2 ${shiftsOn ? 'grid-cols-3' : 'grid-cols-2'}`}>
+          {shiftsOn && (
           <button
             type="button"
             onClick={() => setShiftSheet({ reason: null })}
@@ -1114,6 +1120,7 @@ export default function WaiterPage() {
             {shift ? <LockOpen className="h-5 w-5" /> : <Lock className="h-5 w-5" />}
             {shift ? 'Caja abierta' : 'Abrir caja'}
           </button>
+          )}
           <button
             type="button"
             onClick={openPayments}

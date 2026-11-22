@@ -174,6 +174,8 @@ export interface BusinessSettings {
   phone?: string | null;
   taxRate?: number;
   receiptFooter?: string | null;
+  /** Turnos de caja por mesero (apagado por defecto). */
+  cashShiftsEnabled?: boolean;
 }
 
 /** Ajustes públicos que recibe el cliente (/api/settings). */

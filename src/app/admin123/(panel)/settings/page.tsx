@@ -37,6 +37,7 @@ export default function AdminSettingsPage() {
   const [rate, setRate] = useState('');
   const [rateUpdatedAt, setRateUpdatedAt] = useState<string | null>(null);
   const [isOpen, setIsOpen] = useState(true);
+  const [cashShifts, setCashShifts] = useState(false);
   const [openTime, setOpenTime] = useState('');
   const [closeTime, setCloseTime] = useState('');
   const [bank, setBank] = useState('');
@@ -59,6 +60,7 @@ export default function AdminSettingsPage() {
     setRate(data.exchangeRate ? String(data.exchangeRate) : '');
     setRateUpdatedAt(data.rateUpdatedAt);
     setIsOpen(data.isOpen ?? true);
+    setCashShifts(!!data.cashShiftsEnabled);
     setOpenTime(data.openTime ?? '');
     setCloseTime(data.closeTime ?? '');
     setBank(data.pagoMovilBank ?? '');
@@ -115,6 +117,7 @@ export default function AdminSettingsPage() {
           tableCount,
           exchangeRate: r,
           isOpen,
+          cashShiftsEnabled: cashShifts,
           openTime,
           closeTime,
           pagoMovilBank: bank,
@@ -250,6 +253,17 @@ export default function AdminSettingsPage() {
             <label className="block">
               <Label>Número de mesas</Label>
               <TextField type="number" min={1} max={100} value={tableCount} onChange={(e) => setTableCount(Number(e.target.value))} />
+            </label>
+            <label className="flex items-center justify-between gap-4">
+              <span>
+                <span className="block text-sm font-semibold text-carbon">Turnos de caja</span>
+                <span className="block text-[12px] text-carbon/55">
+                  Cada mesero abre su caja con el efectivo inicial y la cierra contando. Úsalo si cobran bastante en efectivo.
+                </span>
+              </span>
+              <button type="button" role="switch" aria-checked={cashShifts} aria-label="Usar turnos de caja" onClick={() => setCashShifts((v) => !v)} className={`relative h-7 w-12 shrink-0 rounded-full transition-colors ${cashShifts ? 'bg-mint' : 'bg-carbon/20'}`}>
+                <span className={`absolute top-1 h-5 w-5 rounded-full bg-white transition-all ${cashShifts ? 'left-6' : 'left-1'}`} />
+              </button>
             </label>
             <div>
               <Label>Logo del negocio</Label>

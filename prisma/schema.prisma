@@ -262,6 +262,8 @@ model BusinessSettings {
   phone          String?
   /// IVA incluido en los precios (ej. 16). 0 = no desglosar
   taxRate        Decimal   @default(0) @map("tax_rate") @db.Decimal(5, 2)
+  /// Turnos de caja por mesero (abrir/cerrar con el efectivo). Apagado: se cobra sin abrir caja
+  cashShiftsEnabled Boolean @default(false) @map("cash_shifts_enabled")
   receiptFooter  String?   @map("receipt_footer")
   /// Próximo número de recibo
   nextReceipt    Int       @default(1) @map("next_receipt")
