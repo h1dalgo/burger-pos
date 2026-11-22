@@ -140,21 +140,19 @@ export default function ProductVisual3D({
             transition={{ duration: reduced ? 0 : 0.45, ease: 'easeOut' }}
             className="absolute inset-0 flex items-center justify-center"
           >
-            {showPhoto ? (
+            {no3d && showPhoto ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
-                src={cldUrl(imageUrl, { w: no3d ? 720 : 320, quality: no3d ? 'auto' : 'auto:low' })}
+                src={cldUrl(imageUrl, { w: 720, quality: 'auto' })}
                 alt=""
                 onError={() => setPhotoFailed(true)}
-                className={`h-full w-full object-cover transition-[filter,opacity,transform] duration-300 ${no3d ? '' : 'scale-110 opacity-70 blur-md'}`}
+                className="h-full w-full object-cover"
               />
             ) : no3d ? (
               <p className="display px-6 text-center text-2xl text-carbon/80">{productName}</p>
             ) : (
-              <div className="flex flex-col items-center gap-2">
-                <div className="h-20 w-36 animate-pulse rounded-[45%] bg-cream/10" />
-                <div className="h-3 w-28 animate-pulse rounded-full bg-cream/10" />
-              </div>
+              // escenario oscuro igual al del 3D: luz cálida que respira y la sombra donde aparecerá el producto
+              <div className="stage-glow absolute inset-0" />
             )}
           </motion.div>
         )}

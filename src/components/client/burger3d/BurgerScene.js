@@ -657,6 +657,8 @@ export class BurgerScene extends Stage {
     this.gap = { x: 0, v: 0, target: 0, y: Infinity, closeAt: 0 };
     this.squash = sp(1);
     this._squashAt = -1;
+    /** Entrada de todo el conjunto (crece suave al aparecer). */
+    this.introS = sp(1);
   }
 
   /**
@@ -867,13 +869,34 @@ export class BurgerScene extends Stage {
   }
 
   _introLayer(L, i, n) {
-    L.t0 = this._time + 0.15 + i * 0.09;
-    L.py.x = L.baseY + 2.4 + i * 0.12;
-    L.ry.x = (i % 2 ? 1 : -1) * 0.8;
-    L.kY = 150;
+    // se arman de a una por cuadro (sin congelar la pantalla) y, cuando están TODAS,
+    // aparecen juntas (ver _startIntro): nada de piezas que salen una por una
+    const mid = (n - 1) / 2;
+    L.t0 = Infinity;
+    L.introIdx = i;
+    // separadas en vertical (más arriba cuanto más alta la capa) y apenas giradas
+    L.py.x = L.baseY + 0.18 + (i - mid) * 0.11 + i * 0.06;
+    L.py.v = 0;
+    L.ry.x = (i % 2 ? 1 : -1) * (0.22 + 0.04 * i);
+    // muelle casi crítico: se juntan sin rebotar
+    L.kY = 46;
     L.cY = 13;
-    L.fade = 0.18;
-    this._squashAt = this._time + 0.15 + (n - 1) * 0.09 + 0.38;
+    L.fade = 0.3;
+    this._introPending = true;
+    this._squashAt = -1;
+  }
+
+  /** Todas las piezas listas: arranca la entrada (vista desarmada que se junta y crece suave). */
+  _startIntro(now) {
+    this._introPending = false;
+    this.introS.x = 0.9;
+    this.introS.v = 0;
+    for (const L of this.layers) {
+      if (L.introIdx == null) continue;
+      L.t0 = now + 0.04 + L.introIdx * 0.035;
+      L.introUntil = L.t0 + 1.6;
+      L.introIdx = null;
+    }
   }
 
   /** Entra en arco desde el lado derecho de la pantalla y aterriza en su lugar. */
@@ -977,11 +1000,12 @@ export class BurgerScene extends Stage {
     // Construcción progresiva: como mucho una capa nueva por cuadro
     let built = false;
     for (const L of this.layers)
-      if (!L.built && !L.leaving && now >= L.t0 - 0.15) {
+      if (!L.built && !L.leaving && (L.introIdx != null || now >= L.t0 - 0.15)) {
         this._build(L);
         built = true;
         break;
       }
+    if (this._introPending && this.layers.every((L) => L.leaving || L.introIdx == null || L.built)) this._startIntro(now);
 
     // Hueco (la tapa "se abre" para dejar entrar / salir el ingrediente)
     const g = this.gap;
@@ -999,9 +1023,11 @@ export class BurgerScene extends Stage {
       }
     }
     active = spring(this.squash, 1, 260, 14, dt) || active;
+    active = spring(this.introS, 1, 30, 11, dt) || active;
     const sq = this.squash.x;
     const bulge = 1 + (1 - sq) * 0.55;
-    this.stack.scale.set(bulge, sq, bulge);
+    const is = this.introS.x;
+    this.stack.scale.set(bulge * is, sq * is, bulge * is);
 
     let topY = 0;
     let visible = false;
@@ -1014,6 +1040,11 @@ export class BurgerScene extends Stage {
         continue;
       }
       L.root.visible = true;
+      if (L.introUntil && now > L.introUntil) {
+        L.kY = 200;
+        L.cY = 22;
+        L.introUntil = 0;
+      }
       let tx = 0, tz = 0, ty = L.baseY + (L.baseY >= g.y ? g.x : 0), tr = 0, tt = 0;
       if (L.leaving) {
         // al terminar su trayectoria de salida se queda donde está hasta desaparecer
@@ -1053,7 +1084,8 @@ export class BurgerScene extends Stage {
         moving = this._setOpacity(L, 1 - (life - 0.15) / 0.33) || moving;
         if (life > 0.55) L.dead = true;
       } else {
-        moving = this._setOpacity(L, life / L.fade) || moving;
+        const f = clamp01(life / L.fade);
+        moving = this._setOpacity(L, f * f * (3 - 2 * f)) || moving;
       }
       active = active || moving;
     }
