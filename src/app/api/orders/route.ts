@@ -3,6 +3,7 @@ import type { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { bestDiscount, getSettings, moveInventory, openState, outOfStockProductIds } from '@/lib/business';
 import { sendPush } from '@/lib/push';
+import { audit } from '@/lib/audit';
 import { baseUrlFrom, onPaid, redactOrder } from '@/lib/receipts';
 
 export const runtime = 'nodejs';
@@ -25,14 +26,15 @@ async function archiveStale() {
   const before = new Date(Date.now() - STALE_MS);
   const stale = await prisma.order.findMany({
     where: { createdAt: { lt: before }, status: { in: ['WAITING_PAYMENT', 'PENDING', 'IN_PREPARATION', 'READY'] } },
-    select: { id: true, status: true, items: { select: { productId: true, quantity: true } } },
+    select: { id: true, status: true, displayId: true, tableNumber: true, items: { select: { productId: true, quantity: true } } },
   });
   if (!stale.length) return;
   const unpaid = stale.filter((o) => o.status === 'WAITING_PAYMENT');
   const served = stale.filter((o) => o.status !== 'WAITING_PAYMENT');
   if (unpaid.length) {
     // nunca se pagaron: se cancelan y se devuelven los insumos
-    await prisma.order.updateMany({ where: { id: { in: unpaid.map((o) => o.id) } }, data: { status: 'CANCELLED', cancelReason: 'Vencido sin confirmar el pago' } });
+    await prisma.order.updateMany({ where: { id: { in: unpaid.map((o) => o.id) } }, data: { status: 'CANCELLED', cancelReason: 'Vencido sin confirmar el pago', cancelledBy: 'Sistema' } });
+    for (const o of unpaid) await audit('Sistema', 'PEDIDO_CANCELADO', `#${String(o.displayId).padStart(4, '0')} · Mesa ${o.tableNumber} · Motivo: Vencido sin confirmar el pago`, o.id);
     await moveInventory(unpaid.flatMap((o) => o.items), 1);
   }
   if (served.length) {
@@ -249,6 +251,11 @@ export async function POST(request: NextRequest) {
 
     // pedido cargado ya pagado (mesero): recibo de una vez
     if (order.status !== 'WAITING_PAYMENT') await onPaid(order.id, baseUrlFrom(request));
+    if (order.status !== 'WAITING_PAYMENT') {
+      const how = { CASH: 'Efectivo', MOBILE_PAYMENT: 'Pago Móvil', CARD: 'Tarjeta' }[order.paymentMethod];
+      const amount = `$${(Number(order.totalAmount) + Number(order.tip)).toFixed(2)}`;
+      await audit(waiterName || 'Sin identificar', 'PAGO_CONFIRMADO', `#${String(order.displayId).padStart(4, '0')} · Mesa ${order.tableNumber} · ${amount} · ${how} · cargado por el mesero`, order.id);
+    }
 
     if (global.io) {
       const pub = redactOrder(order);

@@ -119,7 +119,7 @@ export default function MenuPage() {
       const patch = await fetch(`/api/orders/${order.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tableNumber: table }),
+        body: JSON.stringify({ tableNumber: table, actor: 'Cliente' }),
       });
       if (patch.ok) toast.success(`Tu pedido se movió a la mesa ${table}`);
     } catch {

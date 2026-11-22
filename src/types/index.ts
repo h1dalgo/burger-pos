@@ -103,6 +103,8 @@ export interface Order {
   paidAt?: string | null;
   /** Quién confirmó el pago (mesero o Admin). */
   paidBy?: string | null;
+  /** Quién canceló el pedido. */
+  cancelledBy?: string | null;
   customerDoc?: string | null;
   /** Correo enmascarado (solo en el recibo) */
   maskedEmail?: string | null;

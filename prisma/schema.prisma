@@ -133,6 +133,8 @@ model Order {
   rating        Int?
   ratingComment String?       @map("rating_comment")
   cancelReason  String?       @map("cancel_reason")
+  /// Quién canceló el pedido
+  cancelledBy   String?       @map("cancelled_by")
   /// Recibo digital: número correlativo asignado al confirmarse el pago
   receiptNumber Int?          @map("receipt_number")
   paidAt        DateTime?     @map("paid_at")
@@ -334,4 +336,36 @@ model PushSubscription {
   createdAt DateTime @default(now()) @map("created_at")
 
   @@map("push_subscriptions")
+}
+
+/// Turno de caja de una persona (mesero o cajero): con cuánto efectivo empieza,
+/// cuánto contó al cerrar y cuánto debería haber según sus cobros.
+model CashShift {
+  id           String    @id @default(uuid()) @db.Uuid
+  person       String
+  openedAt     DateTime  @default(now()) @map("opened_at")
+  openingCash  Decimal   @map("opening_cash") @db.Decimal(10, 2)
+  closedAt     DateTime? @map("closed_at")
+  closedBy     String?   @map("closed_by")
+  countedCash  Decimal?  @map("counted_cash") @db.Decimal(10, 2)
+  expectedCash Decimal?  @map("expected_cash") @db.Decimal(10, 2)
+  note         String?
+
+  @@index([person, closedAt])
+  @@index([openedAt])
+  @@map("cash_shifts")
+}
+
+/// Registro de acciones: cancelaciones, cobros, cambios de mesa, tasa, precios, promociones y caja.
+model AuditLog {
+  id      String   @id @default(uuid()) @db.Uuid
+  at      DateTime @default(now())
+  actor   String
+  action  String
+  orderId String?  @map("order_id") @db.Uuid
+  detail  String
+
+  @@index([at])
+  @@index([orderId])
+  @@map("audit_logs")
 }

@@ -4,6 +4,8 @@ import { prisma } from '@/lib/prisma';
 import { moveInventory } from '@/lib/business';
 import { sendPush } from '@/lib/push';
 import { baseUrlFrom, onPaid, PAID_STATUSES, redactOrder } from '@/lib/receipts';
+import { actorFrom, audit, METHOD_LABEL, money, orderTag } from '@/lib/audit';
+import { getStatusMeta } from '@/lib/order-status';
 import type { OrderStatus } from '@/types';
 
 export const runtime = 'nodejs';
@@ -20,6 +22,10 @@ const ORDER_INCLUDE = {
 } satisfies Prisma.OrderInclude;
 
 const VALID: OrderStatus[] = ['WAITING_PAYMENT', 'PENDING', 'IN_PREPARATION', 'READY', 'DELIVERED', 'CANCELLED'];
+/** Orden del flujo normal (para saber si alguien echó un pedido para atrás). */
+const STEP: Record<string, number> = { WAITING_PAYMENT: 0, PENDING: 1, IN_PREPARATION: 2, READY: 3, DELIVERED: 4 };
+
+const paidStatus = (s: string) => (PAID_STATUSES as readonly string[]).includes(s);
 
 export async function PATCH(
   request: NextRequest,
@@ -29,12 +35,14 @@ export async function PATCH(
   try {
     const body = await request.json();
     const { status, tableNumber, cancelReason, paidBy } = body;
+    // quién hace la acción (lo manda cada pantalla: nombre del mesero, "Cocina", "Admin", "Cliente")
+    const actor = actorFrom(body.actor ?? paidBy);
 
     if (status === undefined && tableNumber === undefined) {
       return NextResponse.json({ error: 'Status or tableNumber is required' }, { status: 400 });
     }
 
-    const prev = await prisma.order.findUnique({ where: { id }, select: { status: true, items: { select: { productId: true, quantity: true } } } });
+    const prev = await prisma.order.findUnique({ where: { id }, select: { status: true, displayId: true, tableNumber: true, totalAmount: true, tip: true, paymentMethod: true, items: { select: { productId: true, quantity: true } } } });
     if (!prev) return NextResponse.json({ error: 'Order not found' }, { status: 404 });
 
     const data: Prisma.OrderUpdateInput = {};
@@ -53,6 +61,7 @@ export async function PATCH(
       }
       if (status === 'CANCELLED') {
         data.cancelReason = typeof cancelReason === 'string' && cancelReason.trim() ? cancelReason.trim().slice(0, 200) : 'Cancelado';
+        data.cancelledBy = actor;
       }
     }
 
@@ -69,6 +78,23 @@ export async function PATCH(
       if (status === 'CANCELLED' && prev.status !== 'CANCELLED') await moveInventory(prev.items, 1, tx);
       return updated;
     });
+
+    // ── registro de lo que pasó ──
+    const tag = orderTag(prev);
+    const amount = money(Number(prev.totalAmount) + Number(prev.tip));
+    if (data.status && data.status !== prev.status) {
+      const paid = (PAID_STATUSES as readonly string[]).includes(prev.status);
+      if (data.status === 'CANCELLED') {
+        await audit(actor, 'PEDIDO_CANCELADO', `${tag} · ${amount}${paid ? ' · ya estaba cobrado' : ''} · Motivo: ${data.cancelReason}`, id);
+      } else if (prev.status === 'WAITING_PAYMENT' && paidStatus(data.status as string)) {
+        await audit(actor, 'PAGO_CONFIRMADO', `${tag} · ${amount} · ${METHOD_LABEL[prev.paymentMethod]}`, id);
+      } else if ((STEP[data.status as string] ?? 0) < (STEP[prev.status] ?? 0)) {
+        await audit(actor, 'ESTADO_REVERTIDO', `${tag} · ${getStatusMeta(prev.status).title} → ${getStatusMeta(data.status as string).title}`, id);
+      }
+    }
+    if (data.tableNumber && data.tableNumber !== prev.tableNumber) {
+      await audit(actor, 'MESA_CAMBIADA', `#${String(prev.displayId).padStart(4, '0')} · Mesa ${prev.tableNumber} → Mesa ${data.tableNumber}`, id);
+    }
 
     // pago confirmado: número de recibo + aviso y correo al cliente
     if (data.status && (PAID_STATUSES as readonly string[]).includes(data.status as string) && !order.receiptNumber) {

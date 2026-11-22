@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { audit } from '@/lib/audit';
 import { parsePromotion } from '../parse';
 
 export const runtime = 'nodejs';
@@ -12,12 +13,14 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     if (Object.keys(body).length === 1 && typeof body.active === 'boolean') {
       const p = await prisma.promotion.update({ where: { id }, data: { active: body.active } });
       global.io?.emit('settings:updated');
+      await audit('Admin', body.active ? 'PROMO_ACTIVADA' : 'PROMO_DESACTIVADA', p.name);
       return NextResponse.json(p);
     }
     const parsed = parsePromotion(body);
     if ('error' in parsed) return NextResponse.json({ error: parsed.error }, { status: 400 });
     const p = await prisma.promotion.update({ where: { id }, data: parsed.data });
     global.io?.emit('settings:updated');
+    await audit('Admin', 'PROMO_EDITADA', p.name);
     return NextResponse.json(p);
   } catch (e) {
     if ((e as { code?: string }).code === 'P2002') return NextResponse.json({ error: 'Ya existe un cupón con ese código' }, { status: 409 });
@@ -28,7 +31,8 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 export async function DELETE(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   try {
-    await prisma.promotion.delete({ where: { id } });
+    const gone = await prisma.promotion.delete({ where: { id } });
+    await audit('Admin', 'PROMO_ELIMINADA', gone.name);
     global.io?.emit('settings:updated');
     return NextResponse.json({ ok: true });
   } catch {

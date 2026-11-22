@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { actorFrom, audit } from '@/lib/audit';
 
 export const runtime = 'nodejs';
 
@@ -51,6 +52,8 @@ export async function PATCH(request: NextRequest) {
     if (global.io) {
       global.io.emit('stock:updated', { type, ...result });
     }
+    const label = 'product' in result && result.product ? `${result.product.name} · ${result.name}` : result.name;
+    await audit(actorFrom(body.actor, 'Cocina'), isAvailable ? 'PRODUCTO_DISPONIBLE' : 'PRODUCTO_AGOTADO', label);
 
     return NextResponse.json({ success: true, data: result });
   } catch (error) {

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { audit, money } from '@/lib/audit';
 import { prisma } from '@/lib/prisma';
 
 const cleanAllergens = (v: unknown) => (Array.isArray(v) ? [...new Set(v.filter((x): x is string => typeof x === 'string' && !!x.trim()).map((x) => x.trim().slice(0, 30)))].slice(0, 15) : undefined);
@@ -47,6 +48,7 @@ export async function PATCH(
     const body = await request.json();
     const { name, description, basePrice, categoryId, imageUrl, hasVariation, isFeatured, allergens, variations, defaultIngredients, extraIngredients, requiredSelections } = body;
 
+    const before = await prisma.product.findUnique({ where: { id }, select: { name: true, basePrice: true } });
     const product = await prisma.$transaction(async (tx) => {
       await tx.productVariation.deleteMany({ where: { productId: id } });
       await tx.defaultIngredient.deleteMany({ where: { productId: id } });
@@ -98,6 +100,9 @@ export async function PATCH(
         },
       });
     });
+    if (before && Number(before.basePrice) !== Number(product.basePrice)) {
+      await audit('Admin', 'PRECIO_CAMBIADO', `${product.name}: ${money(before.basePrice)} → ${money(product.basePrice)}`);
+    }
 
     return NextResponse.json(product);
   } catch (error) {
@@ -112,7 +117,8 @@ export async function DELETE(
 ) {
   const { id } = await params;
   try {
-    await prisma.product.delete({ where: { id } });
+    const gone = await prisma.product.delete({ where: { id } });
+    await audit('Admin', 'PRODUCTO_ELIMINADO', `${gone.name} · ${money(gone.basePrice)}`);
     return NextResponse.json({ success: true });
   } catch {
     return NextResponse.json({ error: 'Failed to delete product' }, { status: 500 });

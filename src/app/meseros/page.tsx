@@ -17,6 +17,8 @@ import {
   UserRound,
   ArrowRightLeft,
   Wallet,
+  Lock,
+  LockOpen,
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { formatPrice } from '@/lib/utils';
@@ -26,6 +28,7 @@ import { calcItemPrice } from '@/components/waiter/shared';
 import WaiterProductModal from '@/components/waiter/WaiterProductModal';
 import MoveTableSheet from '@/components/waiter/MoveTableSheet';
 import PaymentsPanel from '@/components/waiter/PaymentsPanel';
+import ShiftSheet, { type OpenShift } from '@/components/waiter/ShiftSheet';
 import CancelOrderDialog from '@/components/kitchen/CancelOrderDialog';
 import type { Order } from '@/types';
 import { formatDisplayId } from '@/lib/order-status';
@@ -160,6 +163,10 @@ export default function WaiterPage() {
   const [showPayments, setShowPayments] = useState(false);
   const [payBusy, setPayBusy] = useState<string | null>(null);
   const [cancelTarget, setCancelTarget] = useState<Order | null>(null);
+  /** Turno de caja abierto de este mesero (null = caja cerrada). */
+  const [shift, setShift] = useState<OpenShift | null>(null);
+  const [shiftCobros, setShiftCobros] = useState(0);
+  const [shiftSheet, setShiftSheet] = useState<{ reason: string | null } | null>(null);
   const [liveOrders, setLiveOrders] = useState<Array<{ id: string; displayId: number; tableNumber: string; status: string; waiter: string | null }>>([]);
   const [waiterName, setWaiterName] = useState('');
   const [waiterDraft, setWaiterDraft] = useState('');
@@ -200,6 +207,31 @@ export default function WaiterPage() {
     if (typeof Notification !== 'undefined') {
       void Promise.resolve(Notification.permission === 'default' ? Notification.requestPermission() : Notification.permission).then(() => subscribePush('waiter'));
     }
+  };
+
+  const loadShift = useCallback(() => {
+    if (!waiterName) return;
+    fetch(`/api/shifts?person=${encodeURIComponent(waiterName)}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (!d) return;
+        setShift(d.shift ?? null);
+        setShiftCobros(d.cobros ?? 0);
+      })
+      .catch(() => {});
+  }, [waiterName]);
+
+  useEffect(() => {
+    const t = setTimeout(loadShift, 0);
+    return () => clearTimeout(t);
+  }, [loadShift]);
+
+  /** El efectivo se cobra con la caja abierta (para cuadrarla al final del turno). */
+  const needShiftForCash = () => {
+    if (shift) return false;
+    setShowPayments(false);
+    setShiftSheet({ reason: 'Abre tu caja antes de cobrar en efectivo: así se cuadra al final del turno.' });
+    return true;
   };
 
   const leaveService = () => {
@@ -361,7 +393,7 @@ export default function WaiterPage() {
     const res = await fetch(`/api/orders/${orderId}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ status }),
+      body: JSON.stringify({ status, actor: localStorage.getItem('waiter_name') || 'Mesero' }),
     });
     if (!res.ok) throw new Error('patch failed');
     return res.json();
@@ -409,6 +441,7 @@ export default function WaiterPage() {
 
   const confirmPayment = async (o: Order) => {
     if (payBusy) return;
+    if (o.paymentMethod === 'CASH' && needShiftForCash()) return;
     setPayBusy(o.id);
     try {
       const res = await fetch(`/api/orders/${o.id}`, {
@@ -425,6 +458,7 @@ export default function WaiterPage() {
       });
       toast.success(`#${formatDisplayId(o.displayId)} cobrado · enviado a cocina`);
       loadTables();
+      loadShift();
     } catch {
       toast.error('No se pudo confirmar el pago');
     } finally {
@@ -440,7 +474,7 @@ export default function WaiterPage() {
       const res = await fetch(`/api/orders/${o.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: 'CANCELLED', cancelReason: reason }),
+        body: JSON.stringify({ status: 'CANCELLED', cancelReason: reason, actor: waiterName }),
       });
       if (!res.ok) throw new Error();
       setToCollect((prev) => prev.filter((x) => x.id !== o.id));
@@ -491,6 +525,9 @@ export default function WaiterPage() {
   const removeItem = (id: string) => setCart((prev) => prev.filter((i) => i.id !== id));
 
   const sendOrder = async () => {
+    // el pedido que carga el mesero queda cobrado en efectivo
+    // (la caja se abre encima: el pedido cargado no se pierde)
+    if (needShiftForCash()) return;
     if (!customerName.trim() || !selectedTable) {
       toast.error('Ingresa el nombre del cliente');
       return;
@@ -655,6 +692,18 @@ export default function WaiterPage() {
             <span className={`w-1.5 h-1.5 rounded-full ${connected ? 'bg-mint' : 'bg-rose'} ${connected ? '' : 'animate-pulse'}`} />
             <span className="hidden sm:inline">{connected ? 'En línea' : 'Sin conexión'}</span>
           </div>
+          <button
+            type="button"
+            onClick={() => setShiftSheet({ reason: null })}
+            aria-label={shift ? 'Caja abierta. Toca para cerrarla' : 'Caja cerrada. Toca para abrirla'}
+            title={shift ? 'Caja abierta' : 'Abrir caja'}
+            className={`flex items-center gap-1.5 rounded-full border px-2.5 py-1.5 text-xs font-semibold transition-colors ${
+              shift ? 'border-mint/50 text-mint-ink hover:bg-mint/10' : 'border-carbon/15 text-carbon/70 hover:bg-carbon/[0.06]'
+            }`}
+          >
+            {shift ? <LockOpen className="h-3.5 w-3.5" /> : <Lock className="h-3.5 w-3.5" />}
+            <span className="hidden min-[400px]:inline">Caja</span>
+          </button>
           <button
             type="button"
             onClick={openPayments}
@@ -1048,6 +1097,18 @@ export default function WaiterPage() {
             onConfirm={(o) => void confirmPayment(o)}
             onCancel={setCancelTarget}
             onClose={() => setShowPayments(false)}
+          />
+        )}
+      </AnimatePresence>
+      <AnimatePresence>
+        {shiftSheet && (
+          <ShiftSheet
+            person={waiterName}
+            shift={shift}
+            cobros={shiftCobros}
+            reason={shiftSheet.reason}
+            onChanged={loadShift}
+            onClose={() => setShiftSheet(null)}
           />
         )}
       </AnimatePresence>

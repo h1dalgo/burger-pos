@@ -41,7 +41,7 @@ export default function MoveTableSheet({ from, tableCount, orders, onClose, onDo
     try {
       const results = await Promise.all(
         [...selected].map((id) =>
-          fetch(`/api/orders/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ tableNumber: to }) })
+          fetch(`/api/orders/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ tableNumber: to, actor: localStorage.getItem('waiter_name') || 'Mesero' }) })
         )
       );
       if (results.some((r) => !r.ok)) throw new Error();

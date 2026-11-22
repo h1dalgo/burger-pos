@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { audit } from '@/lib/audit';
 import { prisma } from '@/lib/prisma';
 import { getSettings } from '@/lib/business';
 
@@ -56,6 +57,13 @@ export async function PATCH(request: NextRequest) {
     }
 
     const settings = await prisma.businessSettings.update({ where: { id: current.id }, data });
+    if (data.exchangeRate !== undefined) {
+      const fmt = (n: number) => `Bs ${n.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 4 })}`;
+      await audit('Admin', 'TASA_CAMBIADA', `${fmt(Number(current.exchangeRate))} → ${fmt(Number(data.exchangeRate))}`);
+    }
+    if (data.isOpen !== undefined && data.isOpen !== current.isOpen) {
+      await audit('Admin', data.isOpen ? 'NEGOCIO_ABIERTO' : 'NEGOCIO_CERRADO', data.isOpen ? 'Se abrió para recibir pedidos' : 'Se cerró para pedidos');
+    }
     // el menú abierto en los teléfonos se entera (tasa, horario)
     global.io?.emit('settings:updated');
     return NextResponse.json({ ...settings, exchangeRate: Number(settings.exchangeRate) });

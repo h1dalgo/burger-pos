@@ -168,7 +168,7 @@ export default function KanbanBoard() {
         const res = await fetch(`/api/orders/${orderId}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ status, cancelReason }),
+          body: JSON.stringify({ status, cancelReason, actor: 'Cocina' }),
         });
         if (!res.ok) throw new Error();
         const updated = await res.json();

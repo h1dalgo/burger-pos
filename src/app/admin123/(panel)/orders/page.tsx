@@ -80,7 +80,7 @@ export default function OrdersHistoryPage() {
   const patch = async (o: Order, body: Record<string, unknown>, ok: string) => {
     setBusy(o.id);
     try {
-      const res = await fetch(`/api/orders/${o.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+      const res = await fetch(`/api/orders/${o.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...body, actor: 'Admin' }) });
       if (!res.ok) throw new Error();
       toast.success(ok);
       load();
@@ -221,7 +221,12 @@ export default function OrdersHistoryPage() {
                               {Number(o.tip ?? 0) > 0 && <span>Propina: {formatPrice(Number(o.tip))}</span>}
                               {rate > 0 && <span>Tasa: Bs {rate.toLocaleString('es-VE')}</span>}
                               {o.paidBy && <span>Cobró: {o.paidBy}</span>}
-                              {o.cancelReason && <span className="text-rose">Motivo: {o.cancelReason}</span>}
+                              {o.cancelReason && (
+                                <span className="text-rose">
+                                  Motivo: {o.cancelReason}
+                                  {o.cancelledBy ? ` · canceló ${o.cancelledBy}` : ''}
+                                </span>
+                              )}
                               {o.ratingComment && <span className="italic">“{o.ratingComment}”</span>}
                             </div>
                             {o.receiptNumber ? (

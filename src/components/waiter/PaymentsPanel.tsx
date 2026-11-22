@@ -59,7 +59,9 @@ export default function PaymentsPanel({ orders, pendingId, onConfirm, onCancel, 
           {sorted.length === 0 && <p className="py-12 text-center text-sm text-carbon/55">No hay pedidos por cobrar</p>}
           {sorted.map((o) => {
             const Icon = ICON[o.paymentMethod];
-            const total = Number(o.totalAmount);
+            // el cliente paga el total + la propina que eligió
+            const tip = Number(o.tip ?? 0);
+            const total = Number(o.totalAmount) + tip;
             const rate = Number(o.exchangeRate ?? 0);
             const busy = pendingId === o.id;
             return (
@@ -74,6 +76,7 @@ export default function PaymentsPanel({ orders, pendingId, onConfirm, onCancel, 
                   <div className="text-right">
                     <p className="price text-xl">{formatPrice(total)}</p>
                     {rate > 0 && <p className="text-[11px] tabular-nums text-carbon/55">{formatBs(total * rate)}</p>}
+                    {tip > 0 && <p className="text-[11px] font-semibold tabular-nums text-mint-ink">Incluye propina {formatPrice(tip)}</p>}
                   </div>
                 </div>
                 <div className="mt-3 flex flex-wrap items-center gap-2 text-[12px]">
