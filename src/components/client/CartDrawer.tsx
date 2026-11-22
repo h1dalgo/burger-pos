@@ -177,7 +177,9 @@ export default function CartDrawer({ isOpen, onClose, onRequireTable, onEditItem
       setError('Selecciona un método de pago');
       return;
     }
-    if (!tableNumber) {
+    // la mesa guardada pudo caducar mientras la app estaba abierta
+    const table = useSessionStore.getState().freshTable();
+    if (!table) {
       setError('Elige tu mesa para enviar el pedido');
       onRequireTable?.(); // el selector se abre encima del carrito
       return;
@@ -206,7 +208,7 @@ export default function CartDrawer({ isOpen, onClose, onRequireTable, onEditItem
     try {
       const payload = {
         customerName: cleanName,
-        tableNumber,
+        tableNumber: table,
         paymentMethod,
         paymentReference: paymentMethod === 'MOBILE_PAYMENT' ? reference : undefined,
         couponCode: coupon || undefined,

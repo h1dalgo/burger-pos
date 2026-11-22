@@ -22,6 +22,8 @@ export default function ServiceSheet({ onClose, onPickTable }: Props) {
 
   const handleAction = async (type: 'call' | 'bill') => {
     if (!hasTable || sending) return;
+    // la mesa guardada pudo caducar con la app abierta: entonces se pide elegirla
+    if (!useSessionStore.getState().freshTable()) return;
     setSending(type);
     try {
       const res = await fetch('/api/table-calls', {
