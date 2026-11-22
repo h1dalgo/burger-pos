@@ -24,6 +24,9 @@ const Item3D = dynamic(() => import('./burger3d/Item3D'), { ssr: false });
 /** Fondo de la vitrina oscura de los 3D (igual al color de fondo del render). */
 export const SHOWCASE_BG = '#17130f';
 
+/** Se espera a que la hoja del detalle termine de abrirse antes de crear el 3D (apertura sin tirones). */
+const OPEN_DELAY_MS = 380;
+
 export type FoodVariant = 'burger' | 'drink' | 'starter' | 'dessert';
 
 const norm = (s: string) =>
@@ -168,6 +171,7 @@ export default function ProductVisual3D({
             height={height}
             onReady={onReady}
             onFail={() => setNo3d(true)}
+            delay={OPEN_DELAY_MS}
             snapshotRef={snapshotRef}
             highlight={highlight}
             onLayerClick={onIngredientTap}
@@ -182,6 +186,7 @@ export default function ProductVisual3D({
             height={height}
             onReady={onReady}
             onFail={() => setNo3d(true)}
+            delay={OPEN_DELAY_MS}
             snapshotRef={snapshotRef}
             theme="dark"
           />

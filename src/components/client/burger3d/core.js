@@ -534,6 +534,7 @@ function roughTex(name) {
 }
 
 export function food(p = {}) {
+  const tier = getTier().name;
   const rough = p.roughness ?? 0.55;
   // lo húmedo (salsas, tomate, líquidos) conserva su barniz; lo seco casi no brilla
   const wet = rough <= 0.25;
@@ -546,14 +547,16 @@ export function food(p = {}) {
     roughness: wet ? rough : Math.min(1, rough * 1.25),
     roughnessMap: wet ? null : roughTex(p.bump || 'fine'),
     metalness: 0,
-    clearcoat: Math.max(0.03, (p.clearcoat ?? 0.03) * (wet ? 1 : 0.45)),
+    // gama baja: sin barniz (el shader es bastante más liviano)
+    clearcoat: tier === 'low' ? 0 : Math.max(0.03, (p.clearcoat ?? 0.03) * (wet ? 1 : 0.45)),
     clearcoatRoughness: p.clearcoatRoughness ?? 0.4,
     envMapIntensity: p.env ?? 1,
     // "piel" suave en el borde (pan, queso): imita la luz que entra en la comida
-    sheen: p.sheen ?? 0,
+    sheen: tier === 'low' ? 0 : p.sheen ?? 0,
     sheenColor: p.sheenColor ? col(p.sheenColor) : new THREE.Color(1, 0.86, 0.66),
     sheenRoughness: p.sheenRoughness ?? 0.6,
-    transmission: p.transmission ?? 0,
+    // la transmisión vuelve a dibujar la escena en cada cuadro: solo en equipos potentes
+    transmission: tier === 'high' ? p.transmission ?? 0 : 0,
     thickness: p.thickness ?? 0,
     ior: p.ior ?? 1.5,
     side: p.side ?? THREE.FrontSide,
@@ -564,8 +567,8 @@ export function food(p = {}) {
 
 export const TIERS = {
   high: { name: 'high', dpr: 2, minDpr: 1, seg: 112, detail: 1, sesame: 64, shadow: 2048, aa: true },
-  medium: { name: 'medium', dpr: 1.5, minDpr: 1, seg: 80, detail: 0.75, sesame: 50, shadow: 1024, aa: false },
-  low: { name: 'low', dpr: 1.25, minDpr: 0.8, seg: 56, detail: 0.55, sesame: 36, shadow: 0, aa: false },
+  medium: { name: 'medium', dpr: 1.35, minDpr: 0.85, seg: 72, detail: 0.7, sesame: 44, shadow: 1024, aa: false },
+  low: { name: 'low', dpr: 1.1, minDpr: 0.7, seg: 48, detail: 0.5, sesame: 30, shadow: 0, aa: false },
 };
 
 export function detectTier() {
@@ -684,6 +687,20 @@ const TEMPLATES = new Map();
  * Devuelve una copia de la plantilla `key` (la construye la primera vez).
  * La geometría se comparte; los materiales se clonan para animar la opacidad.
  */
+/** ¿Ya está preparada esta pieza (geometría) en la caché? */
+export function hasTemplate(key) {
+  return TEMPLATES.has(key);
+}
+
+/** Prepara una pieza en la caché sin mostrarla (para tenerla lista antes de usarla). */
+export function prepareTemplate(key, build) {
+  if (TEMPLATES.has(key)) return false;
+  const tpl = build();
+  tpl.traverse((o) => o.geometry && (o.geometry.userData.cached = true));
+  TEMPLATES.set(key, tpl);
+  return true;
+}
+
 export function fromTemplate(key, build) {
   let tpl = TEMPLATES.get(key);
   if (!tpl) {
@@ -713,6 +730,9 @@ export function materialsOf(obj) {
 
 const GRAIN_URL =
   "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E\")";
+
+/** Duración objetivo de un cuadro (60 por segundo). */
+const FRAME_MS = 1000 / 60;
 
 let WEBGL_OK = null;
 /** true si el navegador puede dibujar 3D (WebGL). Se consulta una sola vez. */
@@ -1147,7 +1167,12 @@ export class Stage {
     solidColor(geo, WHITE);
     const mats = (this._warmMats = []);
     for (const side of [THREE.FrontSide, THREE.DoubleSide, THREE.BackSide])
-      for (const map of [null, 'crust']) mats.push(food({ side, map }));
+      for (const map of [null, 'crust']) {
+        mats.push(food({ side, map }));
+        mats.push(food({ side, map, sheen: 0.4 })); // pan, queso, lechuga
+        mats.push(food({ side, map, roughness: 0.15, clearcoat: 1 })); // salsas, tomate, líquidos
+      }
+    mats.push(food({ roughness: 0.1, transmission: 0.6, thickness: 1 })); // jugos
     for (const m of mats) {
       const me = new THREE.Mesh(geo, m);
       me.castShadow = me.receiveShadow = true;
@@ -1159,7 +1184,8 @@ export class Stage {
     mats.push(inst.material);
     g.add(inst);
     try {
-      this._compiling = this.renderer.compileAsync(g, this.camera, this.scene);
+      // también la escena real (el producto ya está armado a esta altura)
+      this._compiling = Promise.all([this.renderer.compileAsync(g, this.camera, this.scene), this.renderer.compileAsync(this.scene, this.camera)]);
       await Promise.race([this._compiling, new Promise((res) => setTimeout(res, 1500))]);
     } catch {
       /* sin compilación en paralelo: se compila al dibujar */
@@ -1252,12 +1278,22 @@ export class Stage {
     P.acc = P.n = P.renders = 0;
     if (!continuous) return;
     let next = this._dpr;
-    if (avg > 1 / 45 && this._dpr > this._minDpr) {
-      next = Math.max(this._minDpr, this._dpr - 0.25);
+    const slow = avg > 1 / 55; // por debajo de ~55 cuadros/s se nota
+    if (slow && this._composer) {
+      // 1.º se apaga la oclusión ambiental (es lo más caro)
+      this._composer.dispose();
+      this._ao?.dispose();
+      this._composer = this._ao = null;
+      this.renderer.setClearColor(0x17130f, 1);
       P.good = 0;
-    } else if (avg < 1 / 57 && this._dpr < this._maxDpr) {
-      if (++P.good >= 4) {
-        next = Math.min(this._maxDpr, this._dpr + 0.25);
+      return;
+    }
+    if (slow && this._dpr > this._minDpr) {
+      next = Math.max(this._minDpr, +(this._dpr - 0.15).toFixed(2));
+      P.good = 0;
+    } else if (avg < 1 / 59 && this._dpr < this._maxDpr) {
+      if (++P.good >= 5) {
+        next = Math.min(this._maxDpr, +(this._dpr + 0.1).toFixed(2));
         P.good = 0;
       }
     } else P.good = 0;
@@ -1268,10 +1304,16 @@ export class Stage {
     }
   }
 
-  _loop() {
+  _loop(ts) {
     this._raf = 0;
     if (this._disposed || this._lost) return;
     if (this._paused || !this._visible || (typeof document !== 'undefined' && document.hidden)) return; // se reanuda con _kick()
+    // máximo 60 cuadros por segundo: estable y la mitad de trabajo en pantallas de 120 Hz
+    if (ts && this._lastTs && ts - this._lastTs < FRAME_MS - 1.5) {
+      this._raf = requestAnimationFrame(this._loop);
+      return;
+    }
+    if (ts) this._lastTs = ts;
     const raw = this._clock.getDelta();
     if (!this._ready) {
       this._raf = requestAnimationFrame(this._loop);

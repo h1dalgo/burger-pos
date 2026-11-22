@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, type MutableRefObject } from 'react';
+import { useEffect, useRef, useState, type MutableRefObject } from 'react';
 import { BurgerScene, webglAvailable } from './BurgerScene';
 import { useStageLifecycle } from './useStageLifecycle';
 
@@ -33,15 +33,26 @@ export interface Burger3DProps {
   rebuildKey?: string | number;
   /** No se pudo mostrar el 3D en este dispositivo (sin WebGL o falla repetida): mostrar la foto. */
   onFail?: () => void;
+  /** Crear el 3D después de X ms (ej. cuando termina de abrirse una ventana: sin tirones). */
+  delay?: number;
+  /** Otras hamburguesas para dejar preparadas en ratos libres (cambios instantáneos). */
+  prewarm?: string[][];
 }
 
-export default function Burger3D({ ingredients, height = 280, className, autoRotate = true, onLayerClick, onReady, snapshotRef, highlight = null, interactive = true, theme = 'light', board = false, hint, paused = false, rebuildKey, onFail }: Burger3DProps) {
+export default function Burger3D({ ingredients, height = 280, className, autoRotate = true, onLayerClick, onReady, snapshotRef, highlight = null, interactive = true, theme = 'light', board = false, hint, paused = false, rebuildKey, onFail, delay = 0, prewarm }: Burger3DProps) {
   const ref = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<BurgerScene | null>(null);
   const clickRef = useRef(onLayerClick);
   const readyRef = useRef(onReady);
   const key = ingredients.join('|');
   const { gen, failed, fail, lost } = useStageLifecycle(onFail);
+  const [go, setGo] = useState(delay <= 0);
+  useEffect(() => {
+    if (go) return;
+    const t = setTimeout(() => setGo(true), delay);
+    return () => clearTimeout(t);
+  }, [go, delay]);
+  const prewarmRef = useRef(prewarm);
   // lo último que se pidió, para rearmar la escena si el sistema la borra
   const latest = useRef({ ingredients, paused, highlight, autoRotate });
 
@@ -49,10 +60,11 @@ export default function Burger3D({ ingredients, height = 280, className, autoRot
     clickRef.current = onLayerClick;
     readyRef.current = onReady;
     latest.current = { ingredients, paused, highlight, autoRotate };
+    prewarmRef.current = prewarm;
   });
 
   useEffect(() => {
-    if (!ref.current || failed) return;
+    if (!ref.current || failed || !go) return;
     if (!webglAvailable()) {
       fail();
       return;
@@ -62,7 +74,11 @@ export default function Burger3D({ ingredients, height = 280, className, autoRot
       scene = new BurgerScene(ref.current, {
         autoRotate: latest.current.autoRotate,
         onLayerClick: onLayerClick ? (label: string) => clickRef.current?.(label) : null,
-        onReady: () => readyRef.current?.(),
+        onReady: () => {
+          readyRef.current?.();
+          // con el primer cuadro ya visible, se preparan las demás hamburguesas
+          if (prewarmRef.current?.length) scene.prewarm(prewarmRef.current);
+        },
         onContextLost: lost,
         interactive,
         theme,
@@ -86,7 +102,7 @@ export default function Burger3D({ ingredients, height = 280, className, autoRot
     // Se crea una vez (y de nuevo solo si el sistema borró el lienzo: `gen`);
     // los cambios de ingredientes se animan en el efecto de abajo.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [gen, failed]);
+  }, [gen, failed, go]);
 
   // Reconstrucción desde cero (va antes que el cambio normal de ingredientes)
   const lastRebuild = useRef(rebuildKey);

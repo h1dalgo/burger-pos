@@ -188,6 +188,11 @@ export default function MenuPage() {
     }))
     .filter((c) => c.products.length > 0);
   const isEmptyMenu = !loading && !error && categories.length > 0 && sections.length === 0;
+  // piezas 3D de todas las hamburguesas: se preparan en ratos libres (cambios y detalle sin tirones)
+  const burgerPrewarm = categories
+    .filter((c) => variantFromCategory(c.name) === 'burger')
+    .flatMap((c) => c.products)
+    .map((p) => [...p.variations.map((v) => v.name), ...p.defaultIngredients.map((d) => d.name)]);
   // secciones y tarjetas aparecen al entrar en pantalla (GSAP + ScrollTrigger)
   useScrollReveal(contentRef, [loading, sections.length, sections.reduce((n, c) => n + c.products.length, 0)]);
   // "¿Le agregas algo?" en el carrito: bebidas y postres disponibles
@@ -339,6 +344,7 @@ export default function MenuPage() {
             slides={showcase}
             onOpen={setSelectedProduct}
             paused={!!selectedProduct || !!editingItem || cartOpen}
+            prewarm={burgerPrewarm}
           />
         )}
 

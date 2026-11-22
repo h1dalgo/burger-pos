@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, type MutableRefObject } from 'react';
+import { useEffect, useRef, useState, type MutableRefObject } from 'react';
 import { ItemScene, type ItemVariant } from './ItemScene';
 import { webglAvailable } from './BurgerScene';
 import { useStageLifecycle } from './useStageLifecycle';
@@ -29,14 +29,22 @@ export interface Item3DProps {
   paused?: boolean;
   /** No se pudo mostrar el 3D en este dispositivo: mostrar la foto. */
   onFail?: () => void;
+  /** Crear el 3D después de X ms (cuando termina de abrirse una ventana). */
+  delay?: number;
 }
 
-export default function Item3D({ variant, name, description = '', choices = [], height = 240, className, autoRotate = true, onReady, snapshotRef, interactive = true, theme = 'light', hint, paused = false, onFail }: Item3DProps) {
+export default function Item3D({ variant, name, description = '', choices = [], height = 240, className, autoRotate = true, onReady, snapshotRef, interactive = true, theme = 'light', hint, paused = false, onFail, delay = 0 }: Item3DProps) {
   const ref = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<ItemScene | null>(null);
   const readyRef = useRef(onReady);
   const key = [variant, name, description, ...choices].join('|');
   const { gen, failed, fail, lost } = useStageLifecycle(onFail);
+  const [go, setGo] = useState(delay <= 0);
+  useEffect(() => {
+    if (go) return;
+    const t = setTimeout(() => setGo(true), delay);
+    return () => clearTimeout(t);
+  }, [go, delay]);
   const latest = useRef({ variant, name, description, choices, paused, autoRotate });
 
   useEffect(() => {
@@ -45,7 +53,7 @@ export default function Item3D({ variant, name, description = '', choices = [], 
   });
 
   useEffect(() => {
-    if (!ref.current || failed) return;
+    if (!ref.current || failed || !go) return;
     if (!webglAvailable()) {
       fail();
       return;
@@ -76,7 +84,7 @@ export default function Item3D({ variant, name, description = '', choices = [], 
     };
     // Se crea una vez (y de nuevo solo si el sistema borró el lienzo: `gen`).
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [gen, failed]);
+  }, [gen, failed, go]);
 
   useEffect(() => {
     sceneRef.current?.setProduct({ variant, name, description, choices });

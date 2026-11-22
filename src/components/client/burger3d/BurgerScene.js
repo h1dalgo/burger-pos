@@ -14,6 +14,7 @@
 import {
   THREE, mergeGeometries, Stage, fromTemplate, materialsOf, spring, sp, ease, clamp01, smooth, lerp, mulberry32, strHash, fbm,
   spline, flatLine, joinProfiles, latheGeo, cleanMerge, displace, paint, solidColor, col, WHITE, mesh, food,
+  prepareTemplate,
 } from './core.js';
 
 /* ------------------------------------------------------------------ */
@@ -799,14 +800,52 @@ export class BurgerScene extends Stage {
     };
   }
 
+  _layerKey(L) {
+    return 'burger|' + L.kind + '|' + (L.variant || '') + '|' + L.id + '|' + this.q.name;
+  }
+
+  _layerBuilder(L) {
+    const q = this.q;
+    return () => {
+      const seed = strHash(L.id);
+      return KINDS[L.kind].build({ seed: seed % 10000, rand: mulberry32(seed), q }, L.variant);
+    };
+  }
+
+  /**
+   * Deja listas en la caché las piezas de otras hamburguesas (las del menú),
+   * una por vez en los ratos libres del teléfono: al cambiar de producto o abrir
+   * el detalle ya no hay que generarlas en ese momento (sin tirones).
+   */
+  prewarm(lists) {
+    const queue = [];
+    const seen = new Set();
+    for (const names of lists || []) {
+      for (const d of this._resolve(names)) {
+        const key = this._layerKey(d);
+        if (seen.has(key)) continue;
+        seen.add(key);
+        queue.push(d);
+      }
+    }
+    const idle = (fn) => (typeof requestIdleCallback === 'function' ? requestIdleCallback(fn, { timeout: 3000 }) : setTimeout(() => fn(), 120));
+    const step = (deadline) => {
+      if (this._disposed) return;
+      // varias piezas por rato libre mientras haya tiempo (mín. 8 ms)
+      do {
+        const d = queue.shift();
+        if (!d) return;
+        prepareTemplate(this._layerKey(d), this._layerBuilder(d));
+      } while (queue.length && deadline && typeof deadline.timeRemaining === 'function' && deadline.timeRemaining() > 8);
+      if (queue.length) idle(step);
+    };
+    if (queue.length) idle(step);
+  }
+
   /** Construye (o saca de la caché) la geometría de una capa. */
   _build(L) {
     if (L.built) return;
-    const q = this.q;
-    const obj = fromTemplate('burger|' + L.kind + '|' + (L.variant || '') + '|' + L.id + '|' + q.name, () => {
-      const seed = strHash(L.id);
-      return KINDS[L.kind].build({ seed: seed % 10000, rand: mulberry32(seed), q }, L.variant);
-    });
+    const obj = fromTemplate(this._layerKey(L), this._layerBuilder(L));
     obj.traverse((o) => (o.userData.layerId = L.id));
     L.mats = materialsOf(obj);
     L.root.add(obj);

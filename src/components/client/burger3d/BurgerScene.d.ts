@@ -40,6 +40,8 @@ export declare function classifyIngredient(name: string): LayerInfo | null;
 export declare function normalizeName(name: string): string;
 
 export declare class BurgerScene {
+  /** Prepara en ratos libres las piezas de otras hamburguesas (listas de ingredientes). */
+  prewarm(lists: string[][]): void;
   constructor(container: HTMLElement, options?: BurgerSceneOptions);
   setIngredients(names: string[], options?: { animate?: boolean }): void;
   /** Resalta un ingrediente por nombre (null para quitar el resaltado). */

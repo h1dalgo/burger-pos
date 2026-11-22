@@ -30,6 +30,8 @@ interface Props {
   onOpen: (product: Product) => void;
   /** Pausar el 3D y el avance automático (ej. con un modal abierto encima). */
   paused?: boolean;
+  /** Ingredientes de las hamburguesas del menú: se preparan en ratos libres. */
+  prewarm?: string[][];
 }
 
 const AUTO_MS = 7000;
@@ -39,16 +41,21 @@ const AUTO_MS = 7000;
  * arman solas capa por capa sobre una tabla de madera; deslizar cambia de
  * producto y avanza solo si nadie lo toca.
  */
-export default function MenuShowcase({ slides, onOpen, paused = false }: Props) {
+export default function MenuShowcase({ slides, onOpen, paused = false, prewarm }: Props) {
   const reduced = useReducedMotion();
   const addSimple = useCartStore((s) => s.addSimple);
   const [index, setIndex] = useState(0);
   const [dir, setDir] = useState(1);
   const [hold, setHold] = useState(false); // el usuario está mirando/tocando
-  const [ready, setReady] = useState(false);
+  // un 3D para hamburguesas y otro para bebidas/postres; los dos quedan vivos y se
+  // alternan (crear un 3D nuevo en cada cambio de tipo daba tirones)
+  const [readyBurger, setReadyBurger] = useState(false);
+  const [readyItem, setReadyItem] = useState(false);
+  const [itemWarm, setItemWarm] = useState(false);
   const [no3d, setNo3d] = useState(false);
   const viewRef = useRef<HTMLDivElement>(null);
-  const snapshotRef = useRef<(() => string | null) | null>(null);
+  const burgerSnap = useRef<(() => string | null) | null>(null);
+  const itemSnap = useRef<(() => string | null) | null>(null);
   const holdTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const n = slides.length;
@@ -85,7 +92,15 @@ export default function MenuShowcase({ slides, onOpen, paused = false }: Props) 
 
   if (!slide) return null;
   const p = slide.product;
-  const ingredients = p.defaultIngredients.map((d) => d.name);
+  const isBurger = slide.variant === 'burger';
+  // hamburguesa que muestra (o mostró por última vez) el 3D de hamburguesas
+  const burgerSlide = isBurger ? slide : [...slides.slice(0, i).reverse(), ...slides.slice(i).reverse()].find((x) => x.variant === 'burger');
+  // producto del 3D de bebidas/postres: el actual, o el próximo que viene (se prepara antes)
+  const itemSlide = !isBurger ? slide : [...slides.slice(i + 1), ...slides.slice(0, i)].find((x) => x.variant !== 'burger');
+  const ingredients = burgerSlide ? burgerSlide.product.defaultIngredients.map((d) => d.name) : [];
+  const ready = isBurger ? readyBurger : readyItem;
+  const snapshotRef = isBurger ? burgerSnap : itemSnap;
+  const showItem = !!itemSlide && (!isBurger || itemWarm);
 
   const onDragEnd = (_: unknown, info: PanInfo) => {
     if (n < 2) return;
@@ -133,36 +148,44 @@ export default function MenuShowcase({ slides, onOpen, paused = false }: Props) 
             ) : (
               !ready && <div className="absolute inset-0 m-auto h-24 w-40 animate-pulse rounded-[45%] bg-cream/10" />
             )}
-            {no3d ? null : slide.variant === 'burger' ? (
-              <Burger3D
-                key="burger"
-                ingredients={ingredients}
-                rebuildKey={p.id}
-                height="100%"
-                board
-                interactive={false}
-                hint={false}
-                paused={paused}
-                theme="dark"
-                onReady={() => setReady(true)}
-                onFail={() => setNo3d(true)}
-                snapshotRef={snapshotRef}
-              />
-            ) : (
-              <Item3D
-                key="item"
-                variant={slide.variant}
-                name={p.name}
-                description={p.description}
-                height="100%"
-                interactive={false}
-                hint={false}
-                paused={paused}
-                theme="dark"
-                onReady={() => setReady(true)}
-                onFail={() => setNo3d(true)}
-                snapshotRef={snapshotRef}
-              />
+            {!no3d && burgerSlide && (
+              <div className="absolute inset-0" style={{ visibility: isBurger ? 'visible' : 'hidden' }}>
+                <Burger3D
+                  ingredients={ingredients}
+                  rebuildKey={burgerSlide.product.id}
+                  prewarm={prewarm}
+                  height="100%"
+                  board
+                  interactive={false}
+                  hint={false}
+                  paused={paused || !isBurger}
+                  theme="dark"
+                  onReady={() => {
+                    setReadyBurger(true);
+                    // listo el primer cuadro: se prepara el 3D de bebidas/postres en segundo plano
+                    setTimeout(() => setItemWarm(true), 1800);
+                  }}
+                  onFail={() => setNo3d(true)}
+                  snapshotRef={burgerSnap}
+                />
+              </div>
+            )}
+            {!no3d && showItem && itemSlide && (
+              <div className="absolute inset-0" style={{ visibility: isBurger ? 'hidden' : 'visible' }}>
+                <Item3D
+                  variant={itemSlide.variant as Exclude<FoodVariant, 'burger'>}
+                  name={itemSlide.product.name}
+                  description={itemSlide.product.description}
+                  height="100%"
+                  interactive={false}
+                  hint={false}
+                  paused={paused || isBurger}
+                  theme="dark"
+                  onReady={() => setReadyItem(true)}
+                  onFail={() => setNo3d(true)}
+                  snapshotRef={itemSnap}
+                />
+              </div>
             )}
           </div>
 
