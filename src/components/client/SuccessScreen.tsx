@@ -207,7 +207,9 @@ export default function SuccessScreen({ orderId }: Props) {
       setConnected(socket.connected);
       const onUpdated = (o: Order) => {
         if (o && String(o.displayId) === String(orderId)) {
-          setOrder((prev) => (prev ? { ...prev, ...o, items: o.items?.length ? o.items : prev.items } : o));
+          // el aviso trae solo el estado: se mezcla con el pedido ya cargado
+          setOrder((prev) => (prev ? { ...prev, ...o, items: o.items?.length ? o.items : prev.items } : prev));
+          if (!o.items) void refetch();
           applyStatus(o.status);
         }
       };

@@ -376,7 +376,14 @@ export default function CartDrawer({ isOpen, onClose, onRequireTable, onEditItem
                   <TextField
                     label="Tu nombre"
                     type="text"
-                    autoComplete="given-name"
+                    // sin autocompletar del navegador: Chrome/Safari sincronizan lo escrito entre los
+                    // teléfonos de una misma cuenta y en un teléfono prestado saldría el nombre de otro.
+                    // El nombre lo recuerda la app solo en este teléfono.
+                    autoComplete="off"
+                    name="pedido-nombre"
+                    autoCorrect="off"
+                    autoCapitalize="words"
+                    spellCheck={false}
                     value={nameValue}
                     onChange={(e) => {
                       setName(e.target.value.replace(/\d/g, ''));

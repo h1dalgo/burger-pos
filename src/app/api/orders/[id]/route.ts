@@ -84,7 +84,15 @@ export async function PATCH(
         global.io.to('kitchen').emit('order:updated', pub);
       }
       global.io.to('waiter').emit('order:updated', pub);
-      global.io.to('clients').emit('order:updated', pub);
+      // a los teléfonos de los clientes solo va el estado (sin nombres ni productos de otros)
+      global.io.to('clients').emit('order:updated', {
+        id: order.id,
+        displayId: order.displayId,
+        status: order.status,
+        tableNumber: order.tableNumber,
+        receiptNumber: order.receiptNumber,
+        paidAt: order.paidAt,
+      });
       if (data.status === 'CANCELLED') global.io.emit('stock:refresh');
     }
 
