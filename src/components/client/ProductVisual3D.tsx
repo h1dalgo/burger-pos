@@ -174,6 +174,7 @@ export default function ProductVisual3D({
             highlight={highlight}
             onLayerClick={onIngredientTap}
             theme="dark"
+            board
           />
         ) : (
           <Item3D

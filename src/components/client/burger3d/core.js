@@ -567,8 +567,8 @@ export function food(p = {}) {
 
 export const TIERS = {
   high: { name: 'high', dpr: 2, minDpr: 1, seg: 112, detail: 1, sesame: 64, shadow: 2048, aa: true },
-  medium: { name: 'medium', dpr: 1.35, minDpr: 0.85, seg: 72, detail: 0.7, sesame: 44, shadow: 1024, aa: false },
-  low: { name: 'low', dpr: 1.1, minDpr: 0.7, seg: 48, detail: 0.5, sesame: 30, shadow: 0, aa: false },
+  medium: { name: 'medium', dpr: 1.35, minDpr: 0.85, seg: 72, detail: 0.7, sesame: 44, shadow: 1024, aa: true },
+  low: { name: 'low', dpr: 1.1, minDpr: 0.7, seg: 48, detail: 0.5, sesame: 30, shadow: 0, aa: true },
 };
 
 export function detectTier() {
@@ -825,7 +825,10 @@ export class Stage {
     this.frameW = 1.55;
 
     const dpr = typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1;
-    const r = (this.renderer = new THREE.WebGLRenderer({ antialias: this.q.aa && dpr < 1.5, alpha: true, powerPreference: 'high-performance' }));
+    // suavizado de bordes según la resolución a la que SE DIBUJA (no la de la pantalla):
+    // los teléfonos tienen pantalla 2x-3x pero el 3D se dibuja a ~1.35x → sin esto se ven escalones.
+    // En GPUs de teléfono (por mosaicos) el MSAA es casi gratis.
+    const r = (this.renderer = new THREE.WebGLRenderer({ antialias: this.q.aa && Math.min(dpr, this.q.dpr) < 1.75, alpha: true, powerPreference: 'high-performance' }));
     this._maxDpr = Math.min(dpr, this.q.dpr);
     this._minDpr = Math.min(this._maxDpr, this.q.minDpr);
     this._dpr = this._maxDpr;
@@ -858,9 +861,11 @@ export class Stage {
     container.appendChild(cv);
 
     const scene = (this.scene = new THREE.Scene());
-    scene.add(new THREE.HemisphereLight(0xfff1dc, 0x4a2e18, this._dark ? 0.06 : 0.25));
-    const key = (this._key = new THREE.DirectionalLight(0xffe6c8, 1.7));
-    key.position.set(-2.5, 7, 4);
+    scene.add(new THREE.HemisphereLight(0xfff1dc, 0x4a2e18, this._dark ? 0.05 : 0.25));
+    const key = (this._key = new THREE.DirectionalLight(0xffe2bf, this._dark ? 2.05 : 1.7));
+    // tema oscuro: luz lateral alta (como en estudio de comida), deja volumen y brillo en el pan
+    if (this._dark) key.position.set(-4.2, 6.2, 2.4);
+    else key.position.set(-2.5, 7, 4);
     key.target.position.set(0, 0.8, 0);
     if (this.q.shadow > 0) {
       key.castShadow = true;
@@ -923,7 +928,7 @@ export class Stage {
 
     this.camera = new THREE.PerspectiveCamera(30, 1, 0.1, 100);
     this._dist = 6.5;
-    const elev = 0.32, az = 0.55;
+    const elev = this._dark ? 0.19 : 0.32, az = 0.55;
     this.camera.position.set(Math.sin(az) * Math.cos(elev) * this._dist, 0.9 + Math.sin(elev) * this._dist, Math.cos(az) * Math.cos(elev) * this._dist);
     const c = (this.controls = new OrbitControls(this.camera, cv));
     c.target.set(0, 0.9, 0);

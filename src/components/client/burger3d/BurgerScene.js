@@ -15,6 +15,7 @@ import {
   THREE, mergeGeometries, Stage, fromTemplate, materialsOf, spring, sp, ease, clamp01, smooth, lerp, mulberry32, strHash, fbm,
   spline, flatLine, joinProfiles, latheGeo, cleanMerge, displace, paint, solidColor, col, WHITE, mesh, food,
   prepareTemplate,
+  tex,
 } from './core.js';
 
 /* ------------------------------------------------------------------ */
@@ -43,7 +44,7 @@ function buildBunTop(ctx) {
     c.multiplyScalar(lerp(0.55, 1, smooth(0.0, 0.14, v.y)));
   });
   const group = new THREE.Group();
-  group.add(mesh(g, food({ map: 'crust', bump: 'crust', bumpScale: 2.5, roughness: 0.42, clearcoat: 0.5, clearcoatRoughness: 0.32, sheen: 0.45, sheenRoughness: 0.55 })));
+  group.add(mesh(g, food({ color: '#e3ad84', map: 'crust', bump: 'crust', bumpScale: 2.5, roughness: 0.36, clearcoat: 0.75, clearcoatRoughness: 0.24, sheen: 0.45, sheenRoughness: 0.55 })));
 
   // Ajonjolí (instanciado: 1 sola llamada de dibujo)
   const dome = side.filter((p) => p.y > 0.3);
@@ -97,7 +98,7 @@ function buildBunBottom(ctx) {
     if (n.y <= 0.6) c.multiplyScalar(lerp(1, 0.7, smooth(0.26, 0.36, v.y)));
   });
   const group = new THREE.Group();
-  group.add(mesh(g, food({ map: 'crust', bump: 'crust', bumpScale: 2.2, roughness: 0.55, clearcoat: 0.2, clearcoatRoughness: 0.5, sheen: 0.35 })));
+  group.add(mesh(g, food({ color: '#e8b996', map: 'crust', bump: 'crust', bumpScale: 2.2, roughness: 0.5, clearcoat: 0.3, clearcoatRoughness: 0.45, sheen: 0.35 })));
   const disk = new THREE.CircleGeometry(0.995, Math.round(q.seg * 0.75));
   disk.rotateX(-Math.PI / 2);
   const crumbMesh = mesh(disk, food({ map: 'crumb', bump: 'crumb', bumpScale: 1.2, roughness: 0.92 }));
@@ -165,10 +166,10 @@ function buildCheese(ctx, variant) {
   g.computeVertexNormals();
   const white = variant === 'white';
   const mat = food({
-    color: white ? '#efd596' : '#ec9d2e',
+    color: white ? '#efd596' : '#f2a72c',
     bumpScale: 0.25,
-    roughness: white ? 0.5 : 0.36,
-    clearcoat: 0.35,
+    roughness: white ? 0.5 : 0.3,
+    clearcoat: 0.55,
     clearcoatRoughness: 0.35,
     env: 0.7,
     sheen: 0.5,
@@ -208,7 +209,7 @@ function leafGeo(ctx, radius, seedOff, colors, ruffleAmp = 0.065, freq = 13) {
 
 function buildLettuce(ctx) {
   const group = new THREE.Group();
-  const mat = food({ color: '#dfe8cf', map: 'leaf', bump: 'leaf', bumpScale: 1.2, roughness: 0.45, clearcoat: 0.3, clearcoatRoughness: 0.3, sheen: 0.3, sheenColor: '#e9ffc4', side: THREE.DoubleSide });
+  const mat = food({ color: '#c9d2b0', map: 'leaf', bump: 'leaf', bumpScale: 1.2, roughness: 0.45, clearcoat: 0.3, clearcoatRoughness: 0.3, sheen: 0.3, sheenColor: '#e9ffc4', side: THREE.DoubleSide });
   const a = mesh(leafGeo(ctx, 1.24, 0, ['#4f8f2a', '#a3d65e']), mat);
   a.position.y = 0.012;
   const b = mesh(leafGeo(ctx, 1.16, 50, ['#5a9a30', '#b6e270']), mat);
@@ -654,6 +655,8 @@ export class BurgerScene extends Stage {
     this.layers = [];
     this._boardH = 0;
     if (this.opts.board) this._addBoard();
+    // vapor (equipos medios y altos) y brasas (solo altos): ambiente de cocina, vitrina oscura
+    if (this._dark && !this.reduced && this.q.name !== 'low') this._addAtmosphere();
     this.gap = { x: 0, v: 0, target: 0, y: Infinity, closeAt: 0 };
     this.squash = sp(1);
     this._squashAt = -1;
@@ -733,17 +736,110 @@ export class BurgerScene extends Stage {
   }
 
   /** Tabla de madera bajo la hamburguesa (fuera del grupo que se aplasta al asentarse). */
+  /**
+   * Plato de cerámica oscura esmaltada (como en la foto de restaurante): fondo plano,
+   * ala que sube suave y borde redondeado. Un solo torno: muy barato de dibujar.
+   */
   _addBoard() {
-    const H = 0.14;
-    const geo = new THREE.CylinderGeometry(1.78, 1.84, H, Math.round(this.q.seg * 0.75), 1);
-    const top = food({ map: 'woodboard', bumpScale: 0.6, roughness: 0.72, clearcoat: 0.12, clearcoatRoughness: 0.6 });
-    const side = food({ color: '#8a5a2e', roughness: 0.75, clearcoat: 0.1 });
-    const board = mesh(geo, [side, top, side]);
-    board.position.y = H / 2;
-    board.rotation.y = 0.4;
-    this.scene.add(board);
-    this._boardH = H;
-    this.stack.position.y = H;
+    const FLOOR = 0.07; // altura del fondo del plato, donde apoya el pan
+    const profile = [
+      [0, FLOOR], [1.28, FLOOR], [1.45, FLOOR + 0.02], [1.68, FLOOR + 0.09], [1.86, FLOOR + 0.16],
+      [1.97, FLOOR + 0.19], [2.02, FLOOR + 0.17], [2.0, FLOOR + 0.12], [1.86, 0.08], [1.55, 0.03], [1.25, 0.0], [0.02, 0.0],
+    ].map(([x, y]) => new THREE.Vector2(x, y));
+    const geo = new THREE.LatheGeometry(profile, Math.round(this.q.seg * 0.9));
+    geo.computeVertexNormals();
+    const glaze = food({ color: '#3a332d', bump: 'fine', bumpScale: 0.12, roughness: 0.2, clearcoat: 0.9, clearcoatRoughness: 0.12, env: 0.9 });
+    glaze.transparent = false; // el plato nunca se desvanece: opaco, sin problemas de orden con la sombra del piso
+    const plate = mesh(geo, glaze);
+    plate.castShadow = false; // su propia sombra sobre sí mismo dejaba manchas
+    plate.receiveShadow = true;
+    this.scene.add(plate);
+    this._boardH = FLOOR;
+    this.stack.position.y = FLOOR;
+  }
+
+  /**
+   * Vapor que sube de la hamburguesa recién hecha y unas pocas brasas flotando.
+   * Son puntos (un solo dibujo cada grupo) movidos en la CPU: unas decenas de
+   * números por cuadro, nada de luz ni sombra extra.
+   */
+  _addAtmosphere() {
+    const mk = (n, color, size, opacity) => {
+      const geo = new THREE.BufferGeometry();
+      geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(n * 3), 3));
+      geo.setAttribute('color', new THREE.BufferAttribute(new Float32Array(n * 3), 3));
+      const mat = new THREE.PointsMaterial({
+        size, map: tex('pool'), color, vertexColors: true, transparent: true, opacity,
+        depthWrite: false, blending: THREE.AdditiveBlending, sizeAttenuation: true, toneMapped: false,
+      });
+      const pts = new THREE.Points(geo, mat);
+      pts.frustumCulled = false;
+      pts.renderOrder = 10;
+      this.scene.add(pts);
+      return { pts, geo, n, parts: Array.from({ length: n }, () => ({ life: 0, age: Math.random() * 3, x: 0, y: 0, z: 0, vy: 0, ph: Math.random() * 6.28 })) };
+    };
+    this._steam = mk(this.q.name === 'high' ? 16 : 10, 0xfff3e6, 1.5, 0.55);
+    if (this.q.name === 'high') this._embers = mk(10, 0xff9a3c, 0.12, 1);
+  }
+
+  /** Avanza vapor y brasas. Devuelve true si hay algo que dibujar. */
+  _updateAtmosphere(dt) {
+    if (!this._steam) return false;
+    // aparece cuando la hamburguesa ya está armada (no durante la caída de capas)
+    const settled = !this._introPending && this.layers.length > 0 && this.layers.every((l) => l.built && !l.path && !l.leaving);
+    this._atmosOn = Math.min(1, Math.max(0, (this._atmosOn || 0) + (settled ? dt / 1.2 : -dt / 0.3)));
+    const k = this._atmosOn;
+    const s = this._steam;
+    const top = this.stack.position.y + (this.totalH || 1.2) * 0.92;
+    const pos = s.geo.attributes.position.array, cl = s.geo.attributes.color.array;
+    for (let i = 0; i < s.n; i++) {
+      const q = s.parts[i];
+      q.age += dt;
+      if (q.age >= q.life) {
+        // nace sobre la tapa del pan
+        const a = Math.random() * Math.PI * 2, r = Math.random() * 0.45;
+        Object.assign(q, { age: 0, life: 3.2 + Math.random() * 1.8, x: Math.cos(a) * r, z: Math.sin(a) * r, y: top - 0.15, vy: 0.14 + Math.random() * 0.12 });
+      }
+      const t = q.age / q.life;
+      q.y += q.vy * dt;
+      const sway = Math.sin(q.age * 1.1 + q.ph) * 0.22 * t;
+      pos[i * 3] = q.x + sway;
+      pos[i * 3 + 1] = q.y;
+      pos[i * 3 + 2] = q.z + Math.cos(q.age * 1.1 + q.ph) * 0.08 * t;
+      // entra suave y se disipa al subir (con mezcla aditiva, oscurecer = desvanecer)
+      const f = Math.sin(Math.PI * Math.min(1, t)) * 0.085 * k;
+      cl[i * 3] = cl[i * 3 + 1] = cl[i * 3 + 2] = f;
+    }
+    s.geo.attributes.position.needsUpdate = true;
+    s.geo.attributes.color.needsUpdate = true;
+
+    const e = this._embers;
+    if (e) {
+      const ep = e.geo.attributes.position.array, ec = e.geo.attributes.color.array;
+      for (let i = 0; i < e.n; i++) {
+        const q = e.parts[i];
+        q.age += dt;
+        if (q.age >= q.life) {
+          // nace alrededor del plato, detrás y a los lados
+          const a = Math.PI * (0.15 + Math.random() * 0.7) + (Math.random() < 0.5 ? 0 : Math.PI);
+          const r = 1.2 + Math.random() * 0.7;
+          Object.assign(q, { age: 0, life: 2.2 + Math.random() * 1.8, x: Math.cos(a) * r, z: -Math.abs(Math.sin(a) * r) * 0.8, y: 0.2 + Math.random() * 0.4, vy: 0.35 + Math.random() * 0.35 });
+        }
+        const t = q.age / q.life;
+        q.y += q.vy * dt;
+        ep[i * 3] = q.x + Math.sin(q.age * 2.1 + q.ph) * 0.18;
+        ep[i * 3 + 1] = q.y;
+        ep[i * 3 + 2] = q.z;
+        // parpadea como una brasa y se apaga al subir
+        const f = (1 - t) * (0.65 + 0.35 * Math.sin(q.age * 13 + q.ph)) * k;
+        ec[i * 3] = f;
+        ec[i * 3 + 1] = f * 0.55;
+        ec[i * 3 + 2] = f * 0.18;
+      }
+      e.geo.attributes.position.needsUpdate = true;
+      e.geo.attributes.color.needsUpdate = true;
+    }
+    return k > 0.001;
   }
 
   /** Vuelve a armar la hamburguesa desde cero (capa por capa), con otros ingredientes. */
@@ -871,30 +967,37 @@ export class BurgerScene extends Stage {
   _introLayer(L, i, n) {
     // se arman de a una por cuadro (sin congelar la pantalla) y, cuando están TODAS,
     // aparecen juntas (ver _startIntro): nada de piezas que salen una por una
-    const mid = (n - 1) / 2;
+    void n;
     L.t0 = Infinity;
     L.introIdx = i;
-    // separadas en vertical (más arriba cuanto más alta la capa) y apenas giradas
-    L.py.x = L.baseY + 0.18 + (i - mid) * 0.11 + i * 0.06;
+    L.py.x = L.baseY + 2;
     L.py.v = 0;
-    L.ry.x = (i % 2 ? 1 : -1) * (0.22 + 0.04 * i);
-    // muelle casi crítico: se juntan sin rebotar
-    L.kY = 46;
-    L.cY = 13;
-    L.fade = 0.3;
+    L.fade = 0.12;
     this._introPending = true;
     this._squashAt = -1;
   }
 
-  /** Todas las piezas listas: arranca la entrada (vista desarmada que se junta y crece suave). */
+  /**
+   * Todas las piezas listas: arranca el armado "de foto de producto". Cada capa cae
+   * desde arriba, de abajo hacia arriba y una tras otra, acelerando como con gravedad,
+   * girando apenas, y aterriza con un pequeño aplastón (peso). Solo mueve posiciones:
+   * mismo costo que cualquier otro cuadro.
+   */
   _startIntro(now) {
     this._introPending = false;
-    this.introS.x = 0.9;
-    this.introS.v = 0;
+    const STAGGER = 0.14, DROP = 0.4;
     for (const L of this.layers) {
       if (L.introIdx == null) continue;
-      L.t0 = now + 0.04 + L.introIdx * 0.035;
-      L.introUntil = L.t0 + 1.6;
+      const i = L.introIdx;
+      const dir = i % 2 ? 1 : -1;
+      L.t0 = now + 0.08 + i * STAGGER;
+      L.axis.set(1, 0, 0);
+      L.path = {
+        t0: L.t0, dur: DROP, ease: (t) => t * t, landing: true, // t² = caída libre
+        from: { x: 0, y: 1.7, z: 0 },
+        ctrl: { x: 0, y: 0.85, z: 0 },
+        ry: [dir * 0.35, 0], tilt: [dir * 0.05, 0],
+      };
       L.introIdx = null;
     }
   }
@@ -995,7 +1098,7 @@ export class BurgerScene extends Stage {
   }
 
   _update(dt, now) {
-    let active = false;
+    let active = this._updateAtmosphere(dt);
 
     // Construcción progresiva: como mucho una capa nueva por cuadro
     let built = false;
