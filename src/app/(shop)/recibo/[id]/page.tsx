@@ -100,7 +100,7 @@ export default function ReceiptPage({ params }: { params: Promise<{ id: string }
   const tax = b.taxRate > 0 ? net - net / (1 + b.taxRate / 100) : 0;
   const paid = o.receiptNumber != null && o.status !== 'WAITING_PAYMENT';
   const cancelled = o.status === 'CANCELLED';
-  const title = paid ? `Recibo N.º ${pad(o.receiptNumber!, 6)}` : 'Recibo';
+  const title = paid ? `Recibo N.º ${pad(o.receiptNumber!, 6)}${cancelled ? ' (anulado)' : ''}` : 'Recibo';
 
   const share = async () => {
     const url = window.location.href;
@@ -125,11 +125,13 @@ export default function ReceiptPage({ params }: { params: Promise<{ id: string }
             <ArrowLeft className="h-4 w-4" />
             Mi pedido
           </Link>
-          <button type="button" onClick={share} className="btn btn-outline btn-sm ml-auto">
-            <Share2 className="h-4 w-4" />
-            Compartir
-          </button>
-          <button type="button" onClick={() => window.print()} className="btn btn-primary btn-sm">
+          {!cancelled && (
+            <button type="button" onClick={share} className="btn btn-outline btn-sm ml-auto">
+              <Share2 className="h-4 w-4" />
+              Compartir
+            </button>
+          )}
+          <button type="button" onClick={() => window.print()} className={`btn btn-sm ${cancelled ? 'btn-outline ml-auto' : 'btn-primary'}`}>
             <Download className="h-4 w-4" />
             PDF
           </button>
@@ -143,10 +145,26 @@ export default function ReceiptPage({ params }: { params: Promise<{ id: string }
           className="receipt-paper relative overflow-hidden rounded-[1.25rem] bg-[#fbf7ef] px-6 pb-7 pt-8 text-[#17110a] shadow-[0_30px_70px_-30px_rgb(0_0_0/0.9)] print:rounded-none print:shadow-none"
           aria-label={title}
         >
+          {cancelled && (
+            <>
+              <div className="-mx-6 -mt-8 mb-6 flex items-start gap-2 bg-[#b3263e] px-6 py-3 text-[12px] font-semibold leading-snug text-white print:bg-white print:text-[#b3263e] print:border-b-2 print:border-[#b3263e]">
+                <Ban className="mt-px h-4 w-4 shrink-0" />
+                <span>
+                  Recibo anulado{o.updatedAt ? ` (${new Date(o.updatedAt).toLocaleString('es-VE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })})` : ''}. No es válido como comprobante de pago.
+                </span>
+              </div>
+              <span
+                aria-hidden="true"
+                className="pointer-events-none absolute left-1/2 top-1/2 z-10 -translate-x-1/2 -translate-y-1/2 -rotate-[28deg] select-none whitespace-nowrap rounded-xl border-[5px] border-[#b3263e]/35 px-6 py-1 font-[family-name:var(--font-display)] text-[4.2rem] font-semibold uppercase tracking-[0.12em] text-[#b3263e]/30"
+              >
+                Anulado
+              </span>
+            </>
+          )}
           {/* sello de estado */}
-          {(cancelled || !paid) && (
-            <span className={`absolute right-5 top-6 rotate-[8deg] rounded-md border-2 px-2 py-0.5 text-[11px] font-bold uppercase tracking-[0.18em] ${cancelled ? 'border-[#b3263e] text-[#b3263e]' : 'border-[#a87a2a] text-[#a87a2a]'}`}>
-              {cancelled ? 'Anulado' : 'Por pagar'}
+          {!cancelled && !paid && (
+            <span className="absolute right-5 top-6 rotate-[8deg] rounded-md border-2 border-[#a87a2a] px-2 py-0.5 text-[11px] font-bold uppercase tracking-[0.18em] text-[#a87a2a]">
+              Por pagar
             </span>
           )}
 

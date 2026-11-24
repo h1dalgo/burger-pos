@@ -50,6 +50,7 @@ export async function sendReceiptEmail(orderId: string, baseUrl: string): Promis
   const order = await prisma.order.findUnique({ where: { id: orderId }, include: { items: { include: { variation: true, addedExtras: true } } } });
   if (!order?.customerEmail) return { ok: false, reason: 'El cliente no dejó correo' };
   if (!order.receiptNumber) return { ok: false, reason: 'El pedido aún no está pagado' };
+  if (order.status === 'CANCELLED') return { ok: false, reason: 'El pedido está anulado: su recibo no se envía' };
   const s = await getSettings();
   const business = s.legalName || s.name;
   const link = `${baseUrl.replace(/\/$/, '')}/recibo/${order.id}`;

@@ -234,12 +234,14 @@ export default function OrdersHistoryPage() {
                                 <span className="text-[12px] text-carbon/60">Recibo N.º {String(o.receiptNumber).padStart(6, '0')}</span>
                                 <a href={`/recibo/${o.id}`} target="_blank" rel="noopener" className="btn btn-outline btn-sm">
                                   <ReceiptText className="h-4 w-4" />
-                                  Ver recibo
+                                  {o.status === 'CANCELLED' ? 'Ver recibo anulado' : 'Ver recibo'}
                                 </a>
+{o.status !== 'CANCELLED' && (
                                 <button type="button" disabled={busy === o.id} onClick={() => emailReceipt(o)} className="btn btn-outline btn-sm">
                                   <Mail className="h-4 w-4" />
                                   {o.receiptSentAt ? 'Reenviar por correo' : 'Enviar por correo'}
                                 </button>
+                                )}
                               </div>
                             ) : null}
                             {o.status !== 'CANCELLED' && o.status !== 'DELIVERED' && (
