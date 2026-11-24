@@ -29,7 +29,7 @@ export default function PaymentsPanel({ orders, pendingId, onConfirm, onCancel, 
   const sorted = [...orders].sort((a, b) => a.createdAt.localeCompare(b.createdAt));
 
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-40 bg-black/60 backdrop-blur-[2px]" onClick={onClose}>
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-40 bg-black/70" onClick={onClose}>
       <motion.div
         ref={ref}
         role="dialog"

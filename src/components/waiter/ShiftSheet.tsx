@@ -95,7 +95,7 @@ export default function ShiftSheet({ person, shift, cobros, reason, onChanged, o
   const even = Math.abs(diff) < 0.005;
 
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-end justify-center bg-black/65 backdrop-blur-[2px] sm:items-center sm:p-4" onClick={onClose}>
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 sm:items-center sm:p-4" onClick={onClose}>
       <motion.div
         ref={ref}
         role="dialog"

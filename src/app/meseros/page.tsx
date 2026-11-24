@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useLayoutEffect, useRef, memo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Bell,
@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { formatPrice } from '@/lib/utils';
+import { cldUrl } from '@/lib/cloudinary';
 import { getSocket, joinRoom } from '@/lib/socket-client';
 import type { Category, Product, CartItem, TableData, TableCall } from '@/components/waiter/shared';
 import { calcItemPrice } from '@/components/waiter/shared';
@@ -193,10 +194,15 @@ export default function WaiterPage() {
 
   const [categories, setCategories] = useState<Category[]>([]);
   const [catalogLoading, setCatalogLoading] = useState(true);
+  const [catalogError, setCatalogError] = useState(false);
   const [activeCategory, setActiveCategory] = useState('');
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [cart, setCart] = useState<CartItem[]>([]);
-  const [customerName, setCustomerName] = useState('');
+  /** Campo del nombre del cliente: se lee al enviar (escribir no vuelve a dibujar toda la pantalla). */
+  const nameRef = useRef<HTMLInputElement>(null);
+  const clearName = () => {
+    if (nameRef.current) nameRef.current.value = '';
+  };
   const [submitting, setSubmitting] = useState(false);
   const [catalogEntrance, setCatalogEntrance] = useState(true);
 
@@ -259,21 +265,38 @@ export default function WaiterPage() {
     setWaiterName('');
   };
 
-  useEffect(() => {
-    fetch('/api/products')
-      .then((r) => {
+  /** Carga el catálogo; reintenta solo si falla (wifi del local, servidor despertando). */
+  const loadCatalog = useCallback(async (silent = false) => {
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try {
+        const r = await fetch('/api/products', { cache: 'no-store' });
         if (!r.ok) throw new Error();
-        return r.json();
-      })
-      .then((data: Category[]) => {
-        if (Array.isArray(data) && data.length > 0) {
+        const data: Category[] = await r.json();
+        if (Array.isArray(data)) {
           setCategories(data);
-          setActiveCategory(data[0].id);
+          setActiveCategory((cur) => (cur && data.some((c) => c.id === cur) ? cur : data[0]?.id || ''));
+          setCatalogError(false);
+          setCatalogLoading(false);
+          return;
         }
-      })
-      .catch(() => toast.error('No pudimos cargar el catálogo'))
-      .finally(() => setCatalogLoading(false));
+      } catch {
+        await new Promise((res) => setTimeout(res, 800 * (attempt + 1)));
+      }
+    }
+    if (!silent) setCatalogError(true);
+    setCatalogLoading(false);
   }, []);
+
+  useEffect(() => {
+    const t = setTimeout(() => void loadCatalog(), 0);
+    return () => clearTimeout(t);
+  }, [loadCatalog]);
+
+  const retryCatalog = useCallback(() => {
+    setCatalogLoading(true);
+    setCatalogError(false);
+    void loadCatalog();
+  }, [loadCatalog]);
 
   const loadTables = useCallback(() => {
     Promise.all([fetch('/api/orders'), fetch('/api/table-calls')])
@@ -369,6 +392,10 @@ export default function WaiterPage() {
     socket.on('tableCall:resolved', onResolvedCall);
     socket.on('order:new', onOrderNew);
     socket.on('order:updated', onOrderUpdated);
+    // algo se agotó o volvió: el catálogo del mesero se actualiza solo
+    const onStock = () => void loadCatalog(true);
+    socket.on('stock:updated', onStock);
+    socket.on('stock:refresh', onStock);
 
     return () => {
       socket.off('connect', onConnect);
@@ -378,9 +405,11 @@ export default function WaiterPage() {
       socket.off('tableCall:resolved', onResolvedCall);
       socket.off('order:new', onOrderNew);
       socket.off('order:updated', onOrderUpdated);
+      socket.off('stock:updated', onStock);
+      socket.off('stock:refresh', onStock);
       stopAlertLoop();
     };
-  }, [loadTables]);
+  }, [loadTables, loadCatalog]);
 
   useEffect(() => {
     if (!showOrderPanel && !selectedProduct) return;
@@ -527,18 +556,31 @@ export default function WaiterPage() {
   const readyOrderFor = (tableNum: string | null) =>
     tableNum ? liveOrders.find((o) => o.tableNumber === tableNum && o.status === 'READY') || null : null;
 
+  // el mapa memorizado llama siempre a la versión más nueva de handleTableClick
+  const tableClickRef = useRef<(n: string) => void>(() => {});
+  const onTableTap = useCallback((n: string) => tableClickRef.current(n), []);
+
   const handleTableClick = (tableNum: string) => {
     const calls = activeCalls.filter((c) => c.tableNumber === tableNum);
     if (calls.length > 0) {
       for (const call of calls) resolveCall(call.id);
     }
     acknowledgeAlerts(tableNum);
+    if (catalogError || categories.length === 0) {
+      setCatalogLoading(true);
+      setCatalogError(false);
+      void loadCatalog();
+    }
     setSelectedTable(tableNum);
     setCart([]);
-    setCustomerName('');
+    clearName();
     setCatalogEntrance(true);
     setShowOrderPanel(true);
   };
+
+  useLayoutEffect(() => {
+    tableClickRef.current = handleTableClick;
+  });
 
   const addToCart = (item: Omit<CartItem, 'id'>) => {
     setCart((prev) => [...prev, { ...item, id: Date.now().toString() }]);
@@ -552,7 +594,8 @@ export default function WaiterPage() {
     // el pedido que carga el mesero queda cobrado en efectivo
     // (la caja se abre encima: el pedido cargado no se pierde)
     if (needShiftForCash()) return;
-    if (!customerName.trim() || !selectedTable) {
+    const customerName = (nameRef.current?.value || '').trim();
+    if (!customerName || !selectedTable) {
       toast.error('Ingresa el nombre del cliente');
       return;
     }
@@ -593,7 +636,10 @@ export default function WaiterPage() {
         throw new Error(data?.error || 'Error al enviar el pedido');
       }
       setCart([]);
-      toast.success('Pedido enviado a cocina');
+      clearName();
+      setTipPct(0);
+      setShowOrderPanel(false);
+      toast.success(`Mesa ${selectedTable} — pedido enviado a cocina`);
       loadTables();
     } catch (err) {
       toast.error(err instanceof Error && err.message ? err.message : 'Error al enviar el pedido');
@@ -744,70 +790,7 @@ export default function WaiterPage() {
           />
         ) : (
           <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3 max-w-3xl mx-auto">
-            {tables.map((table) => {
-              const cfg = statusConfig[table.status];
-              const calls = activeCalls.filter((c) => c.tableNumber === table.number);
-              const hasCall = calls.length > 0;
-              // lo que más urge en la mesa: un llamado o su estado, con los minutos que lleva
-              const callSince = hasCall ? Math.min(...calls.map((c) => +new Date(c.createdAt))) : null;
-              const since = callSince ?? (table.since ? +new Date(table.since) : null);
-              const mins = since ? Math.max(0, Math.floor((now - since) / 60000)) : null;
-              const limits = hasCall ? [2, 4] : table.status === 'ready' ? [2, 5] : table.status === 'ordered' ? [3, 6] : [12, 20];
-              const level = mins == null ? 0 : mins >= limits[1] ? 2 : mins >= limits[0] ? 1 : 0;
-              return (
-                <motion.button
-                  key={table.number}
-                  onClick={() => handleTableClick(table.number)}
-                  whileTap={{ scale: 0.95 }}
-                  aria-label={`Mesa ${table.number}, ${cfg.label}${hasCall ? ', llamada activa' : ''}`}
-                  className={`relative rounded-2xl p-4 border-2 transition-[border-color,box-shadow,background-color] duration-200 ${cfg.bg} ${cfg.border} ${
-                    level === 2 ? 'ring-2 ring-rose shadow-pop' : hasCall ? 'ring-2 ring-burger shadow-pop' : 'hover:shadow-card'
-                  }`}
-                >
-                  {hasCall && (
-                    <div className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-mustard border-2 border-carbon flex items-center justify-center z-10">
-                      {calls[0].type === 'CALL_WAITER' ? (
-                        <Bell className="w-3 h-3 text-carbon animate-pulse" />
-                      ) : (
-                        <DollarSign className="w-3 h-3 text-carbon animate-pulse" />
-                      )}
-                    </div>
-                  )}
-                  <div className="flex flex-col items-center gap-1">
-                    <div
-                      className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg font-bold border ${cfg.color} ${cfg.bg} ${cfg.border}`}
-                    >
-                      {table.number}
-                    </div>
-                    <span className={`text-[10px] font-semibold uppercase tracking-wider text-center ${cfg.color}`}>
-                      {cfg.label}
-                    </span>
-                    {mins != null && table.status !== 'empty' || hasCall ? (
-                      <span
-                        className={`text-[11px] font-bold tabular-nums ${level === 2 ? 'text-rose animate-pulse' : level === 1 ? 'text-burger' : 'text-carbon/50'}`}
-                        aria-label={`hace ${mins ?? 0} minutos`}
-                      >
-                        {mins != null && mins < 1 ? 'ahora' : `${mins ?? 0} min`}
-                      </span>
-                    ) : null}
-                  </div>
-                  {hasCall && (
-                    <div className="mt-2 space-y-0.5 text-center">
-                      {calls.map((c) => (
-                        <span
-                          key={c.id}
-                          className={`block text-[10px] font-bold uppercase ${
-                            c.type === 'CALL_WAITER' ? 'text-burger' : 'text-azul'
-                          }`}
-                        >
-                          {c.type === 'CALL_WAITER' ? 'Llamando' : 'Cuenta'}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                </motion.button>
-              );
-            })}
+            <TableGrid tables={tables} calls={activeCalls} now={now} onTap={onTableTap} />
           </div>
         )}
       </div>
@@ -818,7 +801,7 @@ export default function WaiterPage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-30 bg-black/70 backdrop-blur-[3px]"
+            className="fixed inset-0 z-30 bg-black/75"
             onClick={() => setShowOrderPanel(false)}
           >
             <motion.div
@@ -830,7 +813,7 @@ export default function WaiterPage() {
               exit={{ y: '100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 300 }}
               onClick={(e) => e.stopPropagation()}
-              className="absolute bottom-0 left-0 right-0 max-h-[calc(100%_-_8rem)] bg-card rounded-t-3xl overflow-hidden flex flex-col"
+              className="absolute bottom-0 left-0 right-0 h-[calc(100%_-_max(4rem,env(safe-area-inset-top)_+_2.5rem))] bg-card rounded-t-3xl overflow-hidden flex flex-col"
             >
               <div className="sticky top-0 bg-card z-10 px-6 pt-4 pb-3 border-b-2 border-carbon flex items-center justify-between shrink-0">
                 <div className="flex items-center gap-3">
@@ -906,8 +889,15 @@ export default function WaiterPage() {
               <div className="flex-1 overflow-y-auto">
                 <div className="px-6 pt-4">
                   <input
-                    value={customerName}
-                    onChange={(e) => setCustomerName(e.target.value.replace(/\d/g, ''))}
+                    ref={nameRef}
+                    defaultValue=""
+                    autoComplete="off"
+                    autoCapitalize="words"
+                    // sin números (se limpian al escribir, sin redibujar nada más)
+                    onInput={(e) => {
+                      const el = e.currentTarget;
+                      if (/\d/.test(el.value)) el.value = el.value.replace(/\d/g, '');
+                    }}
                     placeholder="Nombre del cliente"
                     className="field w-full"
                   />
@@ -930,79 +920,24 @@ export default function WaiterPage() {
                           setActiveCategory(cat.id);
                           setCatalogEntrance(false);
                         }}
-                        className={`relative px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
-                          activeCategory === cat.id ? 'text-cream' : 'text-carbon/60 hover:text-carbon'
+                        className={`shrink-0 px-4 py-2 rounded-full text-sm font-semibold whitespace-nowrap transition-colors duration-150 ${
+                          activeCategory === cat.id ? 'bg-burger text-[#0f0d0a]' : 'text-carbon/60 hover:text-carbon'
                         }`}
                       >
-                        {activeCategory === cat.id && (
-                          <motion.div
-                            layoutId="waiterCat"
-                            className="absolute inset-0 bg-burger rounded-full"
-                            transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-                          />
-                        )}
-                        <span className="relative z-10">{cat.name}</span>
+                        {cat.name}
                       </button>
                     ))
                   )}
                 </nav>
 
-                <div className="px-4 pb-4 grid grid-cols-2 gap-2">
-                  {catalogLoading ? (
-                    Array.from({ length: 6 }).map((_, i) => (
-                      <div key={i} className="rounded-xl p-3 border-2 border-carbon/10 bg-carbon/5 space-y-2">
-                        <Skeleton className="h-16 w-full rounded-lg" />
-                        <Skeleton className="h-4 w-3/4" />
-                        <Skeleton className="h-4 w-1/3" />
-                      </div>
-                    ))
-                  ) : activeProducts.length === 0 ? (
-                    <div className="col-span-2 py-8">
-                      <EmptyState
-                        compact
-                        icon={<ShoppingBag className="w-8 h-8" />}
-                        title="Sin productos"
-                        description="Esta categoría no tiene productos disponibles."
-                      />
-                    </div>
-                  ) : (
-                    activeProducts.map((p, i) => (
-                      <motion.button
-                        key={p.id}
-                        initial={catalogEntrance ? { opacity: 0, y: 20 } : false}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={catalogEntrance ? { delay: i * 0.02 } : { duration: 0 }}
-                        onClick={() => p.isAvailable && setSelectedProduct(p)}
-                        disabled={!p.isAvailable}
-                        className={`relative text-left rounded-xl p-3 border-2 transition-[border-color,background-color,opacity] ${
-                          p.isAvailable
-                            ? 'bg-cream border-carbon/20 hover:border-burger'
-                            : 'bg-cream border-carbon/10 opacity-50'
-                        }`}
-                      >
-                        {p.imageUrl ? (
-                          <div className="w-full h-16 rounded-lg overflow-hidden bg-carbon/10 mb-2">
-                            <img
-                              src={p.imageUrl}
-                              alt={p.name}
-                              className="w-full h-full object-cover"
-                              onError={(e) => {
-                                e.currentTarget.style.display = 'none';
-                              }}
-                            />
-                          </div>
-                        ) : (
-                          <div className="w-full h-16 rounded-lg bg-carbon/8 mb-2 flex items-center justify-center text-carbon/40">
-                            <ImageOff className="w-5 h-5" />
-                          </div>
-                        )}
-                        <h3 className="font-semibold text-carbon text-sm truncate">{p.name}</h3>
-                        <p className="text-burger font-bold text-sm mt-1">{formatPrice(Number(p.basePrice))}</p>
-                        {!p.isAvailable && <span className="text-xs font-semibold text-rose">Agotado</span>}
-                      </motion.button>
-                    ))
-                  )}
-                </div>
+                <ProductGrid
+                  products={activeProducts}
+                  loading={catalogLoading}
+                  error={catalogError}
+                  entrance={catalogEntrance}
+                  onSelect={setSelectedProduct}
+                  onRetry={retryCatalog}
+                />
               </div>
 
               {cart.length > 0 && (
@@ -1190,3 +1125,167 @@ export default function WaiterPage() {
     </div>
   );
 }
+
+/** Mapa de mesas. Va aparte y memorizado: escribir el pedido o cambiar de categoría no lo vuelve a dibujar. */
+const TableGrid = memo(function TableGrid({ tables, calls: allCalls, now, onTap }: { tables: TableData[]; calls: TableCall[]; now: number; onTap: (n: string) => void }) {
+  return (
+    <>
+      {tables.map((table) => {
+        const cfg = statusConfig[table.status];
+        const calls = allCalls.filter((c) => c.tableNumber === table.number);
+        const hasCall = calls.length > 0;
+        // lo que más urge en la mesa: un llamado o su estado, con los minutos que lleva
+        const callSince = hasCall ? Math.min(...calls.map((c) => +new Date(c.createdAt))) : null;
+        const since = callSince ?? (table.since ? +new Date(table.since) : null);
+        const mins = since ? Math.max(0, Math.floor((now - since) / 60000)) : null;
+        const limits = hasCall ? [2, 4] : table.status === 'ready' ? [2, 5] : table.status === 'ordered' ? [3, 6] : [12, 20];
+        const level = mins == null ? 0 : mins >= limits[1] ? 2 : mins >= limits[0] ? 1 : 0;
+        return (
+          <motion.button
+            key={table.number}
+            onClick={() => onTap(table.number)}
+            whileTap={{ scale: 0.95 }}
+            aria-label={`Mesa ${table.number}, ${cfg.label}${hasCall ? ', llamada activa' : ''}`}
+            className={`relative rounded-2xl p-4 border-2 transition-[border-color,box-shadow,background-color] duration-200 ${cfg.bg} ${cfg.border} ${
+              level === 2 ? 'ring-2 ring-rose shadow-pop' : hasCall ? 'ring-2 ring-burger shadow-pop' : 'hover:shadow-card'
+            }`}
+          >
+            {hasCall && (
+              <div className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-mustard border-2 border-carbon flex items-center justify-center z-10">
+                {calls[0].type === 'CALL_WAITER' ? (
+                  <Bell className="w-3 h-3 text-carbon animate-pulse" />
+                ) : (
+                  <DollarSign className="w-3 h-3 text-carbon animate-pulse" />
+                )}
+              </div>
+            )}
+            <div className="flex flex-col items-center gap-1">
+              <div
+                className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg font-bold border ${cfg.color} ${cfg.bg} ${cfg.border}`}
+              >
+                {table.number}
+              </div>
+              <span className={`text-[10px] font-semibold uppercase tracking-wider text-center ${cfg.color}`}>
+                {cfg.label}
+              </span>
+              {mins != null && table.status !== 'empty' || hasCall ? (
+                <span
+                  className={`text-[11px] font-bold tabular-nums ${level === 2 ? 'text-rose animate-pulse' : level === 1 ? 'text-burger' : 'text-carbon/50'}`}
+                  aria-label={`hace ${mins ?? 0} minutos`}
+                >
+                  {mins != null && mins < 1 ? 'ahora' : `${mins ?? 0} min`}
+                </span>
+              ) : null}
+            </div>
+            {hasCall && (
+              <div className="mt-2 space-y-0.5 text-center">
+                {calls.map((c) => (
+                  <span
+                    key={c.id}
+                    className={`block text-[10px] font-bold uppercase ${
+                      c.type === 'CALL_WAITER' ? 'text-burger' : 'text-azul'
+                    }`}
+                  >
+                    {c.type === 'CALL_WAITER' ? 'Llamando' : 'Cuenta'}
+                  </span>
+                ))}
+              </div>
+            )}
+          </motion.button>
+        );
+      })}
+    </>
+  );
+});
+
+/** Productos de la categoría. Memorizada: escribir el nombre o tocar la propina no la redibuja. */
+const ProductGrid = memo(function ProductGrid({
+  products,
+  loading,
+  error,
+  entrance,
+  onSelect,
+  onRetry,
+}: {
+  products: Product[];
+  loading: boolean;
+  error: boolean;
+  entrance: boolean;
+  onSelect: (p: Product) => void;
+  onRetry: () => void;
+}) {
+  return (
+    <div className="px-4 pb-4 grid grid-cols-2 gap-2">
+      {loading ? (
+        Array.from({ length: 6 }).map((_, i) => (
+          <div key={i} className="rounded-xl p-3 border-2 border-carbon/10 bg-carbon/5 space-y-2">
+            <Skeleton className="h-16 w-full rounded-lg" />
+            <Skeleton className="h-4 w-3/4" />
+            <Skeleton className="h-4 w-1/3" />
+          </div>
+        ))
+      ) : error ? (
+        <div className="col-span-2 py-8">
+          <EmptyState
+            compact
+            icon={<ShoppingBag className="w-8 h-8" />}
+            title="No cargó el catálogo"
+            description="Revisa la conexión e inténtalo de nuevo."
+            action={
+              <Button size="sm" onClick={onRetry}>
+                Reintentar
+              </Button>
+            }
+          />
+        </div>
+      ) : products.length === 0 ? (
+        <div className="col-span-2 py-8">
+          <EmptyState
+            compact
+            icon={<ShoppingBag className="w-8 h-8" />}
+            title="Sin productos"
+            description="Esta categoría no tiene productos disponibles."
+          />
+        </div>
+      ) : (
+        products.map((p, i) => (
+          <motion.button
+            key={p.id}
+            initial={entrance && i < 8 ? { opacity: 0, y: 12 } : false}
+            animate={{ opacity: 1, y: 0 }}
+            transition={entrance ? { delay: 0.12 + i * 0.025, duration: 0.25 } : { duration: 0 }}
+            onClick={() => p.isAvailable && onSelect(p)}
+            disabled={!p.isAvailable}
+            className={`relative text-left rounded-xl p-3 border-2 transition-[border-color,background-color,opacity] ${
+              p.isAvailable
+                ? 'bg-cream border-carbon/20 hover:border-burger'
+                : 'bg-cream border-carbon/10 opacity-50'
+            }`}
+          >
+            {p.imageUrl ? (
+              <div className="w-full h-16 rounded-lg overflow-hidden bg-carbon/10 mb-2">
+                <img
+                  src={cldUrl(p.imageUrl, { w: 240 })}
+                  alt={p.name}
+                  loading="lazy"
+                  decoding="async"
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    e.currentTarget.style.display = 'none';
+                  }}
+                />
+              </div>
+            ) : (
+              <div className="w-full h-16 rounded-lg bg-carbon/8 mb-2 flex items-center justify-center text-carbon/40">
+                <ImageOff className="w-5 h-5" />
+              </div>
+            )}
+            <h3 className="font-semibold text-carbon text-sm truncate">{p.name}</h3>
+            <p className="text-burger font-bold text-sm mt-1">{formatPrice(Number(p.basePrice))}</p>
+            {!p.isAvailable && <span className="text-xs font-semibold text-rose">Agotado</span>}
+          </motion.button>
+        ))
+      )}
+    </div>
+  );
+});

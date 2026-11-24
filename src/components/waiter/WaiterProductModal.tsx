@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { X, Minus, Plus, ImageOff } from 'lucide-react';
 import { formatPrice } from '@/lib/utils';
+import { cldUrl } from '@/lib/cloudinary';
 import type { Product, ProductVariation, ExtraIngredient, CartItem } from './shared';
 import { calcItemPrice } from './shared';
 
@@ -118,7 +119,8 @@ export default function WaiterProductModal({ product, onClose, onAdd }: Props) {
           {product.imageUrl && !imageBroken && (
             <div className="w-full h-44 rounded-xl overflow-hidden bg-carbon/10">
               <img
-                src={product.imageUrl}
+                src={cldUrl(product.imageUrl, { w: 720 })}
+                decoding="async"
                 alt={product.name}
                 className="w-full h-full object-cover"
                 onError={() => setImageBroken(true)}

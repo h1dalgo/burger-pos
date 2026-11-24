@@ -55,7 +55,7 @@ export default function MoveTableSheet({ from, tableCount, orders, onClose, onDo
   };
 
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[45] flex items-end justify-center bg-black/70 backdrop-blur-[3px] sm:items-center" onClick={onClose}>
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[45] flex items-end justify-center bg-black/75 sm:items-center" onClick={onClose}>
       <motion.div
         ref={ref}
         role="dialog"
