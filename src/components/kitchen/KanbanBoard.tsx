@@ -224,7 +224,9 @@ export default function KanbanBoard() {
             </button>
           </div>
         ),
-        { duration: 5000 }
+        // abajo: arriba ya está el aviso de "pedido nuevo / listo" y se tapaban.
+        // Un aviso por pedido: si el mismo pedido vuelve a avanzar, reemplaza al anterior.
+        { duration: 5000, position: 'bottom-center', id: `undo-${order.id}` }
       );
     },
     [sendStatus]
