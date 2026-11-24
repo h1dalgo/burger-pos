@@ -607,7 +607,7 @@ export default function WaiterPage() {
     setSubmitting(true);
     try {
       const payload = {
-        customerName: `${customerName} (Mesa ${selectedTable})`,
+        customerName, // la mesa va aparte (si se mueve el pedido, el nombre no queda con la mesa vieja)
         tableNumber: selectedTable,
         paymentMethod: 'CASH',
         status: 'PENDING',

@@ -30,12 +30,16 @@ export async function GET(request: NextRequest) {
     }
     if (q) {
       const num = Number(q.replace(/^#/, ''));
+      const digits = q.replace(/\D/g, '');
       where.OR = [
         ...(Number.isInteger(num) && num > 0 ? [{ displayId: num }] : []),
         { customerName: { contains: q, mode: 'insensitive' } },
         { tableNumber: { equals: q } },
-        { paymentReference: { contains: q.replace(/\D/g, '') || '\u0000' } },
+        // la referencia solo se busca si hay dígitos (antes se mandaba un carácter nulo
+        // que Postgres rechaza: buscar por nombre daba error 500)
+        ...(digits ? [{ paymentReference: { contains: digits } }] : []),
         { waiter: { contains: q, mode: 'insensitive' } },
+        { paidBy: { contains: q, mode: 'insensitive' } },
       ];
     }
 
