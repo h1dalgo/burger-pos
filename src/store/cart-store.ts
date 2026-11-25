@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { toast } from 'react-hot-toast';
 import type { CartItem, ExtraIngredient, Product, ProductVariation } from '@/types';
 import { generateId } from '@/lib/utils';
 
@@ -83,6 +84,14 @@ export const useCartStore = create<CartState>()((set, get) => ({
   },
 
   addSimple: (product) => {
+    // inventario: no se suma más de lo que queda (el servidor igual lo valida)
+    if (product.stockLeft != null) {
+      const inCart = get().items.filter((i) => i.product.id === product.id).reduce((n, i) => n + i.quantity, 0);
+      if (inCart >= product.stockLeft) {
+        toast.error(product.stockLeft > 0 ? `Solo ${product.stockLeft === 1 ? 'queda' : 'quedan'} ${product.stockLeft} de ${product.name}` : `${product.name} se agotó`);
+        return;
+      }
+    }
     const same = get().items.find((i) => i.product.id === product.id && isPlain(i));
     if (same) get().updateQuantity(same.id, same.quantity + 1);
     else get().addItem({ product, variation: null, quantity: 1, removedIngredients: [], addedExtras: [], selections: {}, selectionLabels: {}, note: null });

@@ -259,11 +259,15 @@ export default function WaiterProductModal({ product, onClose, onAdd }: Props) {
                 <Minus className="w-4 h-4 text-carbon" />
               </button>
               <span className="font-bold text-lg text-carbon w-6 text-center tabular-nums">{quantity}</span>
+              {product.stockLeft != null && product.stockLeft <= 10 && (
+                <span className="text-xs font-semibold text-burger">Quedan {product.stockLeft}</span>
+              )}
               <button
                 type="button"
                 aria-label="Aumentar cantidad"
                 onClick={() => setQuantity(quantity + 1)}
-                className="w-11 h-11 rounded-xl bg-carbon/8 hover:bg-carbon/15 flex items-center justify-center transition-colors"
+                disabled={product.stockLeft != null && quantity >= product.stockLeft}
+                className="w-11 h-11 rounded-xl bg-carbon/8 hover:bg-carbon/15 flex items-center justify-center transition-colors disabled:opacity-30"
               >
                 <Plus className="w-4 h-4 text-carbon" />
               </button>

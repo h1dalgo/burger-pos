@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import type { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
-import { bestDiscount, getSettings, moveInventory, openState, outOfStockProductIds } from '@/lib/business';
+import { bestDiscount, getSettings, moveInventory, openState, outOfStockProductIds, StockError } from '@/lib/business';
 import { sendPush } from '@/lib/push';
 import { audit } from '@/lib/audit';
 import { baseUrlFrom, onPaid, redactOrder } from '@/lib/receipts';
@@ -277,6 +277,19 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(order, { status: 201 });
   } catch (error) {
+    if (error instanceof StockError) {
+      // qué producto del pedido usa ese insumo y cuántas unidades alcanzan
+      const usage = await prisma.inventoryUsage
+        .findFirst({ where: { inventoryItemId: error.itemId }, select: { amount: true, product: { select: { name: true } } }, orderBy: { amount: 'desc' } })
+        .catch(() => null);
+      const name = usage?.product.name ?? error.itemName;
+      const n = usage ? Math.max(0, Math.floor((error.available + 1e-9) / Number(usage.amount))) : Math.max(0, Math.floor(error.available));
+      global.io?.emit('stock:refresh');
+      return NextResponse.json(
+        { error: n > 0 ? `Solo ${n === 1 ? 'queda' : 'quedan'} ${n} de ${name}. Ajusta la cantidad.` : `${name} se agotó.`, stock: { product: name, left: n } },
+        { status: 409 }
+      );
+    }
     console.error('Create order error:', error);
     return NextResponse.json({ error: 'Failed to create order' }, { status: 500 });
   }

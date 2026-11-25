@@ -18,6 +18,8 @@ export interface Product {
   isFeatured?: boolean;
   /** Alérgenos que contiene ("Gluten", "Lácteos"...). */
   allergens?: string[];
+  /** Unidades que alcanzan según el inventario (solo productos con inventario). */
+  stockLeft?: number;
   /** Agotado porque se acabó un insumo del inventario. */
   outOfStock?: boolean;
   variations: ProductVariation[];

@@ -35,6 +35,8 @@ export interface Product {
   defaultIngredients: DefaultIngredient[];
   extraIngredients: ExtraIngredient[];
   requiredSelections: RequiredSelection[];
+  /** Unidades que alcanzan según el inventario. */
+  stockLeft?: number;
 }
 export interface Category {
   id: string;

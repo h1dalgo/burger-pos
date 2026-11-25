@@ -350,6 +350,11 @@ export default function CartDrawer({ isOpen, onClose, onRequireTable, onEditItem
                         onRemove={() => removeWithUndo(item)}
                         onEdit={onEditItem ? () => onEditItem(item) : undefined}
                         onQty={(q) => updateQuantity(item.id, q)}
+                        maxQty={
+                          item.product.stockLeft != null
+                            ? item.product.stockLeft - items.filter((i) => i.product.id === item.product.id && i.id !== item.id).reduce((n, i) => n + i.quantity, 0)
+                            : Infinity
+                        }
                       />
                     ))}
                   </AnimatePresence>
@@ -599,12 +604,15 @@ function CartRow({
   onRemove,
   onEdit,
   onQty,
+  maxQty = Infinity,
 }: {
   item: CartItem;
   lineTotal: number;
   onRemove: () => void;
   onEdit?: () => void;
   onQty: (q: number) => void;
+  /** Máximo según inventario (lo que queda menos las otras líneas del mismo producto). */
+  maxQty?: number;
 }) {
   const x = useMotionValue(0);
   const reveal = useTransform(x, [-120, -24, 0], [1, 0.35, 0]);
@@ -708,8 +716,9 @@ function CartRow({
             <motion.button
               whileTap={{ scale: 0.86 }}
               onClick={() => onQty(item.quantity + 1)}
+              disabled={item.quantity >= maxQty}
               aria-label="Agregar uno"
-              className="flex h-9 w-9 items-center justify-center rounded-full transition-colors hover:bg-mustard"
+              className="flex h-9 w-9 items-center justify-center rounded-full transition-colors hover:bg-mustard disabled:opacity-35"
             >
               <Plus className="h-4 w-4 text-carbon" />
             </motion.button>

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { outOfStockProductIds } from '@/lib/business';
+import { stockLeftByProduct } from '@/lib/business';
 
 export const runtime = 'nodejs';
 
@@ -23,16 +23,18 @@ export async function GET() {
           },
         },
       }),
-      outOfStockProductIds(),
+      stockLeftByProduct(),
     ]);
 
-    // un insumo agotado (inventario) agota los productos que lo usan
-    const result = outOfStock.size
-      ? categories.map((c) => ({
-          ...c,
-          products: c.products.map((p) => (outOfStock.has(p.id) ? { ...p, isAvailable: false, outOfStock: true } : p)),
-        }))
-      : categories;
+    // inventario: un insumo que no alcanza agota el producto; si alcanza, se informa cuántas quedan
+    const result = categories.map((c) => ({
+      ...c,
+      products: c.products.map((p) => {
+        if (!outOfStock.has(p.id)) return p;
+        const left = outOfStock.get(p.id)!;
+        return left < 1 ? { ...p, isAvailable: false, outOfStock: true, stockLeft: 0 } : { ...p, stockLeft: left };
+      }),
+    }));
 
     return NextResponse.json(result, {
       headers: {

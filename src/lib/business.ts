@@ -123,12 +123,33 @@ export async function currentPromotions(timezone: string, db: Tx = prisma) {
 /* ───────────────────────── Inventario ───────────────────────── */
 
 /** Productos que usan un insumo agotado (existencia ≤ 0). */
+/**
+ * Cuántas unidades se pueden vender de cada producto que usa inventario
+ * (el insumo que primero se acaba manda). Productos sin inventario no aparecen.
+ */
+export async function stockLeftByProduct(db: Tx = prisma) {
+  const usages = await db.inventoryUsage.findMany({ select: { productId: true, amount: true, inventoryItem: { select: { quantity: true } } } });
+  const left = new Map<string, number>();
+  for (const u of usages) {
+    const amount = Number(u.amount);
+    if (amount <= 0) continue;
+    const units = Math.max(0, Math.floor((Number(u.inventoryItem.quantity) + 1e-9) / amount));
+    left.set(u.productId, Math.min(left.get(u.productId) ?? Infinity, units));
+  }
+  return left;
+}
+
+/** Productos agotados: su insumo no alcanza ni para una unidad (no solo cuando llega a 0). */
 export async function outOfStockProductIds(db: Tx = prisma) {
-  const usages = await db.inventoryUsage.findMany({
-    where: { inventoryItem: { quantity: { lte: 0 } } },
-    select: { productId: true },
-  });
-  return new Set(usages.map((u) => u.productId));
+  const left = await stockLeftByProduct(db);
+  return new Set([...left].filter(([, n]) => n < 1).map(([id]) => id));
+}
+
+/** El pedido pide más de lo que hay de un insumo: se rechaza entero (no queda stock negativo). */
+export class StockError extends Error {
+  constructor(public itemId: string, public itemName: string, public available: number) {
+    super(`No alcanza el stock de ${itemName}`);
+  }
 }
 
 /** Descuenta (sign=-1) o devuelve (sign=1) los insumos que usan estos productos. */
@@ -140,6 +161,16 @@ export async function moveInventory(lines: { productId: string; quantity: number
   const byItem = new Map<string, number>();
   for (const u of usages) byItem.set(u.inventoryItemId, (byItem.get(u.inventoryItemId) ?? 0) + Number(u.amount) * (qtyByProduct.get(u.productId) ?? 0));
   for (const [id, amount] of byItem) {
-    await db.inventoryItem.update({ where: { id }, data: { quantity: sign === 1 ? { increment: amount } : { decrement: amount } } });
+    if (sign === 1) {
+      await db.inventoryItem.update({ where: { id }, data: { quantity: { increment: amount } } });
+      continue;
+    }
+    // descuento atómico: solo si alcanza. Dos pedidos al mismo tiempo no pueden
+    // llevarse la última unidad: el segundo no encuentra stock suficiente.
+    const r = await db.inventoryItem.updateMany({ where: { id, quantity: { gte: amount } }, data: { quantity: { decrement: amount } } });
+    if (r.count === 0) {
+      const item = await db.inventoryItem.findUnique({ where: { id }, select: { name: true, quantity: true } });
+      throw new StockError(id, item?.name ?? 'un insumo', Number(item?.quantity ?? 0));
+    }
   }
 }

@@ -37,6 +37,10 @@ export default function ProductModal({ product, categoryName, onClose, editItem 
   const [addedExtras, setAddedExtras] = useState<ExtraIngredient[]>(editItem?.addedExtras ?? []);
   const [selections, setSelections] = useState<Record<string, string[]>>(editItem?.selections ?? {});
   const [quantity, setQuantity] = useState(editItem?.quantity ?? 1);
+  // inventario: lo que queda menos lo que ya está en el carrito (sin contar la línea que se edita)
+  const cartItems = useCartStore((s) => s.items);
+  const inCartElsewhere = cartItems.filter((i) => i.product.id === product.id && i.id !== editItem?.id).reduce((n, i) => n + i.quantity, 0);
+  const maxQty = product.stockLeft != null ? Math.max(0, product.stockLeft - inCartElsewhere) : Infinity;
   const [note, setNote] = useState(editItem?.note ?? '');
   const [error, setError] = useState('');
   const [celebrateSeq, setCelebrateSeq] = useState(0);
@@ -411,6 +415,13 @@ export default function ProductModal({ product, categoryName, onClose, editItem 
               {error}
             </motion.p>
           )}
+          {product.stockLeft != null && product.stockLeft <= 10 && (
+            <p className="mb-2 text-[12px] font-semibold text-burger" role="status">
+              {maxQty < 1
+                ? `Ya tienes en tu pedido todas las que quedan (${product.stockLeft})`
+                : `¡${product.stockLeft === 1 ? 'Queda' : 'Quedan'} ${product.stockLeft}!`}
+            </p>
+          )}
           <div className="flex items-center gap-3">
             <div className="flex shrink-0 items-center gap-1.5 rounded-full border border-carbon/15 p-1">
               <motion.button
@@ -427,14 +438,15 @@ export default function ProductModal({ product, categoryName, onClose, editItem 
               </span>
               <motion.button
                 whileTap={{ scale: 0.88 }}
-                onClick={() => setQuantity(quantity + 1)}
+                onClick={() => setQuantity(Math.min(quantity + 1, Math.max(1, maxQty)))}
+                disabled={quantity >= maxQty}
                 aria-label="Agregar uno"
-                className="w-9 h-9 rounded-full flex items-center justify-center hover:bg-mustard transition-colors"
+                className="w-9 h-9 rounded-full flex items-center justify-center hover:bg-mustard transition-colors disabled:opacity-30"
               >
                 <Plus className="w-4 h-4 text-carbon" />
               </motion.button>
             </div>
-            <Button onClick={handleAddToCart} size="lg" disabled={celebrating} className="flex-1 min-w-0">
+            <Button onClick={handleAddToCart} size="lg" disabled={celebrating || quantity > maxQty} className="flex-1 min-w-0">
               <span className="flex w-full items-center justify-between gap-3">
                 <span className="truncate">
                   {celebrating
