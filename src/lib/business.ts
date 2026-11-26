@@ -145,21 +145,84 @@ export async function outOfStockProductIds(db: Tx = prisma) {
   return new Set([...left].filter(([, n]) => n < 1).map(([id]) => id));
 }
 
+/** Nombre de extra/variación normalizado (igual en todos los productos). */
+export const optionKey = (s: string) => s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, ' ').trim();
+
+/**
+ * Cuántas veces se puede vender cada extra/variación que usa inventario.
+ * Clave: "extra:doble carne" / "variation:pollo crispy".
+ */
+export async function optionStockLeft(db: Tx = prisma) {
+  const rows = await db.inventoryOptionUsage.findMany({ select: { kind: true, name: true, amount: true, inventoryItem: { select: { quantity: true } } } });
+  const left = new Map<string, number>();
+  for (const r of rows) {
+    const amount = Number(r.amount);
+    if (amount <= 0) continue;
+    const units = Math.max(0, Math.floor((Number(r.inventoryItem.quantity) + 1e-9) / amount));
+    const key = `${r.kind}:${r.name}`;
+    left.set(key, Math.min(left.get(key) ?? Infinity, units));
+  }
+  return left;
+}
+
 /** El pedido pide más de lo que hay de un insumo: se rechaza entero (no queda stock negativo). */
 export class StockError extends Error {
-  constructor(public itemId: string, public itemName: string, public available: number) {
+  constructor(
+    public itemId: string,
+    public itemName: string,
+    public available: number,
+    /** Lo que necesitaba este pedido de ese insumo */
+    public needed: number,
+    public unit: string,
+    /** true si parte del gasto venía de extras o variaciones */
+    public fromOptions: boolean
+  ) {
     super(`No alcanza el stock de ${itemName}`);
   }
 }
 
-/** Descuenta (sign=-1) o devuelve (sign=1) los insumos que usan estos productos. */
-export async function moveInventory(lines: { productId: string; quantity: number }[], sign: 1 | -1, db: Tx = prisma) {
+export interface InventoryLine {
+  productId: string;
+  quantity: number;
+  /** Nombres de los extras agregados (cada uno cuenta una vez por unidad) */
+  extras?: string[];
+  /** Nombre de la variación elegida */
+  variation?: string | null;
+}
+
+/** Descuenta (sign=-1) o devuelve (sign=1) los insumos de productos, extras y variaciones. */
+export async function moveInventory(lines: InventoryLine[], sign: 1 | -1, db: Tx = prisma) {
   if (!lines.length) return;
   const qtyByProduct = new Map<string, number>();
-  for (const l of lines) qtyByProduct.set(l.productId, (qtyByProduct.get(l.productId) ?? 0) + l.quantity);
+  const qtyByOption = new Map<string, number>(); // "extra:doble carne" → unidades
+  for (const l of lines) {
+    qtyByProduct.set(l.productId, (qtyByProduct.get(l.productId) ?? 0) + l.quantity);
+    for (const e of l.extras ?? []) {
+      const k = `extra:${optionKey(e)}`;
+      qtyByOption.set(k, (qtyByOption.get(k) ?? 0) + l.quantity);
+    }
+    if (l.variation) {
+      const k = `variation:${optionKey(l.variation)}`;
+      qtyByOption.set(k, (qtyByOption.get(k) ?? 0) + l.quantity);
+    }
+  }
   const usages = await db.inventoryUsage.findMany({ where: { productId: { in: [...qtyByProduct.keys()] } } });
   const byItem = new Map<string, number>();
   for (const u of usages) byItem.set(u.inventoryItemId, (byItem.get(u.inventoryItemId) ?? 0) + Number(u.amount) * (qtyByProduct.get(u.productId) ?? 0));
+  const fromOptions = new Set<string>();
+  if (qtyByOption.size) {
+    const keys = [...qtyByOption.keys()].map((k) => {
+      const i = k.indexOf(':');
+      return { kind: k.slice(0, i), name: k.slice(i + 1) };
+    });
+    const opts = await db.inventoryOptionUsage.findMany({ where: { OR: keys } });
+    for (const o of opts) {
+      const units = qtyByOption.get(`${o.kind}:${o.name}`) ?? 0;
+      if (!units) continue;
+      byItem.set(o.inventoryItemId, (byItem.get(o.inventoryItemId) ?? 0) + Number(o.amount) * units);
+      fromOptions.add(o.inventoryItemId);
+    }
+  }
   for (const [id, amount] of byItem) {
     if (sign === 1) {
       await db.inventoryItem.update({ where: { id }, data: { quantity: { increment: amount } } });
@@ -169,8 +232,8 @@ export async function moveInventory(lines: { productId: string; quantity: number
     // llevarse la última unidad: el segundo no encuentra stock suficiente.
     const r = await db.inventoryItem.updateMany({ where: { id, quantity: { gte: amount } }, data: { quantity: { decrement: amount } } });
     if (r.count === 0) {
-      const item = await db.inventoryItem.findUnique({ where: { id }, select: { name: true, quantity: true } });
-      throw new StockError(id, item?.name ?? 'un insumo', Number(item?.quantity ?? 0));
+      const item = await db.inventoryItem.findUnique({ where: { id }, select: { name: true, quantity: true, unit: true } });
+      throw new StockError(id, item?.name ?? 'un insumo', Number(item?.quantity ?? 0), amount, item?.unit ?? 'u', fromOptions.has(id));
     }
   }
 }

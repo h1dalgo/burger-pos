@@ -24,12 +24,17 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     }
     const parsed = parseInventory(body);
     if ('error' in parsed) return NextResponse.json({ error: parsed.error }, { status: 400 });
-    const { usages, ...data } = parsed.data;
+    const { usages, optionUsages, ...data } = parsed.data;
     const item = await prisma.$transaction(async (tx) => {
       await tx.inventoryUsage.deleteMany({ where: { inventoryItemId: id } });
+      await tx.inventoryOptionUsage.deleteMany({ where: { inventoryItemId: id } });
       return tx.inventoryItem.update({
         where: { id },
-        data: { ...data, usages: { create: usages.map((u) => ({ productId: u.productId, amount: u.amount })) } },
+        data: {
+          ...data,
+          usages: { create: usages.map((u) => ({ productId: u.productId, amount: u.amount })) },
+          optionUsages: { create: optionUsages },
+        },
       });
     });
     global.io?.emit('stock:refresh');

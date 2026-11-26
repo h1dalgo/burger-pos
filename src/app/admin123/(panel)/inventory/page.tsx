@@ -13,6 +13,11 @@ interface Usage {
   productName?: string;
   amount: number;
 }
+interface OptUsage {
+  kind: 'extra' | 'variation';
+  label: string;
+  amount: number;
+}
 interface Item {
   id: string;
   name: string;
@@ -20,6 +25,12 @@ interface Item {
   unit: string;
   lowAt: number;
   usages: Usage[];
+  optionUsages?: OptUsage[];
+}
+/** Extras y variaciones del menú (por nombre, sin repetir) */
+interface Options {
+  extras: string[];
+  variations: string[];
 }
 type Draft = Omit<Item, 'id'> & { id?: string };
 interface Cat {
@@ -28,10 +39,11 @@ interface Cat {
   products: { id: string; name: string }[];
 }
 
-const EMPTY: Draft = { name: '', quantity: 0, unit: 'u', lowAt: 5, usages: [] };
+const EMPTY: Draft = { name: '', quantity: 0, unit: 'u', lowAt: 5, usages: [], optionUsages: [] };
+const optKey = (s: string) => s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, ' ').trim();
 const fmt = (n: number) => n.toLocaleString('es-VE', { maximumFractionDigits: 2 });
 
-function ItemForm({ initial, cats, onClose, onSaved }: { initial: Draft; cats: Cat[]; onClose: () => void; onSaved: () => void }) {
+function ItemForm({ initial, cats, options, onClose, onSaved }: { initial: Draft; cats: Cat[]; options: Options; onClose: () => void; onSaved: () => void }) {
   const ref = useRef<HTMLDivElement>(null);
   useEscapeClose(ref, onClose);
   const [d, setD] = useState<Draft>(initial);
@@ -41,6 +53,16 @@ function ItemForm({ initial, cats, onClose, onSaved }: { initial: Draft; cats: C
   const toggleProduct = (id: string) =>
     setD((x) => ({ ...x, usages: used.has(id) ? x.usages.filter((u) => u.productId !== id) : [...x.usages, { productId: id, amount: 1 }] }));
   const setAmount = (id: string, amount: number) => setD((x) => ({ ...x, usages: x.usages.map((u) => (u.productId === id ? { ...u, amount } : u)) }));
+  const opts = d.optionUsages ?? [];
+  const optFind = (kind: OptUsage['kind'], label: string) => opts.find((o) => o.kind === kind && optKey(o.label) === optKey(label));
+  const toggleOpt = (kind: OptUsage['kind'], label: string) =>
+    setD((x) => {
+      const list = x.optionUsages ?? [];
+      const has = list.some((o) => o.kind === kind && optKey(o.label) === optKey(label));
+      return { ...x, optionUsages: has ? list.filter((o) => !(o.kind === kind && optKey(o.label) === optKey(label))) : [...list, { kind, label, amount: 1 }] };
+    });
+  const setOptAmount = (kind: OptUsage['kind'], label: string, amount: number) =>
+    setD((x) => ({ ...x, optionUsages: (x.optionUsages ?? []).map((o) => (o.kind === kind && optKey(o.label) === optKey(label) ? { ...o, amount } : o)) }));
 
   const save = async () => {
     setSaving(true);
@@ -127,6 +149,40 @@ function ItemForm({ initial, cats, onClose, onSaved }: { initial: Draft; cats: C
               ))}
             </div>
           </div>
+          {(['variation', 'extra'] as const).map((kind) => {
+            const names = kind === 'extra' ? options.extras : options.variations;
+            if (!names.length) return null;
+            return (
+              <div key={kind}>
+                <span className="block text-sm font-semibold text-carbon/75">{kind === 'extra' ? '¿Qué extras lo usan?' : '¿Qué variaciones lo usan?'}</span>
+                <span className="mb-2 block text-[12px] text-carbon/55">
+                  {kind === 'extra'
+                    ? 'Ej: "Doble Carne" usa 1. Cuenta en todos los productos que tengan ese extra.'
+                    : 'Ej: "150gr de Carne" usa 1 y "Pollo Crispy" no. Así la variación de pollo no gasta carne.'}
+                </span>
+                <div className="space-y-1">
+                  {names.map((label) => {
+                    const o = optFind(kind, label);
+                    return (
+                      <div key={label} className="flex items-center gap-3 rounded-xl px-2 py-1.5 hover:bg-carbon/[0.03]">
+                        <label className="flex min-w-0 flex-1 items-center gap-2.5 text-sm text-carbon">
+                          <input type="checkbox" checked={!!o} onChange={() => toggleOpt(kind, label)} className="h-4 w-4" />
+                          <span className="truncate">{label}</span>
+                        </label>
+                        {o && (
+                          <label className="flex items-center gap-1.5 text-[12px] text-carbon/60">
+                            usa
+                            <input type="number" min={0.01} step="any" value={o.amount} onChange={(e) => setOptAmount(kind, label, Number(e.target.value))} className="field w-16 px-2 py-1 text-sm" aria-label={`Cantidad que usa ${label}`} />
+                            {d.unit}
+                          </label>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })}
         </div>
         <div className="flex gap-2 border-t border-carbon/10 px-6 pt-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
           <button type="button" onClick={onClose} className="btn btn-outline flex-1">
@@ -144,6 +200,7 @@ function ItemForm({ initial, cats, onClose, onSaved }: { initial: Draft; cats: C
 export default function InventoryPage() {
   const [items, setItems] = useState<Item[] | null>(null);
   const [cats, setCats] = useState<Cat[]>([]);
+  const [options, setOptions] = useState<Options>({ extras: [], variations: [] });
   const [editing, setEditing] = useState<Draft | null>(null);
 
   const load = useCallback(() => {
@@ -157,7 +214,16 @@ export default function InventoryPage() {
     load();
     fetch('/api/products')
       .then((r) => r.json())
-      .then((d: Cat[]) => setCats(d.map((c) => ({ id: c.id, name: c.name, products: c.products.map((p) => ({ id: p.id, name: p.name })) }))))
+      .then((d: (Cat & { products: { id: string; name: string; extraIngredients?: { name: string }[]; variations?: { name: string }[] }[] })[]) => {
+        setCats(d.map((c) => ({ id: c.id, name: c.name, products: c.products.map((p) => ({ id: p.id, name: p.name })) })));
+        // extras y variaciones por nombre (sin repetir): "Doble Carne" es el mismo en todas las hamburguesas
+        const uniq = (names: string[]) => [...new Map(names.map((n) => [optKey(n), n.trim()])).values()].sort((a, b) => a.localeCompare(b, 'es'));
+        const all = d.flatMap((c) => c.products);
+        setOptions({
+          extras: uniq(all.flatMap((p) => (p.extraIngredients ?? []).map((e) => e.name))),
+          variations: uniq(all.flatMap((p) => (p.variations ?? []).map((v) => v.name))),
+        });
+      })
       .catch(() => {});
   }, [load]);
 
@@ -226,7 +292,9 @@ export default function InventoryPage() {
                   {out && <span className="badge badge-danger">Agotado</span>}
                   {isLow && <span className="badge badge-warning">Bajo</span>}
                 </p>
-                <p className="truncate text-[12px] text-carbon/55">{it.usages.length ? `Lo usan: ${it.usages.map((u) => u.productName).join(', ')}` : 'Ningún producto lo usa todavía'}</p>
+                <p className="truncate text-[12px] text-carbon/55">{it.usages.length || it.optionUsages?.length
+                    ? `Lo usan: ${[...it.usages.map((u) => u.productName), ...(it.optionUsages ?? []).map((o) => (o.kind === 'extra' ? `extra ${o.label}` : o.label))].join(', ')}`
+                    : 'Ningún producto lo usa todavía'}</p>
               </div>
               <div className="flex items-center gap-1.5 rounded-full border border-carbon/15 p-0.5">
                 <button type="button" onClick={() => adjust(it, -1)} disabled={out} aria-label={`Restar 1 ${it.unit} de ${it.name}`} className="flex h-8 w-8 items-center justify-center rounded-full hover:bg-carbon/[0.06] disabled:opacity-35">
@@ -258,6 +326,7 @@ export default function InventoryPage() {
           <ItemForm
             initial={editing}
             cats={cats}
+            options={options}
             onClose={() => setEditing(null)}
             onSaved={() => {
               setEditing(null);

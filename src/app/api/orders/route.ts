@@ -26,7 +26,7 @@ async function archiveStale() {
   const before = new Date(Date.now() - STALE_MS);
   const stale = await prisma.order.findMany({
     where: { createdAt: { lt: before }, status: { in: ['WAITING_PAYMENT', 'PENDING', 'IN_PREPARATION', 'READY'] } },
-    select: { id: true, status: true, displayId: true, tableNumber: true, items: { select: { productId: true, quantity: true } } },
+    select: { id: true, status: true, displayId: true, tableNumber: true, items: { select: { productId: true, quantity: true, addedExtras: { select: { extraName: true } }, variation: { select: { variationName: true } } } } },
   });
   if (!stale.length) return;
   const unpaid = stale.filter((o) => o.status === 'WAITING_PAYMENT');
@@ -35,7 +35,7 @@ async function archiveStale() {
     // nunca se pagaron: se cancelan y se devuelven los insumos
     await prisma.order.updateMany({ where: { id: { in: unpaid.map((o) => o.id) } }, data: { status: 'CANCELLED', cancelReason: 'Vencido sin confirmar el pago', cancelledBy: 'Sistema' } });
     for (const o of unpaid) await audit('Sistema', 'PEDIDO_CANCELADO', `#${String(o.displayId).padStart(4, '0')} · Mesa ${o.tableNumber} · Motivo: Vencido sin confirmar el pago`, o.id);
-    await moveInventory(unpaid.flatMap((o) => o.items), 1);
+    await moveInventory(unpaid.flatMap((o) => o.items.map((i) => ({ productId: i.productId, quantity: i.quantity, extras: i.addedExtras.map((e) => e.extraName), variation: i.variation?.variationName ?? null }))), 1);
   }
   if (served.length) {
     await prisma.order.updateMany({ where: { id: { in: served.map((o) => o.id) } }, data: { status: 'DELIVERED' } });
@@ -140,7 +140,7 @@ export async function POST(request: NextRequest) {
     const productById = new Map(dbProducts.map((p) => [p.id, p]));
 
     let totalAmount = 0;
-    const lines: { categoryId: string; subtotal: number; productId: string; quantity: number }[] = [];
+    const lines: { categoryId: string; subtotal: number; productId: string; quantity: number; extras: string[]; variation: string | null }[] = [];
     const orderItems: Prisma.OrderItemUncheckedCreateWithoutOrderInput[] = [];
     for (const item of items) {
       const product = item?.productId ? productById.get(item.productId) : undefined;
@@ -188,7 +188,15 @@ export async function POST(request: NextRequest) {
 
       const subtotal = unitPrice * qty;
       totalAmount += subtotal;
-      lines.push({ categoryId: product.categoryId, subtotal, productId: product.id, quantity: qty });
+      lines.push({
+        categoryId: product.categoryId,
+        subtotal,
+        productId: product.id,
+        quantity: qty,
+        // extras y variación también gastan inventario (ej. "Doble Carne" usa 1 carne)
+        extras: extrasRel ? (extrasRel.create as { extraName: string }[]).map((x) => x.extraName) : [],
+        variation: variationRel ? (variationRel.create as { variationName: string }).variationName : null,
+      });
 
       orderItems.push({
         productId: product.id,
@@ -277,6 +285,17 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(order, { status: 201 });
   } catch (error) {
+    if (error instanceof StockError && error.fromOptions) {
+      const fmt = (n: number) => n.toLocaleString('es-VE', { maximumFractionDigits: 2 });
+      global.io?.emit('stock:refresh');
+      return NextResponse.json(
+        {
+          error: `No alcanza ${error.itemName}: ${error.available > 0 ? `quedan ${fmt(error.available)} ${error.unit}` : 'se agotó'} y este pedido necesita ${fmt(error.needed)}. Ajusta las cantidades o quita extras.`,
+          stock: { item: error.itemName, left: error.available, needed: error.needed },
+        },
+        { status: 409 }
+      );
+    }
     if (error instanceof StockError) {
       // qué producto del pedido usa ese insumo y cuántas unidades alcanzan
       const usage = await prisma.inventoryUsage

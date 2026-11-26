@@ -308,8 +308,29 @@ model InventoryItem {
   lowAt     Decimal          @default(5) @map("low_at") @db.Decimal(12, 2)
   updatedAt DateTime         @updatedAt @map("updated_at")
   usages    InventoryUsage[]
+  optionUsages InventoryOptionUsage[]
 
   @@map("inventory_items")
+}
+
+/// Cuánto de un insumo usa un extra (ej. "Doble Carne") o una variación (ej. "150gr de Carne").
+/// Va por nombre: el mismo extra en todas las hamburguesas descuenta lo mismo.
+model InventoryOptionUsage {
+  id              String  @id @default(uuid()) @db.Uuid
+  inventoryItemId String  @map("inventory_item_id") @db.Uuid
+  /// "extra" o "variation"
+  kind            String
+  /// nombre normalizado (minúsculas, sin acentos)
+  name            String
+  /// nombre como se ve en el menú
+  label           String
+  amount          Decimal @default(1) @db.Decimal(10, 2)
+
+  inventoryItem InventoryItem @relation(fields: [inventoryItemId], references: [id], onDelete: Cascade)
+
+  @@unique([inventoryItemId, kind, name])
+  @@index([kind, name])
+  @@map("inventory_option_usages")
 }
 
 /// Cuánto de un insumo usa cada unidad de un producto

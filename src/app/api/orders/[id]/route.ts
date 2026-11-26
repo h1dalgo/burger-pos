@@ -42,7 +42,7 @@ export async function PATCH(
       return NextResponse.json({ error: 'Status or tableNumber is required' }, { status: 400 });
     }
 
-    const prev = await prisma.order.findUnique({ where: { id }, select: { status: true, displayId: true, tableNumber: true, totalAmount: true, tip: true, paymentMethod: true, items: { select: { productId: true, quantity: true } } } });
+    const prev = await prisma.order.findUnique({ where: { id }, select: { status: true, displayId: true, tableNumber: true, totalAmount: true, tip: true, paymentMethod: true, items: { select: { productId: true, quantity: true, addedExtras: { select: { extraName: true } }, variation: { select: { variationName: true } } } } } });
     if (!prev) return NextResponse.json({ error: 'Order not found' }, { status: 404 });
 
     const data: Prisma.OrderUpdateInput = {};
@@ -75,7 +75,12 @@ export async function PATCH(
     const order = await prisma.$transaction(async (tx) => {
       const updated = await tx.order.update({ where: { id }, data, include: ORDER_INCLUDE });
       // al cancelar se devuelven los insumos al inventario
-      if (status === 'CANCELLED' && prev.status !== 'CANCELLED') await moveInventory(prev.items, 1, tx);
+      if (status === 'CANCELLED' && prev.status !== 'CANCELLED')
+        await moveInventory(
+          prev.items.map((i) => ({ productId: i.productId, quantity: i.quantity, extras: i.addedExtras.map((e) => e.extraName), variation: i.variation?.variationName ?? null })),
+          1,
+          tx
+        );
       return updated;
     });
 

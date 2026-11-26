@@ -9,11 +9,12 @@ const shape = (i: Awaited<ReturnType<typeof list>>[number]) => ({
   quantity: Number(i.quantity),
   lowAt: Number(i.lowAt),
   usages: i.usages.map((u) => ({ productId: u.productId, productName: u.product.name, amount: Number(u.amount) })),
+  optionUsages: i.optionUsages.map((o) => ({ kind: o.kind, name: o.name, label: o.label, amount: Number(o.amount) })),
 });
 const list = () =>
   prisma.inventoryItem.findMany({
     orderBy: { name: 'asc' },
-    include: { usages: { include: { product: { select: { name: true } } } } },
+    include: { usages: { include: { product: { select: { name: true } } } }, optionUsages: true },
   });
 
 export async function GET() {
@@ -24,9 +25,13 @@ export async function POST(request: NextRequest) {
   try {
     const parsed = parseInventory(await request.json());
     if ('error' in parsed) return NextResponse.json({ error: parsed.error }, { status: 400 });
-    const { usages, ...data } = parsed.data;
+    const { usages, optionUsages, ...data } = parsed.data;
     const item = await prisma.inventoryItem.create({
-      data: { ...data, usages: { create: usages.map((u) => ({ productId: u.productId, amount: u.amount })) } },
+      data: {
+        ...data,
+        usages: { create: usages.map((u) => ({ productId: u.productId, amount: u.amount })) },
+        optionUsages: { create: optionUsages },
+      },
     });
     global.io?.emit('stock:refresh');
     return NextResponse.json(item, { status: 201 });
