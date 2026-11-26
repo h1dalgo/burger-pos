@@ -8,6 +8,7 @@ import BarChart from '@/components/admin/BarChart';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Button } from '@/components/ui/Button';
+import ReportPrintSheet, { type PrintBusiness } from '@/components/admin/ReportPrintSheet';
 
 type Period = 'day' | 'week' | 'month';
 const PERIODS: { value: Period; label: string; days: number }[] = [
@@ -18,6 +19,8 @@ const PERIODS: { value: Period; label: string; days: number }[] = [
 const WEEKDAYS = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
 
 interface ReportData {
+  start?: string;
+  end?: string;
   count: number;
   cancelled: number;
   revenueBs: number;
@@ -59,6 +62,14 @@ export default function ReportPage() {
   const [period, setPeriod] = useState<Period>('day');
   const [data, setData] = useState<ReportData | null>(null);
   const [error, setError] = useState(false);
+  /** Datos del negocio para el encabezado del corte impreso */
+  const [business, setBusiness] = useState<PrintBusiness | null>(null);
+  useEffect(() => {
+    fetch('/api/settings')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((s) => s && setBusiness({ name: s.name, legalName: s.legalName, rif: s.rif, address: s.address, phone: s.phone }))
+      .catch(() => {});
+  }, []);
 
   const load = useCallback((dateStr: string, p: Period) => {
     fetch(`/api/admin/report?${range(dateStr, p)}`)
@@ -95,7 +106,10 @@ export default function ReportPage() {
   const money = (v: number) => (v >= 1000 ? `$${(v / 1000).toFixed(1)}K` : `$${Math.round(v)}`);
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <>
+    {/* al imprimir: hoja ordenada en una sola página (la vista de pantalla se oculta) */}
+    {data && <ReportPrintSheet data={data} business={business} periodLabel={`Ventas ${periodLabel}`} />}
+    <div className="max-w-4xl mx-auto space-y-6 print:hidden">
       <div className="flex flex-wrap items-center justify-between gap-3 print:hidden">
         <div>
           <h1 className="display text-3xl text-carbon sign-yellow">Corte de Caja</h1>
@@ -273,5 +287,6 @@ export default function ReportPage() {
         </>
       )}
     </div>
+    </>
   );
 }
