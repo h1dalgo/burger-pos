@@ -55,22 +55,6 @@ function polarDisc(R, rings, segs, yFn) {
   return g;
 }
 
-/** Puntos repartidos sin chocar dentro de un disco (siempre los mismos para una semilla). */
-function scatter(n, R, minD, seed, avoid = []) {
-  const r = mulberry32(seed);
-  const pts = [];
-  let tries = 0;
-  while (pts.length < n && tries < n * 60) {
-    tries++;
-    const a = r() * Math.PI * 2, d = Math.sqrt(r()) * R;
-    const x = Math.cos(a) * d, z = Math.sin(a) * d;
-    if (pts.some((p) => (p.x - x) ** 2 + (p.z - z) ** 2 < minD * minD)) continue;
-    if (avoid.some((p) => (p.x - x) ** 2 + (p.z - z) ** 2 < (minD * 0.8) ** 2)) continue;
-    pts.push({ x, z, rot: r() * Math.PI * 2, s: 0.85 + r() * 0.3, t: r() });
-  }
-  return pts;
-}
-
 const _m = new THREE.Matrix4();
 const _q = new THREE.Quaternion();
 const _e = new THREE.Euler();
@@ -104,7 +88,7 @@ function instanced(geo, mat, items, place) {
 /* ------------------------------------------------------------------ */
 
 export const PIZZA_R = 1.08; // radio del queso
-const TOP_Y = 0.135; // altura de la superficie del queso (sobre la tabla)
+export const TOP_Y = 0.135; // altura de la superficie del queso (sobre la tabla)
 
 /** Plato de cerámica oscura esmaltada (mismo estilo que el de la hamburguesa, más amplio). */
 export function buildPizzaPlate(q) {
@@ -206,138 +190,6 @@ export function pizzaToppings(texts) {
   const out = TOPPING_RULES.filter(([, re]) => re.test(t)).map(([k]) => k);
   // "extra queso": más queso (se nota en la cantidad de burbujas doradas, no hace falta otra pieza)
   return out;
-}
-
-/** Un tipo de ingrediente repartido sobre la pizza (una malla instanciada). */
-export function buildTopping(kind, q) {
-  const D = q.detail;
-  const R = PIZZA_R - 0.16;
-  const g = new THREE.Group();
-  let geo, mat, items, place;
-  const seedOf = { pepperoni: 11, jamon: 23, pina: 37, champinon: 41, aceituna: 53, albahaca: 61, maiz: 71, tocineta: 83, cebolla: 97, pimenton: 101, quesoazul: 113, parmesano: 127 }[kind] || 5;
-  switch (kind) {
-    case 'pepperoni': {
-      geo = new THREE.CylinderGeometry(0.115, 0.11, 0.026, Math.round(22 * D + 8), 2);
-      // se curva como taza al hornearse
-      displace(geo, (v, n) => (n.y > 0.5 ? Math.hypot(v.x, v.z) ** 2 * 0.9 : 0));
-      paint(geo, (v, n, c) => c.set('#9b2615').lerp(_c.set('#5e1309'), clamp01(fbm(v.x * 30, 0, v.z * 30, 3, 2) + 0.3) * 0.6));
-      mat = food({ bump: 'fine', bumpScale: 0.8, roughness: 0.3, clearcoat: 0.8, clearcoatRoughness: 0.2 });
-      items = scatter(13, R, 0.27, seedOf);
-      place = (p) => ({ x: p.x, y: TOP_Y + 0.03, z: p.z, ry: p.rot, rx: (p.t - 0.5) * 0.12, s: p.s });
-      break;
-    }
-    case 'jamon': {
-      geo = new RoundedBoxGeometry(0.17, 0.018, 0.14, 2, 0.01);
-      paint(geo, (v, n, c) => c.set('#e8a0a0').lerp(_c.set('#f4c6c0'), clamp01(fbm(v.x * 20, 1, v.z * 20, 4, 2) + 0.5)));
-      mat = food({ bumpScale: 0.5, roughness: 0.4, clearcoat: 0.5 });
-      items = scatter(11, R, 0.25, seedOf);
-      place = (p) => ({ x: p.x, y: TOP_Y + 0.022, z: p.z, ry: p.rot, rz: (p.t - 0.5) * 0.15, s: p.s });
-      break;
-    }
-    case 'pina': {
-      geo = new RoundedBoxGeometry(0.12, 0.05, 0.08, 2, 0.012);
-      displace(geo, (v) => (v.x > 0 ? -v.y * 0.3 : 0));
-      solidColor(geo, WHITE);
-      mat = food({ color: '#f2c94c', bump: 'fine', bumpScale: 1.4, roughness: 0.25, clearcoat: 0.7 });
-      items = scatter(13, R, 0.2, seedOf);
-      place = (p) => ({ x: p.x, y: TOP_Y + 0.028, z: p.z, ry: p.rot, s: p.s });
-      break;
-    }
-    case 'champinon': {
-      const s = new THREE.Shape();
-      // corte de champiñón: sombrero redondo + tallo
-      s.absarc(0, 0.02, 0.085, 0, Math.PI, false);
-      s.lineTo(-0.03, 0.02);
-      s.lineTo(-0.028, -0.07);
-      s.lineTo(0.028, -0.07);
-      s.lineTo(0.03, 0.02);
-      s.lineTo(0.085, 0.02);
-      geo = new THREE.ExtrudeGeometry(s, { depth: 0.02, bevelEnabled: true, bevelThickness: 0.006, bevelSize: 0.006, bevelSegments: 1, curveSegments: 12 });
-      geo.rotateX(-Math.PI / 2);
-      paint(geo, (v, n, c) => c.set('#d8c3a4').lerp(_c.set('#8a6a4a'), clamp01((Math.hypot(v.x, v.z - 0.02) - 0.06) * 30)));
-      mat = food({ bumpScale: 0.4, roughness: 0.45, clearcoat: 0.3 });
-      items = scatter(12, R, 0.22, seedOf);
-      place = (p) => ({ x: p.x, y: TOP_Y + 0.012, z: p.z, ry: p.rot, s: p.s });
-      break;
-    }
-    case 'aceituna': {
-      geo = new THREE.TorusGeometry(0.045, 0.02, 8, Math.round(16 * D + 6));
-      geo.rotateX(Math.PI / 2);
-      solidColor(geo, WHITE);
-      mat = food({ color: '#1f1b19', bumpScale: 0, roughness: 0.18, clearcoat: 1, clearcoatRoughness: 0.08 });
-      items = scatter(14, R, 0.18, seedOf);
-      place = (p) => ({ x: p.x, y: TOP_Y + 0.018, z: p.z, ry: p.rot, rx: (p.t - 0.5) * 0.3, s: p.s });
-      break;
-    }
-    case 'albahaca': {
-      geo = new THREE.SphereGeometry(0.14, 14, 6);
-      geo.scale(1, 0.1, 0.55);
-      displace(geo, (v) => -Math.abs(v.z) * 0.08);
-      paint(geo, (v, n, c) => c.set('#2f6d1f').lerp(_c.set('#4f9a33'), clamp01(0.5 - Math.abs(v.z) * 6)));
-      mat = food({ bumpScale: 0.3, roughness: 0.3, clearcoat: 0.6, sheen: 0.3, sheenColor: '#d6ffb0' });
-      items = scatter(7, R * 0.85, 0.3, seedOf);
-      place = (p) => ({ x: p.x, y: TOP_Y + 0.03, z: p.z, ry: p.rot, rx: 0.15, s: p.s });
-      break;
-    }
-    case 'maiz': {
-      geo = new THREE.SphereGeometry(0.028, 8, 6);
-      geo.scale(1, 0.75, 0.85);
-      solidColor(geo, WHITE);
-      mat = food({ color: '#f4c22f', bumpScale: 0, roughness: 0.25, clearcoat: 0.8 });
-      items = scatter(32, R, 0.09, seedOf);
-      place = (p) => ({ x: p.x, y: TOP_Y + 0.025, z: p.z, ry: p.rot, s: p.s });
-      break;
-    }
-    case 'tocineta': {
-      geo = new RoundedBoxGeometry(0.22, 0.02, 0.065, 2, 0.008);
-      displace(geo, (v) => Math.sin(v.x * 28) * 0.012);
-      paint(geo, (v, n, c) => c.set('#8b3a22').lerp(_c.set('#e6b38a'), clamp01(Math.sin(v.z * 90) * 0.5 + 0.1)));
-      mat = food({ bumpScale: 0.6, roughness: 0.38, clearcoat: 0.6 });
-      items = scatter(10, R, 0.26, seedOf);
-      place = (p) => ({ x: p.x, y: TOP_Y + 0.025, z: p.z, ry: p.rot, s: p.s });
-      break;
-    }
-    case 'cebolla': {
-      geo = new THREE.TorusGeometry(0.07, 0.01, 6, Math.round(18 * D + 6), Math.PI * 1.6);
-      geo.rotateX(Math.PI / 2);
-      solidColor(geo, WHITE);
-      mat = food({ color: '#d9b3d0', bumpScale: 0, roughness: 0.3, clearcoat: 0.7 });
-      items = scatter(10, R, 0.22, seedOf);
-      place = (p) => ({ x: p.x, y: TOP_Y + 0.02, z: p.z, ry: p.rot, s: p.s });
-      break;
-    }
-    case 'pimenton': {
-      geo = new RoundedBoxGeometry(0.17, 0.02, 0.035, 2, 0.008);
-      displace(geo, (v) => Math.cos(v.x * 14) * 0.012);
-      solidColor(geo, WHITE);
-      mat = food({ bumpScale: 0, roughness: 0.22, clearcoat: 0.9 });
-      items = scatter(12, R, 0.2, seedOf);
-      place = (p) => ({ x: p.x, y: TOP_Y + 0.022, z: p.z, ry: p.rot, s: p.s, color: p.t > 0.5 ? '#c4271b' : '#3f8a26' });
-      break;
-    }
-    case 'quesoazul': {
-      geo = new THREE.SphereGeometry(0.05, 10, 6);
-      displace(geo, (v) => fbm(v.x * 40, v.y * 40, v.z * 40, 2, 2) * 0.012);
-      geo.scale(1, 0.55, 1);
-      paint(geo, (v, n, c) => c.set('#e8ecef').lerp(_c.set('#5f7486'), clamp01(fbm(v.x * 60, v.y * 60, v.z * 60, 9, 2) * 2.5)));
-      mat = food({ bumpScale: 0.6, roughness: 0.55, clearcoat: 0.2 });
-      items = scatter(12, R, 0.2, seedOf);
-      place = (p) => ({ x: p.x, y: TOP_Y + 0.02, z: p.z, ry: p.rot, s: p.s });
-      break;
-    }
-    case 'parmesano': {
-      geo = new THREE.BoxGeometry(0.07, 0.008, 0.035);
-      solidColor(geo, WHITE);
-      mat = food({ color: '#f5ecd2', bumpScale: 0.3, roughness: 0.6 });
-      items = scatter(26, R, 0.1, seedOf);
-      place = (p) => ({ x: p.x, y: TOP_Y + 0.03, z: p.z, ry: p.rot, rz: (p.t - 0.5) * 0.4, s: p.s });
-      break;
-    }
-    default:
-      return g;
-  }
-  g.add(instanced(geo, mat, items, place));
-  return g;
 }
 
 /* ------------------------------------------------------------------ */
@@ -655,12 +507,17 @@ export function buildPhotoPizza(q, assets, look = 'base') {
     roughnessMap: aux,
     roughness: 1,
     metalness: 0,
-    clearcoat: low ? 0 : 0.35,
-    clearcoatRoughness: 0.35,
-    sheen: low ? 0 : 0.25,
+    // poco brillo blanco encima: el reflejo volvía rosada la salsa
+    clearcoat: low ? 0 : 0.12,
+    clearcoatRoughness: 0.4,
+    specularIntensity: 0.35,
+    // la luz del estudio es fuerte (pensada para la hamburguesa): la foto ya trae su luz,
+    // así que se oscurece un poco para que el rojo no se lave hacia rosado
+    color: new THREE.Color(0.8, 0.8, 0.8),
+    sheen: 0,
     sheenColor: new THREE.Color(1, 0.88, 0.7),
     sheenRoughness: 0.55,
-    envMapIntensity: 0.8,
+    envMapIntensity: 0.55,
     transparent: true,
   });
   const m = new THREE.Mesh(g, mat);
@@ -670,4 +527,20 @@ export function buildPhotoPizza(q, assets, look = 'base') {
   const group = new THREE.Group();
   group.add(m);
   return group;
+}
+
+/** Altura de la pizza de foto en (x, z): para apoyar los ingredientes sobre el relieve. */
+export function photoSurface(assets, look) {
+  const { meta, heights } = assets;
+  const hm = look === 'margarita' ? heights.margarita : heights.base;
+  const ro = meta.ro, NA = ro.length;
+  return (x, z) => {
+    let a = Math.atan2(z, x);
+    if (a < 0) a += Math.PI * 2;
+    const fa = (a / (Math.PI * 2)) * NA;
+    const k0 = Math.floor(fa) % NA, k1 = (k0 + 1) % NA;
+    const rEdge = ro[k0] + (ro[k1] - ro[k0]) * (fa - Math.floor(fa));
+    const rho = Math.min(1, Math.hypot(x, z) / (rEdge * PHOTO_R));
+    return 0.072 + polarSample(hm, rho, a) * meta.hmax * PHOTO_R;
+  };
 }

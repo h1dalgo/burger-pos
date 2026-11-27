@@ -17,8 +17,9 @@ import {
   THREE, mergeGeometries, Stage, fromTemplate, materialsOf, spring, sp, clamp01, smooth, lerp, mulberry32, fbm, spline, flatLine,
   joinProfiles, latheGeo, displace, paint, solidColor, col, mesh, food, canvasTex, TEXTURES,
 } from './core.js';
-import { buildPizzaPlate, buildPizzaDough, buildPhotoPizza, loadPizzaPhoto, buildTopping, pizzaToppings, buildSushiBoard, buildSushiRolls, sushiSpec, normText } from './PizzaSushi.js';
+import { buildPizzaPlate, buildPizzaDough, buildPhotoPizza, loadPizzaPhoto, photoSurface, TOP_Y, PIZZA_R, pizzaToppings, buildSushiBoard, buildSushiRolls, sushiSpec, normText } from './PizzaSushi.js';
 import { Atmosphere } from './atmosphere.js';
+import { buildDetailedTopping } from './PizzaToppings.js';
 
 /* ------------------------------------------------------------------ */
 /* Texturas propias                                                    */
@@ -990,8 +991,9 @@ class PizzaModel extends Model {
       const cur = this.drops.get(k);
       if (cur && !cur.leaving) continue;
       if (cur) dropObj(this, cur.holder);
-      const d = this._part('topping|' + k, () => buildTopping(k, q), start + i++ * 0.13, reduced ? { from: 0, dur: 0.01, squash: 0 } : { from: 1.0, dur: 0.32, squash: 0.9 });
-      if (photo) d.holder.children[0].position.y = 0.01; // la foto tiene la mozzarella en relieve
+      // se apoyan sobre el relieve real (con foto) o sobre el queso dibujado
+      const env = photo ? { surf: photoSurface(photo, look), R: 0.97 } : { surf: () => TOP_Y + 0.012, R: PIZZA_R - 0.16 };
+      const d = this._part('topping|' + k + '|' + look, () => buildDetailedTopping(k, q, env), start + i++ * 0.13, reduced ? { from: 0, dur: 0.01, squash: 0 } : { from: 1.0, dur: 0.32, squash: 0.9 });
       this.drops.set(k, d);
     }
   }
