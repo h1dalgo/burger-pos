@@ -1,5 +1,5 @@
-export type ItemVariant = 'drink' | 'starter' | 'dessert';
-export type ItemKind = 'bottle' | 'pitcher' | 'glass' | 'basket' | 'popsicle';
+export type ItemVariant = 'drink' | 'starter' | 'dessert' | 'pizza' | 'sushi';
+export type ItemKind = 'bottle' | 'pitcher' | 'glass' | 'basket' | 'popsicle' | 'pizza' | 'sushi';
 
 export interface ItemSceneOptions {
   /** 'dark' = vitrina oscura con el producto iluminado. */

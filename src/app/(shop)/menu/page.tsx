@@ -239,7 +239,7 @@ export default function MenuPage() {
     const marked = all.filter((s) => s.product.isFeatured);
     if (marked.length) return marked.slice(0, 6);
     const pick = (v: string) => all.filter((s) => s.variant === v);
-    return [...pick('burger').slice(0, 3), ...pick('drink').slice(0, 1), ...pick('dessert').slice(0, 1)];
+    return [...pick('burger').slice(0, 3), ...pick('pizza').slice(0, 1), ...pick('sushi').slice(0, 1), ...pick('drink').slice(0, 1), ...pick('dessert').slice(0, 1)];
   })();
 
   return (

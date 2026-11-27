@@ -27,13 +27,15 @@ export const SHOWCASE_BG = '#17130f';
 /** Se espera a que la hoja del detalle termine de abrirse antes de crear el 3D (apertura sin tirones). */
 const OPEN_DELAY_MS = 380;
 
-export type FoodVariant = 'burger' | 'drink' | 'starter' | 'dessert';
+export type FoodVariant = 'burger' | 'drink' | 'starter' | 'dessert' | 'pizza' | 'sushi';
 
 const norm = (s: string) =>
   s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
 
 export function variantFromCategory(name?: string): FoodVariant {
   const n = norm(name || '');
+  if (/pizza/.test(n)) return 'pizza';
+  if (/(sushi|roll|maki|japon)/.test(n)) return 'sushi';
   if (/(bebida|refresco|jugo|gaseosa|soda|batido|cafe)/.test(n)) return 'drink';
   if (/(entrada|combo|appetizer|compartir|alitas|snack)/.test(n)) return 'starter';
   if (/(postre|dessert|dulce|helado|paleta|brownie)/.test(n)) return 'dessert';
@@ -88,6 +90,18 @@ export default function ProductVisual3D({
 
   const choicesKey = choiceLabels.join('|');
   const choices = useMemo(() => (choicesKey ? choicesKey.split('|') : []), [choicesKey]);
+  // pizza y sushi: lo que se ve depende de los ingredientes que quedan + extras + opciones
+  const itemChoices = useMemo(
+    () =>
+      variant === 'pizza' || variant === 'sushi'
+        ? [
+            ...choices,
+            ...defaultIngredients.filter((d) => !removedIngredients.includes(d.name)).map((d) => d.name),
+            ...addedExtras.map((e) => e.name),
+          ]
+        : choices,
+    [variant, choices, defaultIngredients, removedIngredients, addedExtras]
+  );
   const burgerIngredients = useMemo(
     () => [
       ...choices,
@@ -181,7 +195,7 @@ export default function ProductVisual3D({
             variant={variant}
             name={productName}
             description={description}
-            choices={choices}
+            choices={itemChoices}
             height={height}
             onReady={onReady}
             onFail={() => setNo3d(true)}

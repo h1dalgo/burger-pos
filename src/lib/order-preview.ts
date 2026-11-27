@@ -6,7 +6,7 @@
  */
 import type { CartItem, Order } from '@/types';
 
-export type PreviewVariant = 'burger' | 'drink' | 'starter' | 'dessert';
+export type PreviewVariant = 'burger' | 'drink' | 'starter' | 'dessert' | 'pizza' | 'sushi';
 
 export interface OrderPreview {
   orderId: string;
@@ -30,6 +30,8 @@ const norm = (s: string) =>
 /** Adivina el tipo de producto por su nombre (si no hay vista previa guardada). */
 export function guessVariant(name: string): PreviewVariant {
   const n = norm(name);
+  if (/pizza|margarita|pepperoni|hawaiana|cuatro quesos/.test(n)) return 'pizza';
+  if (/sushi|roll|maki|nigiri/.test(n)) return 'sushi';
   if (/refresco|jarra|jugo|nestea|bebida|vaso|soda|gaseosa|limonada|batido|cafe|agua/.test(n)) return 'drink';
   if (/paleta|helado|postre|brownie|torta|dulce/.test(n)) return 'dessert';
   if (/alita|papas|combo|tequen|nugget|entrada|snack/.test(n)) return 'starter';

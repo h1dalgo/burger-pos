@@ -40,6 +40,73 @@ async function main() {
     if (filled.count > 0) console.log(`Image restored: ${name}`);
   }
 
+  // ── Pizzas y sushi (menú aprobado el 27-11-2026). Se crean UNA vez: si la
+  // categoría ya existe no se toca nada (lo que se edite o borre en el admin se respeta).
+  const MENU_ADDITIONS: {
+    name: string;
+    order: number;
+    products: { name: string; description: string; price: number; allergens: string[]; ingredients: string[] }[];
+    extras: { name: string; basePrice: number }[];
+  }[] = [
+    {
+      name: 'PIZZAS',
+      order: 3,
+      products: [
+        { name: 'Margarita', description: 'Salsa de tomate, mozzarella, albahaca fresca y aceite de oliva. 8 porciones', price: 9, allergens: ['Gluten', 'Lácteos'], ingredients: ['Salsa de Tomate', 'Mozzarella', 'Albahaca', 'Aceite de Oliva'] },
+        { name: 'Pepperoni', description: 'Salsa de tomate, mozzarella y pepperoni. 8 porciones', price: 11, allergens: ['Gluten', 'Lácteos'], ingredients: ['Salsa de Tomate', 'Mozzarella', 'Pepperoni'] },
+        { name: 'Cuatro Quesos', description: 'Mozzarella, parmesano, queso azul y queso blanco. 8 porciones', price: 12, allergens: ['Gluten', 'Lácteos'], ingredients: ['Mozzarella', 'Parmesano', 'Queso Azul', 'Queso Blanco'] },
+        { name: 'Hawaiana', description: 'Salsa de tomate, mozzarella, jamón y piña. 8 porciones', price: 11, allergens: ['Gluten', 'Lácteos'], ingredients: ['Salsa de Tomate', 'Mozzarella', 'Jamón', 'Piña'] },
+        { name: 'Criolla', description: 'Salsa de tomate, mozzarella, jamón, tocineta, maíz, cebolla y pimentón. 8 porciones', price: 12, allergens: ['Gluten', 'Lácteos'], ingredients: ['Salsa de Tomate', 'Mozzarella', 'Jamón', 'Tocineta', 'Maíz', 'Cebolla', 'Pimentón'] },
+      ],
+      extras: [
+        { name: 'Extra Queso', basePrice: 1.5 },
+        { name: 'Pepperoni', basePrice: 1.5 },
+        { name: 'Champiñones', basePrice: 1 },
+        { name: 'Tocineta', basePrice: 1.5 },
+        { name: 'Aceitunas', basePrice: 1 },
+      ],
+    },
+    {
+      name: 'SUSHI',
+      order: 4,
+      products: [
+        { name: 'California Roll', description: 'Kanikama, aguacate, pepino y ajonjolí. 10 piezas', price: 10, allergens: ['Pescado', 'Gluten', 'Huevo', 'Soya', 'Sésamo'], ingredients: ['Kanikama', 'Aguacate', 'Pepino', 'Ajonjolí'] },
+        { name: 'Philadelphia Roll', description: 'Salmón, queso crema y aguacate. 10 piezas', price: 12, allergens: ['Pescado', 'Lácteos', 'Soya'], ingredients: ['Salmón', 'Queso Crema', 'Aguacate'] },
+        { name: 'Ebi Tempura Roll', description: 'Langostino tempura, queso crema, aguacate y salsa anguila. 10 piezas', price: 13, allergens: ['Mariscos', 'Gluten', 'Lácteos', 'Huevo', 'Soya'], ingredients: ['Langostino Tempura', 'Queso Crema', 'Aguacate', 'Salsa Anguila'] },
+        { name: 'Spicy Tuna Roll', description: 'Atún, mayonesa picante, cebollín y ajonjolí. 10 piezas', price: 12, allergens: ['Pescado', 'Huevo', 'Soya', 'Sésamo', 'Picante'], ingredients: ['Atún', 'Mayonesa Picante', 'Cebollín', 'Ajonjolí'] },
+        { name: 'Roll Criollo', description: 'Plátano maduro frito, salmón, queso crema y tocineta. 10 piezas', price: 12, allergens: ['Pescado', 'Lácteos', 'Soya'], ingredients: ['Plátano Maduro', 'Salmón', 'Queso Crema', 'Tocineta'] },
+      ],
+      extras: [
+        { name: 'Queso Crema', basePrice: 1 },
+        { name: 'Salsa Anguila', basePrice: 0.5 },
+        { name: 'Topping Tempura', basePrice: 1 },
+      ],
+    },
+  ];
+  if ((await prisma.category.count()) > 0) {
+    for (const cat of MENU_ADDITIONS) {
+      if (await prisma.category.findFirst({ where: { name: cat.name } })) continue;
+      // pizzas y sushi van después de las hamburguesas; bebidas y postres al final
+      await prisma.category.updateMany({ where: { name: 'BEBIDAS', displayOrder: { lt: 5 } }, data: { displayOrder: 5 } });
+      await prisma.category.updateMany({ where: { name: 'POSTRES', displayOrder: { lt: 6 } }, data: { displayOrder: 6 } });
+      const c = await prisma.category.create({ data: { name: cat.name, displayOrder: cat.order } });
+      for (const p of cat.products) {
+        await prisma.product.create({
+          data: {
+            categoryId: c.id,
+            name: p.name,
+            description: p.description,
+            basePrice: p.price,
+            allergens: p.allergens,
+            defaultIngredients: { create: p.ingredients.map((name) => ({ name })) },
+            extraIngredients: { create: cat.extras.filter((e) => e.name !== p.name).map((e) => ({ name: e.name, basePrice: e.basePrice })) },
+          },
+        });
+      }
+      console.log(`Menu: added ${cat.name} (${cat.products.length} products)`);
+    }
+  }
+
   const existingCount = await prisma.category.count();
   if (existingCount > 0) {
     console.log(`Database already has ${existingCount} categories, skipping seed.`);

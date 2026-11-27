@@ -17,6 +17,7 @@ import {
   THREE, mergeGeometries, Stage, fromTemplate, materialsOf, spring, sp, clamp01, smooth, lerp, mulberry32, fbm, spline, flatLine,
   joinProfiles, latheGeo, displace, paint, solidColor, col, mesh, food, canvasTex, TEXTURES,
 } from './core.js';
+import { buildPizzaBase, buildTopping, pizzaToppings, buildSushiBoard, buildSushiRolls, sushiSpec, normText } from './PizzaSushi.js';
 
 /* ------------------------------------------------------------------ */
 /* Texturas propias                                                    */
@@ -144,6 +145,8 @@ const sauceTone = (name) => {
 /** Elige el modelo según la categoría y el nombre del producto. */
 export function itemKindFor(variant, name = '') {
   const n = norm(name);
+  if (variant === 'pizza') return 'pizza';
+  if (variant === 'sushi') return 'sushi';
   if (variant === 'starter') return 'basket';
   if (variant === 'dessert') return 'popsicle';
   if (/jarra|pitcher/.test(n)) return 'pitcher';
@@ -843,6 +846,135 @@ class PopsicleModel extends Model {
   }
 }
 
+/** Pizza: la base cambia con los quesos; cada ingrediente cae o se va con animación. */
+class PizzaModel extends Model {
+  constructor(stage) {
+    super(stage, 'pizza');
+    this.frameH = 0.55;
+    this.frameW = 1.62;
+    this.frameCenter = 0.2;
+    this.elev = 0.62; // se ve desde más arriba (es plana)
+    this.tops = new Map();
+    this.cheese = null;
+    this.first = true;
+  }
+
+  set({ name, description, choices }) {
+    const n = normText(name);
+    const cheese = /cuatro quesos|4 quesos|quattro/.test(n) ? 'quattro' : 'mozzarella';
+    if (cheese !== this.cheese) {
+      if (this.crust) {
+        this.group.remove(this.crust);
+        const old = materialsOf(this.crust);
+        this.mats = this.mats.filter((m) => !old.includes(m));
+        old.forEach((m) => m.dispose());
+      }
+      this.crust = this.add('pizzabase|' + cheese, () => buildPizzaBase(this.stage.q, cheese));
+      this.cheese = cheese;
+    }
+    // con lista de ingredientes manda la lista (quitar "Pepperoni" lo quita aunque el nombre lo diga)
+    const texts = choices.length ? choices : [name, description];
+    const want = new Set(pizzaToppings(texts));
+    if (cheese === 'quattro') want.add('quesoazul').add('parmesano');
+    const now = this.stage._time;
+    for (const [k, t] of this.tops) if (!want.has(k) && !t.leaving) t.leaving = now;
+    let i = 0;
+    for (const k of want) {
+      const cur = this.tops.get(k);
+      if (cur && !cur.leaving) continue;
+      if (cur) this._drop(k, cur);
+      const holder = new THREE.Group();
+      this.group.add(holder);
+      const obj = this.add('topping|' + k, () => buildTopping(k, this.stage.q), holder);
+      const mats = materialsOf(obj);
+      const animate = !this.first && !this.stage.reduced;
+      if (animate) mats.forEach((m) => (m.opacity = 0));
+      this.tops.set(k, { holder, mats, y: sp(animate ? 0.9 : 0), s: sp(animate ? 0.6 : 1), t0: now + (animate ? i++ * 0.09 : 0), leaving: 0, animate });
+    }
+    this.first = false;
+  }
+
+  _drop(k, t) {
+    this.group.remove(t.holder);
+    this.mats = this.mats.filter((m) => !t.mats.includes(m));
+    t.mats.forEach((m) => m.dispose());
+    this.tops.delete(k);
+  }
+
+  update(dt, now) {
+    let a = Model.prototype.base.call(this, dt, now);
+    if (!this.group.visible) return a;
+    for (const [k, t] of this.tops) {
+      if (t.leaving) {
+        const life = now - t.leaving;
+        t.holder.position.y = life * 0.9;
+        t.mats.forEach((m) => (m.opacity = clamp01(1 - life / 0.35)));
+        if (life > 0.4) this._drop(k, t);
+        a = true;
+        continue;
+      }
+      if (!t.animate || now < t.t0) {
+        if (t.animate) a = true;
+        continue;
+      }
+      a = spring(t.y, 0, 170, 15, dt) || a;
+      a = spring(t.s, 1, 220, 14, dt) || a;
+      t.holder.position.y = t.y.x;
+      t.holder.scale.set(t.s.x, 1, t.s.x);
+      const o = clamp01((now - t.t0) / 0.2) * this.op;
+      if (t.mats[0] && Math.abs(t.mats[0].opacity - o) > 1e-3) {
+        t.mats.forEach((m) => (m.opacity = o));
+        a = true;
+      }
+      if (o >= this.op && Math.abs(t.y.x) < 1e-3 && Math.abs(t.s.x - 1) < 1e-3) t.animate = false;
+    }
+    return a;
+  }
+}
+
+/** Sushi: pizarra fija; al cambiar de roll las piezas saltan y aparecen las nuevas. */
+class SushiModel extends Model {
+  constructor(stage) {
+    super(stage, 'sushi');
+    this.add('sushiboard', () => buildSushiBoard(stage.q));
+    this.frameH = 0.55;
+    this.frameW = 1.5;
+    this.frameCenter = 0.25;
+    this.elev = 0.55;
+    this.key = null;
+    this.swap = sp(1);
+  }
+
+  set({ name, description, choices }) {
+    const spec = sushiSpec(name, choices.length ? choices : [description]);
+    if (spec.key === this.key) return;
+    const first = this.key == null;
+    this.key = spec.key;
+    if (this.rolls) {
+      this.group.remove(this.rolls);
+      const old = materialsOf(this.rolls);
+      this.mats = this.mats.filter((m) => !old.includes(m));
+      old.forEach((m) => m.dispose());
+    }
+    this.rolls = this.add('sushi|' + spec.key, () => buildSushiRolls(this.stage.q, spec));
+    if (!first && !this.stage.reduced) {
+      this.swap.x = 0.55;
+      this.swap.v = 0;
+    }
+  }
+
+  update(dt, now) {
+    let a = Model.prototype.base.call(this, dt, now);
+    if (!this.group.visible) return a;
+    a = spring(this.swap, 1, 240, 13, dt) || a;
+    if (this.rolls) {
+      this.rolls.scale.setScalar(this.swap.x);
+      this.rolls.position.y = (1 - this.swap.x) * 0.6;
+    }
+    return a;
+  }
+}
+
 /* ------------------------------------------------------------------ */
 /* Escena                                                              */
 /* ------------------------------------------------------------------ */
@@ -862,11 +994,34 @@ export class ItemScene extends Stage {
     if (!this.model || this.model.kind !== kind) {
       this.model?.dispose();
       this.model =
-        kind === 'basket' ? new BasketModel(this) : kind === 'popsicle' ? new PopsicleModel(this) : new DrinkModel(this, kind);
+        kind === 'basket'
+          ? new BasketModel(this)
+          : kind === 'popsicle'
+            ? new PopsicleModel(this)
+            : kind === 'pizza'
+              ? new PizzaModel(this)
+              : kind === 'sushi'
+                ? new SushiModel(this)
+                : new DrinkModel(this, kind);
+      this._setElevation(this.model.elev);
     }
     this.model.set({ name, description, choices });
     this._dirty = true;
     this._kick();
+  }
+
+  /** Altura de la cámara según el producto (pizza y sushi son planos: se ven desde más arriba). */
+  _setElevation(elev) {
+    const c = this.controls;
+    if (!c) return;
+    if (this._baseElev == null) this._baseElev = Math.PI / 2 - new THREE.Spherical().setFromVector3(this.camera.position.clone().sub(c.target)).phi;
+    const want = elev ?? this._baseElev;
+    const off = this.camera.position.clone().sub(c.target);
+    const s = new THREE.Spherical().setFromVector3(off);
+    s.phi = Math.PI / 2 - want;
+    off.setFromSpherical(s);
+    this.camera.position.copy(c.target).add(off);
+    c.update();
   }
 
   _update(dt, now) {
