@@ -17,7 +17,8 @@ import {
   THREE, mergeGeometries, Stage, fromTemplate, materialsOf, spring, sp, clamp01, smooth, lerp, mulberry32, fbm, spline, flatLine,
   joinProfiles, latheGeo, displace, paint, solidColor, col, mesh, food, canvasTex, TEXTURES,
 } from './core.js';
-import { buildPizzaBase, buildTopping, pizzaToppings, buildSushiBoard, buildSushiRolls, sushiSpec, normText } from './PizzaSushi.js';
+import { buildPizzaPlate, buildPizzaDough, buildTopping, pizzaToppings, buildSushiBoard, buildSushiRolls, sushiSpec, normText } from './PizzaSushi.js';
+import { Atmosphere } from './atmosphere.js';
 
 /* ------------------------------------------------------------------ */
 /* Texturas propias                                                    */
@@ -846,103 +847,162 @@ class PopsicleModel extends Model {
   }
 }
 
-/** Pizza: la base cambia con los quesos; cada ingrediente cae o se va con animación. */
+/**
+ * Una parte que cae sobre el plato como en la hamburguesa: acelera (caída libre),
+ * aterriza con un pequeño aplastón y se asienta. También sirve para irse.
+ */
+class Drop {
+  constructor(holder, mats, t0, { from = 1.4, dur = 0.4, squash = 1.4 } = {}) {
+    Object.assign(this, { holder, mats, t0, from, dur, squash });
+    this.s = sp(1);
+    this.landed = false;
+    this.leaving = 0;
+    this.done = false;
+    holder.visible = false;
+  }
+
+  /** @returns {boolean} si sigue moviéndose */
+  update(now, dt, op) {
+    if (this.leaving) {
+      const life = now - this.leaving;
+      this.holder.position.y = life * 0.9;
+      const o = clamp01(1 - life / 0.35) * op;
+      this.mats.forEach((m) => (m.opacity = o));
+      return true;
+    }
+    if (now < this.t0) {
+      this.holder.visible = false;
+      return true;
+    }
+    this.holder.visible = true;
+    const t = clamp01((now - this.t0) / this.dur);
+    this.holder.position.y = this.from * (1 - t * t);
+    if (t >= 1 && !this.landed) {
+      this.landed = true;
+      this.s.v -= this.squash;
+    }
+    const moving = spring(this.s, 1, 300, 14, dt);
+    const sq = this.s.x;
+    this.holder.scale.set(1 + (1 - sq) * 0.5, sq, 1 + (1 - sq) * 0.5);
+    const o = clamp01((now - this.t0) / 0.12) * op;
+    if (this.mats[0] && Math.abs(this.mats[0].opacity - o) > 1e-3) this.mats.forEach((m) => (m.opacity = o));
+    this.done = this.landed && !moving && o >= op - 1e-3;
+    return !this.done;
+  }
+}
+
+/** Saca un objeto del modelo y libera sus materiales. */
+function dropObj(model, obj) {
+  if (!obj) return;
+  obj.parent?.remove(obj);
+  const old = materialsOf(obj);
+  model.mats = model.mats.filter((m) => !old.includes(m));
+  old.forEach((m) => m.dispose());
+}
+
+/**
+ * Pizza, con el armado de la hamburguesa: plato → cae la masa con el queso y
+ * aterriza con un aplastón → los ingredientes caen uno tras otro. Después, al
+ * quitar o agregar, cada ingrediente se va o cae. Vapor cuando ya está armada.
+ */
 class PizzaModel extends Model {
   constructor(stage) {
     super(stage, 'pizza');
     this.frameH = 0.55;
-    this.frameW = 1.62;
+    this.frameW = 1.72;
     this.frameCenter = 0.2;
     this.elev = 0.62; // se ve desde más arriba (es plana)
-    this.tops = new Map();
+    this.plate = this.add('pizzaplate', () => buildPizzaPlate(stage.q));
+    this.drops = new Map(); // 'dough' y cada ingrediente
     this.cheese = null;
-    this.first = true;
+    this.intro = !stage.reduced;
+  }
+
+  /** ¿Ya terminó de armarse? (para el vapor) */
+  get settled() {
+    return this.group.visible && [...this.drops.values()].every((d) => d.done && !d.leaving);
+  }
+
+  _part(key, build, t0, opts) {
+    const holder = new THREE.Group();
+    this.group.add(holder);
+    const obj = this.add(key, build, holder);
+    const d = new Drop(holder, materialsOf(obj), t0, opts);
+    d.mats.forEach((m) => (m.opacity = 0));
+    return d;
   }
 
   set({ name, description, choices }) {
+    const now = this.stage._time;
+    const q = this.stage.q;
     const n = normText(name);
     const cheese = /cuatro quesos|4 quesos|quattro/.test(n) ? 'quattro' : 'mozzarella';
+    const first = this.cheese == null;
+    const reduced = this.stage.reduced;
+    // la masa: cae primero (también cuando cambia el tipo de queso)
     if (cheese !== this.cheese) {
-      if (this.crust) {
-        this.group.remove(this.crust);
-        const old = materialsOf(this.crust);
-        this.mats = this.mats.filter((m) => !old.includes(m));
-        old.forEach((m) => m.dispose());
-      }
-      this.crust = this.add('pizzabase|' + cheese, () => buildPizzaBase(this.stage.q, cheese));
+      const old = this.drops.get('dough');
+      if (old) dropObj(this, old.holder);
+      this.drops.set('dough', this._part('pizzadough|' + cheese, () => buildPizzaDough(q, cheese), first ? this.t0 + 0.1 : now, reduced ? { from: 0, dur: 0.01, squash: 0 } : { from: 1.5, dur: 0.42, squash: 1.6 }));
       this.cheese = cheese;
     }
     // con lista de ingredientes manda la lista (quitar "Pepperoni" lo quita aunque el nombre lo diga)
-    const texts = choices.length ? choices : [name, description];
-    const want = new Set(pizzaToppings(texts));
+    const want = new Set(pizzaToppings(choices.length ? choices : [name, description]));
     if (cheese === 'quattro') want.add('quesoazul').add('parmesano');
-    const now = this.stage._time;
-    for (const [k, t] of this.tops) if (!want.has(k) && !t.leaving) t.leaving = now;
+    for (const [k, d] of this.drops) if (k !== 'dough' && !want.has(k) && !d.leaving) d.leaving = now;
+    // los ingredientes caen después de la masa, uno tras otro
+    const doughLands = this.drops.get('dough').t0 + this.drops.get('dough').dur;
+    let start = Math.max(now, first ? doughLands + 0.05 : now);
     let i = 0;
     for (const k of want) {
-      const cur = this.tops.get(k);
+      const cur = this.drops.get(k);
       if (cur && !cur.leaving) continue;
-      if (cur) this._drop(k, cur);
-      const holder = new THREE.Group();
-      this.group.add(holder);
-      const obj = this.add('topping|' + k, () => buildTopping(k, this.stage.q), holder);
-      const mats = materialsOf(obj);
-      const animate = !this.first && !this.stage.reduced;
-      if (animate) mats.forEach((m) => (m.opacity = 0));
-      this.tops.set(k, { holder, mats, y: sp(animate ? 0.9 : 0), s: sp(animate ? 0.6 : 1), t0: now + (animate ? i++ * 0.09 : 0), leaving: 0, animate });
+      if (cur) dropObj(this, cur.holder);
+      this.drops.set(k, this._part('topping|' + k, () => buildTopping(k, q), start + i++ * 0.13, reduced ? { from: 0, dur: 0.01, squash: 0 } : { from: 1.0, dur: 0.32, squash: 0.9 }));
     }
-    this.first = false;
-  }
-
-  _drop(k, t) {
-    this.group.remove(t.holder);
-    this.mats = this.mats.filter((m) => !t.mats.includes(m));
-    t.mats.forEach((m) => m.dispose());
-    this.tops.delete(k);
   }
 
   update(dt, now) {
-    let a = Model.prototype.base.call(this, dt, now);
-    if (!this.group.visible) return a;
-    for (const [k, t] of this.tops) {
-      if (t.leaving) {
-        const life = now - t.leaving;
-        t.holder.position.y = life * 0.9;
-        t.mats.forEach((m) => (m.opacity = clamp01(1 - life / 0.35)));
-        if (life > 0.4) this._drop(k, t);
-        a = true;
-        continue;
+    // el plato aparece suave; las partes caen por su cuenta
+    let a = false;
+    if (now < this.t0) return true;
+    this.group.visible = true;
+    const plateMats = materialsOf(this.plate);
+    const po = clamp01((now - this.t0) / 0.25);
+    if (plateMats[0] && plateMats[0].opacity !== po) {
+      plateMats.forEach((m) => (m.opacity = po));
+      a = true;
+    }
+    this.op = 1;
+    for (const [k, d] of this.drops) {
+      a = d.update(now, dt, 1) || a;
+      if (d.leaving && now - d.leaving > 0.4) {
+        dropObj(this, d.holder);
+        this.drops.delete(k);
       }
-      if (!t.animate || now < t.t0) {
-        if (t.animate) a = true;
-        continue;
-      }
-      a = spring(t.y, 0, 170, 15, dt) || a;
-      a = spring(t.s, 1, 220, 14, dt) || a;
-      t.holder.position.y = t.y.x;
-      t.holder.scale.set(t.s.x, 1, t.s.x);
-      const o = clamp01((now - t.t0) / 0.2) * this.op;
-      if (t.mats[0] && Math.abs(t.mats[0].opacity - o) > 1e-3) {
-        t.mats.forEach((m) => (m.opacity = o));
-        a = true;
-      }
-      if (o >= this.op && Math.abs(t.y.x) < 1e-3 && Math.abs(t.s.x - 1) < 1e-3) t.animate = false;
     }
     return a;
   }
 }
 
-/** Sushi: pizarra fija; al cambiar de roll las piezas saltan y aparecen las nuevas. */
+/**
+ * Sushi, con el armado de la hamburguesa: la pizarra se asienta, las 6 piezas
+ * caen una tras otra (con aplastón) y al final se dibuja la salsa. Al cambiar
+ * de roll, las piezas nuevas vuelven a caer.
+ */
 class SushiModel extends Model {
   constructor(stage) {
     super(stage, 'sushi');
-    this.add('sushiboard', () => buildSushiBoard(stage.q));
+    this.board = this.add('sushiboard', () => buildSushiBoard(stage.q));
     this.frameH = 0.55;
     this.frameW = 1.5;
     this.frameCenter = 0.25;
     this.elev = 0.55;
     this.key = null;
-    this.swap = sp(1);
+  }
+
+  get settled() {
+    return !this.anim;
   }
 
   set({ name, description, choices }) {
@@ -950,30 +1010,102 @@ class SushiModel extends Model {
     if (spec.key === this.key) return;
     const first = this.key == null;
     this.key = spec.key;
-    if (this.rolls) {
-      this.group.remove(this.rolls);
-      const old = materialsOf(this.rolls);
-      this.mats = this.mats.filter((m) => !old.includes(m));
-      old.forEach((m) => m.dispose());
-    }
+    dropObj(this, this.rolls);
     this.rolls = this.add('sushi|' + spec.key, () => buildSushiRolls(this.stage.q, spec));
-    if (!first && !this.stage.reduced) {
-      this.swap.x = 0.55;
-      this.swap.v = 0;
+    // posición final de cada instancia (para hacerlas caer pieza por pieza)
+    const parts = [];
+    this.rolls.traverse((o) => {
+      if (!o.isInstancedMesh) return;
+      // las piezas empiezan escondidas y suben: sin este ajuste el motor calcula su zona
+      // una sola vez (abajo, escondidas) y nunca las dibuja
+      o.frustumCulled = false;
+      const base = [];
+      for (let i = 0; i < o.count; i++) {
+        o.getMatrixAt(i, _m4);
+        const pos = new THREE.Vector3(), quat = new THREE.Quaternion(), scl = new THREE.Vector3();
+        _m4.decompose(pos, quat, scl);
+        base.push({ pos, quat, scl, piece: o.userData.pieceOf?.[i] ?? 0 });
+      }
+      parts.push({ mesh: o, base });
+    });
+    this.eel = this.rolls.getObjectByName('eel') || null;
+    const t0 = (first ? this.t0 + 0.3 : this.stage._time) + 0.02;
+    const reduced = this.stage.reduced;
+    this.anim = reduced
+      ? null
+      : {
+          parts,
+          pieces: Array.from({ length: 6 }, (_, i) => ({ t0: t0 + i * 0.11, s: sp(1), landed: false })),
+          eelT0: t0 + 6 * 0.11 + 0.25,
+        };
+    if (this.eel) this.eel.visible = reduced;
+    if (!reduced) this._place(this.stage._time, 0);
+  }
+
+  _place(now, dt) {
+    const A = this.anim;
+    let moving = false;
+    const FROM = 1.3, DUR = 0.34;
+    const off = A.pieces.map((p) => {
+      if (now < p.t0) return { y: 99, sq: 1 };
+      const t = clamp01((now - p.t0) / DUR);
+      if (t >= 1 && !p.landed) {
+        p.landed = true;
+        p.s.v -= 1.3;
+      }
+      if (spring(p.s, 1, 320, 14, dt) || t < 1) moving = true;
+      return { y: FROM * (1 - t * t), sq: p.s.x };
+    });
+    for (const { mesh, base } of A.parts) {
+      for (let i = 0; i < base.length; i++) {
+        const b = base[i];
+        const o = off[b.piece] || off[0];
+        // aplastón: se ensancha y baja un poco desde la base de la pieza
+        _p3.set(b.pos.x, o.y > 50 ? -50 : b.pos.y * o.sq + o.y, b.pos.z);
+        _s3.set(b.scl.x * (1 + (1 - o.sq) * 0.5), b.scl.y * o.sq, b.scl.z * (1 + (1 - o.sq) * 0.5));
+        _m4.compose(_p3, b.quat, _s3);
+        mesh.setMatrixAt(i, _m4);
+      }
+      mesh.instanceMatrix.needsUpdate = true;
     }
+    // la salsa se dibuja de izquierda a derecha cuando todas las piezas aterrizaron
+    if (this.eel) {
+      const e = clamp01((now - A.eelT0) / 0.6);
+      this.eel.visible = e > 0;
+      const k = 1 - Math.pow(1 - e, 3);
+      this.eel.scale.x = Math.max(0.001, k);
+      this.eel.position.x = -1.15 * (1 - k);
+      if (e < 1) moving = true;
+    }
+    if (!moving && now > A.eelT0 + 0.6) this.anim = null;
+    return moving;
   }
 
   update(dt, now) {
-    let a = Model.prototype.base.call(this, dt, now);
-    if (!this.group.visible) return a;
-    a = spring(this.swap, 1, 240, 13, dt) || a;
-    if (this.rolls) {
-      this.rolls.scale.setScalar(this.swap.x);
-      this.rolls.position.y = (1 - this.swap.x) * 0.6;
+    if (now < this.t0) return true;
+    this.group.visible = true;
+    let a = false;
+    // la pizarra baja un poquito y aparece
+    const o = clamp01((now - this.t0) / 0.25);
+    const bm = materialsOf(this.board);
+    if (bm[0] && bm[0].opacity !== o) {
+      bm.forEach((m) => (m.opacity = o));
+      this.board.position.y = (1 - o) * 0.15;
+      a = true;
     }
+    if (this.rolls) {
+      const rm = materialsOf(this.rolls);
+      const ro = clamp01((now - this.t0) / 0.2);
+      if (rm[0] && rm[0].opacity !== ro) rm.forEach((m) => (m.opacity = ro));
+    }
+    if (this.anim) a = this._place(now, dt) || a;
     return a;
   }
 }
+
+const _m4 = new THREE.Matrix4();
+const _p3 = new THREE.Vector3();
+const _s3 = new THREE.Vector3();
 
 /* ------------------------------------------------------------------ */
 /* Escena                                                              */
@@ -1026,7 +1158,15 @@ export class ItemScene extends Stage {
 
   _update(dt, now) {
     if (!this.model) return { visible: false };
-    const active = this.model.update(dt, now);
+    let active = this.model.update(dt, now);
+    // pizza recién hecha: vapor (equipos medios y altos) y brasas (altos), igual que la hamburguesa
+    const wantsAtmos = this.model.kind === 'pizza' && this._dark && !this.reduced && this.q.name !== 'low';
+    if (wantsAtmos && !this._atmos) this._atmos = new Atmosphere(this.scene, this.q, { emberRing: [1.9, 2.5] });
+    if (!wantsAtmos && this._atmos) {
+      this._atmos.dispose(this.scene);
+      this._atmos = null;
+    }
+    if (this._atmos) active = this._atmos.update(dt, !!this.model.settled, { top: 0.32, spread: 0.95 }) || active;
     this.frameH = this.model.frameH;
     this.frameW = this.model.frameW;
     this.frameCenter = this.model.frameCenter;

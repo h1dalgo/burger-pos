@@ -81,7 +81,9 @@ const _c = new THREE.Color();
 function instanced(geo, mat, items, place) {
   if (!geo.attributes.color) solidColor(geo, WHITE);
   const im = new THREE.InstancedMesh(geo, mat, items.length);
+  const pieceOf = new Int16Array(items.length);
   items.forEach((it, i) => {
+    pieceOf[i] = it.pi ?? i;
     const t = place(it, i);
     _e.set(t.rx || 0, t.ry || 0, t.rz || 0);
     _q.setFromEuler(_e);
@@ -93,6 +95,7 @@ function instanced(geo, mat, items, place) {
   });
   im.castShadow = true;
   im.receiveShadow = true;
+  im.userData.pieceOf = pieceOf;
   return im;
 }
 
@@ -103,17 +106,28 @@ function instanced(geo, mat, items, place) {
 export const PIZZA_R = 1.08; // radio del queso
 const TOP_Y = 0.135; // altura de la superficie del queso (sobre la tabla)
 
-/** Tabla redonda de madera + borde + queso (una sola vez por calidad). */
-export function buildPizzaBase(q, cheese = 'mozzarella') {
+/** Plato de cerámica oscura esmaltada (mismo estilo que el de la hamburguesa, más amplio). */
+export function buildPizzaPlate(q) {
+  const FLOOR = 0.07;
+  const profile = [
+    [0, FLOOR], [1.38, FLOOR], [1.48, FLOOR + 0.02], [1.6, FLOOR + 0.07], [1.7, FLOOR + 0.12],
+    [1.77, FLOOR + 0.14], [1.8, FLOOR + 0.125], [1.78, FLOOR + 0.085], [1.68, 0.06], [1.45, 0.02], [1.2, 0.0], [0.02, 0.0],
+  ].map(([x, y]) => new THREE.Vector2(x, y));
+  const geo = new THREE.LatheGeometry(profile, Math.round(q.seg * 0.9));
+  geo.computeVertexNormals();
+  const glaze = food({ color: '#3a332d', bump: 'fine', bumpScale: 0.12, roughness: 0.2, clearcoat: 0.9, clearcoatRoughness: 0.12, env: 0.9 });
+  const plate = mesh(geo, glaze);
+  plate.castShadow = false; // su propia sombra sobre sí mismo dejaba manchas
+  plate.receiveShadow = true;
+  const g = new THREE.Group();
+  g.add(plate);
+  return g;
+}
+
+/** Masa: borde inflado con manchas de horno + queso derretido (una sola vez por tipo de queso). */
+export function buildPizzaDough(q, cheese = 'mozzarella') {
   const group = new THREE.Group();
   const seg = Math.round(q.seg * 1.1);
-
-  // tabla de madera
-  const board = new THREE.CylinderGeometry(1.42, 1.45, 0.07, seg, 1);
-  board.translate(0, 0.035, 0);
-  const top = food({ map: 'woodboard', bumpScale: 0.6, roughness: 0.7, clearcoat: 0.15, clearcoatRoughness: 0.6 });
-  const side = food({ color: '#6e4524', roughness: 0.72, clearcoat: 0.1 });
-  group.add(mesh(board, [side, top, side]));
 
   // borde de la masa: perfil girado, inflado e irregular
   const prof = joinProfiles(
@@ -444,17 +458,20 @@ export function buildSushiRolls(q, spec) {
     solidColor(seed, WHITE);
     const r = mulberry32(17);
     const seeds = [];
-    for (const p of PIECES)
+    PIECES.forEach((p, pi) => {
       for (let k = 0; k < Math.round(q.sesame * 0.5); k++) {
         const a = r() * Math.PI * 2, y = r() * PIECE_H;
-        seeds.push({ x: p.x + Math.cos(a) * (PIECE_R + 0.004), y: SLATE_Y + y, z: p.z + 0.12 + Math.sin(a) * (PIECE_R + 0.004), ry: -a, color: r() > 0.25 ? '#f3ead2' : '#2a2420' });
+        seeds.push({ pi, x: p.x + Math.cos(a) * (PIECE_R + 0.004), y: SLATE_Y + y, z: p.z + 0.12 + Math.sin(a) * (PIECE_R + 0.004), ry: -a, color: r() > 0.25 ? '#f3ead2' : '#2a2420' });
       }
+    });
     group.add(instanced(seed, food({ bumpScale: 0, roughness: 0.4, clearcoat: 0.5 }), seeds, (s) => ({ x: s.x, y: s.y, z: s.z, ry: s.ry, rz: Math.PI / 2, color: s.color })));
   } else if (spec.top === 'salmon') {
-    const sl = new RoundedBoxGeometry(0.56, 0.04, 0.3, 2, 0.015);
-    displace(sl, (v) => -Math.abs(v.x) * Math.abs(v.x) * 0.5);
-    paint(sl, (v, n, c) => c.set('#f08a5d').lerp(_c.set('#ffe1d0'), Math.pow(Math.abs(Math.sin((v.x * 0.7 + v.z) * 30)), 10) * 0.8));
-    group.add(instanced(sl, food({ bumpScale: 0.3, roughness: 0.22, clearcoat: 0.9, clearcoatRoughness: 0.15 }), PIECES, (p) => ({ x: p.x, y: SLATE_Y + PIECE_H + 0.025, z: p.z + 0.12, ry: 0.4, rz: 0.06 })));
+    // lámina de salmón: ovalada y fina, con las vetas blancas, que cae por los lados de la pieza
+    const sl = new THREE.CylinderGeometry(0.27, 0.27, 0.03, 28, 1);
+    sl.scale(1, 1, 0.62);
+    displace(sl, (v) => -(Math.max(0, Math.abs(v.x) - 0.12) ** 2) * 3.2);
+    paint(sl, (v, n, c) => c.set('#f27f52').lerp(_c.set('#ffe4d6'), Math.pow(Math.abs(Math.sin((v.x * 0.6 + v.z) * 34)), 12) * 0.75).lerp(_c.set('#d8623a'), n.y < 0.3 ? 0.35 : 0));
+    group.add(instanced(sl, food({ bumpScale: 0.25, roughness: 0.22, clearcoat: 0.9, clearcoatRoughness: 0.15, sheen: 0.3, sheenColor: '#ffd2bd' }), PIECES, (p) => ({ x: p.x, y: SLATE_Y + PIECE_H + 0.02, z: p.z + 0.12, ry: 0.4 + p.ry * 0.15 })));
   } else if (spec.top === 'spicy') {
     const dot = new THREE.SphereGeometry(0.09, 16, 10);
     dot.scale(1, 0.45, 1);
@@ -465,11 +482,12 @@ export function buildSushiRolls(q, spec) {
     solidColor(flake, WHITE);
     const r = mulberry32(29);
     const fl = [];
-    for (const p of PIECES)
+    PIECES.forEach((p, pi) => {
       for (let k = 0; k < 16; k++) {
         const a = r() * Math.PI * 2, d = Math.sqrt(r()) * 0.2;
-        fl.push({ x: p.x + Math.cos(a) * d, z: p.z + 0.12 + Math.sin(a) * d, s: 0.6 + r() * 0.8, ry: r() * 6, color: r() > 0.5 ? '#e8b04a' : '#d4902e' });
+        fl.push({ pi, x: p.x + Math.cos(a) * d, z: p.z + 0.12 + Math.sin(a) * d, s: 0.6 + r() * 0.8, ry: r() * 6, color: r() > 0.5 ? '#e8b04a' : '#d4902e' });
       }
+    });
     group.add(instanced(flake, food({ bump: 'crust', bumpScale: 1.4, roughness: 0.55, clearcoat: 0.3 }), fl, (f) => ({ x: f.x, y: SLATE_Y + PIECE_H + 0.03, z: f.z, ry: f.ry, rx: f.ry, s: f.s, color: f.color })));
   } else if (spec.top === 'platano') {
     const sl = new THREE.CylinderGeometry(0.17, 0.17, 0.035, 18, 1);
@@ -482,7 +500,9 @@ export function buildSushiRolls(q, spec) {
     solidColor(bit, WHITE);
     const r = mulberry32(43);
     const bits = [];
-    for (const p of PIECES) for (let k = 0; k < 7; k++) bits.push({ x: p.x + (r() - 0.5) * 0.18, z: p.z + 0.12 + (r() - 0.5) * 0.18, rx: r() * 3, rz: r() * 3 });
+    PIECES.forEach((p, pi) => {
+      for (let k = 0; k < 7; k++) bits.push({ pi, x: p.x + (r() - 0.5) * 0.18, z: p.z + 0.12 + (r() - 0.5) * 0.18, rx: r() * 3, rz: r() * 3 });
+    });
     group.add(instanced(bit, food({ color: '#4d9a2c', bumpScale: 0, roughness: 0.35, clearcoat: 0.6 }), bits, (b) => ({ x: b.x, y: SLATE_Y + PIECE_H + (spec.top === 'spicy' ? 0.05 : 0.02), z: b.z, rx: b.rx, rz: b.rz })));
   }
   // salsa anguila en zigzag sobre las piezas
@@ -495,7 +515,9 @@ export function buildSushiRolls(q, spec) {
     }
     const tube = new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), Math.round(140 * q.detail + 40), 0.014, 6, false);
     solidColor(tube, WHITE);
-    group.add(mesh(tube, food({ color: '#4a2611', bumpScale: 0, roughness: 0.12, clearcoat: 1, clearcoatRoughness: 0.05 })));
+    const eel = mesh(tube, food({ color: '#4a2611', bumpScale: 0, roughness: 0.12, clearcoat: 1, clearcoatRoughness: 0.05 }));
+    eel.name = 'eel';
+    group.add(eel);
   }
   return group;
 }
