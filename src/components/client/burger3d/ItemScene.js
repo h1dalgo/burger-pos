@@ -1001,6 +1001,11 @@ class PizzaModel extends Model {
   update(dt, now) {
     // el plato aparece suave; las partes caen por su cuenta
     let a = false;
+    // mientras llega la foto no se muestra nada (ni el plato vacío): al llegar se avisa y arranca
+    if (!this.assets && !this.failed) {
+      this.t0 = now + 0.05;
+      return false;
+    }
     if (now < this.t0) return true;
     this.group.visible = true;
     const plateMats = materialsOf(this.plate);

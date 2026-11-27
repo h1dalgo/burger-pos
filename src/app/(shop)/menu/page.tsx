@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { preloadPizzaPhotos } from '@/lib/preload-food';
 import { preload } from 'react-dom';
 import { useRouter } from 'next/navigation';
 import { AnimatePresence } from 'framer-motion';
@@ -104,6 +105,13 @@ export default function MenuPage() {
     void loadBusiness();
   }, [loadBusiness]);
   const tableCount = business && business.tableCount > 0 ? business.tableCount : 10;
+
+  // si hay pizzas en el menú, sus fotos 3D se bajan en un rato libre (al abrir una, ya están)
+  useEffect(() => {
+    if (!categories.some((c) => variantFromCategory(c.name) === 'pizza')) return;
+    const t = setTimeout(preloadPizzaPhotos, 1500);
+    return () => clearTimeout(t);
+  }, [categories]);
 
   // "Repetir pedido" desde el seguimiento abre el carrito al llegar
   useEffect(() => {
