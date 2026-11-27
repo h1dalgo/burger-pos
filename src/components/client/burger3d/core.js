@@ -566,9 +566,9 @@ export function food(p = {}) {
 }
 
 export const TIERS = {
-  high: { name: 'high', dpr: 2, minDpr: 1, seg: 112, detail: 1, sesame: 64, shadow: 2048, aa: true },
-  medium: { name: 'medium', dpr: 1.35, minDpr: 0.85, seg: 72, detail: 0.7, sesame: 44, shadow: 1024, aa: true },
-  low: { name: 'low', dpr: 1.1, minDpr: 0.7, seg: 48, detail: 0.5, sesame: 30, shadow: 0, aa: true },
+  high: { name: 'high', dpr: 2, minDpr: 1.25, seg: 112, detail: 1, sesame: 64, shadow: 2048, aa: true },
+  medium: { name: 'medium', dpr: 1.35, minDpr: 1.1, seg: 72, detail: 0.7, sesame: 44, shadow: 1024, aa: true },
+  low: { name: 'low', dpr: 1.1, minDpr: 0.9, seg: 48, detail: 0.5, sesame: 30, shadow: 0, aa: true },
 };
 
 export function detectTier() {

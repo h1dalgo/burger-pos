@@ -17,7 +17,7 @@ import {
   THREE, mergeGeometries, Stage, fromTemplate, materialsOf, spring, sp, clamp01, smooth, lerp, mulberry32, fbm, spline, flatLine,
   joinProfiles, latheGeo, displace, paint, solidColor, col, mesh, food, canvasTex, TEXTURES,
 } from './core.js';
-import { buildPizzaPlate, buildPizzaDough, buildTopping, pizzaToppings, buildSushiBoard, buildSushiRolls, sushiSpec, normText } from './PizzaSushi.js';
+import { buildPizzaPlate, buildPizzaDough, buildPhotoPizza, loadPizzaPhoto, buildTopping, pizzaToppings, buildSushiBoard, buildSushiRolls, sushiSpec, normText } from './PizzaSushi.js';
 import { Atmosphere } from './atmosphere.js';
 
 /* ------------------------------------------------------------------ */
@@ -914,13 +914,34 @@ class PizzaModel extends Model {
     this.elev = 0.62; // se ve desde más arriba (es plana)
     this.plate = this.add('pizzaplate', () => buildPizzaPlate(stage.q));
     this.drops = new Map(); // 'dough' y cada ingrediente
-    this.cheese = null;
+    this.look = null;
     this.intro = !stage.reduced;
+    // la pizza es la foto real puesta sobre una malla con relieve: se carga aparte
+    this.assets = null;
+    this.failed = false;
+    this._pending = null;
+    loadPizzaPhoto()
+      .then((a) => {
+        this.assets = a;
+      })
+      .catch(() => {
+        this.failed = true; // sin red: queda la pizza dibujada con código
+      })
+      .finally(() => {
+        if (this._gone) return;
+        if (this._pending) this.set(this._pending);
+        this.stage._kick();
+      });
+  }
+
+  dispose() {
+    this._gone = true;
+    super.dispose();
   }
 
   /** ¿Ya terminó de armarse? (para el vapor) */
   get settled() {
-    return this.group.visible && [...this.drops.values()].every((d) => d.done && !d.leaving);
+    return this.group.visible && this.drops.size > 0 && [...this.drops.values()].every((d) => d.done && !d.leaving);
   }
 
   _part(key, build, t0, opts) {
@@ -932,23 +953,34 @@ class PizzaModel extends Model {
     return d;
   }
 
-  set({ name, description, choices }) {
+  set(args) {
+    if (!this.assets && !this.failed) {
+      this._pending = args; // se arma cuando llegue la foto
+      return;
+    }
+    this._pending = null;
+    const { name, description, choices } = args;
     const now = this.stage._time;
     const q = this.stage.q;
     const n = normText(name);
     const cheese = /cuatro quesos|4 quesos|quattro/.test(n) ? 'quattro' : 'mozzarella';
-    const first = this.cheese == null;
-    const reduced = this.stage.reduced;
-    // la masa: cae primero (también cuando cambia el tipo de queso)
-    if (cheese !== this.cheese) {
-      const old = this.drops.get('dough');
-      if (old) dropObj(this, old.holder);
-      this.drops.set('dough', this._part('pizzadough|' + cheese, () => buildPizzaDough(q, cheese), first ? this.t0 + 0.1 : now, reduced ? { from: 0, dur: 0.01, squash: 0 } : { from: 1.5, dur: 0.42, squash: 1.6 }));
-      this.cheese = cheese;
-    }
     // con lista de ingredientes manda la lista (quitar "Pepperoni" lo quita aunque el nombre lo diga)
     const want = new Set(pizzaToppings(choices.length ? choices : [name, description]));
     if (cheese === 'quattro') want.add('quesoazul').add('parmesano');
+    const photo = this.assets;
+    // la foto ya trae la albahaca: con albahaca se usa tal cual, sin ella la versión limpia
+    const look = !photo ? cheese : cheese === 'quattro' ? 'blanca' : want.has('albahaca') ? 'margarita' : 'base';
+    if (photo) want.delete('albahaca');
+    const first = this.look == null;
+    const reduced = this.stage.reduced;
+    // la masa: cae primero (también cuando cambia la foto)
+    if (look !== this.look) {
+      const old = this.drops.get('dough');
+      if (old) dropObj(this, old.holder);
+      const build = photo ? () => buildPhotoPizza(q, photo, look) : () => buildPizzaDough(q, cheese);
+      this.drops.set('dough', this._part((photo ? 'pizzaphoto|' : 'pizzadough|') + look, build, first ? Math.max(now, this.t0 + 0.1) : now, reduced ? { from: 0, dur: 0.01, squash: 0 } : { from: 1.5, dur: 0.42, squash: 1.6 }));
+      this.look = look;
+    }
     for (const [k, d] of this.drops) if (k !== 'dough' && !want.has(k) && !d.leaving) d.leaving = now;
     // los ingredientes caen después de la masa, uno tras otro
     const doughLands = this.drops.get('dough').t0 + this.drops.get('dough').dur;
@@ -958,7 +990,9 @@ class PizzaModel extends Model {
       const cur = this.drops.get(k);
       if (cur && !cur.leaving) continue;
       if (cur) dropObj(this, cur.holder);
-      this.drops.set(k, this._part('topping|' + k, () => buildTopping(k, q), start + i++ * 0.13, reduced ? { from: 0, dur: 0.01, squash: 0 } : { from: 1.0, dur: 0.32, squash: 0.9 }));
+      const d = this._part('topping|' + k, () => buildTopping(k, q), start + i++ * 0.13, reduced ? { from: 0, dur: 0.01, squash: 0 } : { from: 1.0, dur: 0.32, squash: 0.9 });
+      if (photo) d.holder.children[0].position.y = 0.01; // la foto tiene la mozzarella en relieve
+      this.drops.set(k, d);
     }
   }
 

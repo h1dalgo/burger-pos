@@ -521,3 +521,153 @@ export function buildSushiRolls(q, spec) {
   }
   return group;
 }
+
+/* ------------------------------------------------------------------ */
+/* PIZZA CON FOTO REAL                                                 */
+/* La foto (vista desde arriba) se pone sobre una malla con la forma   */
+/* sacada de la misma foto: borde inflado, mozzarella y albahaca con   */
+/* volumen. Ver scripts/bake-pizza.py (arma las texturas y alturas).   */
+/* ------------------------------------------------------------------ */
+
+const PHOTO_DIR = '/food/pizza/';
+export const PHOTO_R = 1.32; // radio de la pizza en la escena
+let _photoAssets = null;
+
+function loadHeights(url) {
+  return new Promise((res, rej) => {
+    const img = new Image();
+    img.onload = () => {
+      const c = document.createElement('canvas');
+      c.width = img.width;
+      c.height = img.height;
+      const x = c.getContext('2d', { willReadFrequently: true });
+      x.drawImage(img, 0, 0);
+      const d = x.getImageData(0, 0, c.width, c.height).data;
+      const h = new Float32Array(c.width * c.height);
+      for (let i = 0; i < h.length; i++) h[i] = d[i * 4] / 255;
+      res({ w: c.width, h: c.height, data: h });
+    };
+    img.onerror = rej;
+    img.src = url;
+  });
+}
+
+/** Carga (una sola vez) las fotos y las alturas de la pizza. */
+export function loadPizzaPhoto() {
+  if (_photoAssets) return _photoAssets;
+  const loader = new THREE.TextureLoader();
+  const tex = (f, srgb = true) =>
+    new Promise((res, rej) =>
+      loader.load(
+        PHOTO_DIR + f,
+        (t) => {
+          if (srgb) t.colorSpace = THREE.SRGBColorSpace;
+          t.anisotropy = 8;
+          res(t);
+        },
+        undefined,
+        rej
+      )
+    );
+  _photoAssets = Promise.all([
+    fetch(PHOTO_DIR + 'meta.json').then((r) => r.json()),
+    tex('pizza-margarita.webp'),
+    tex('pizza-base.webp'),
+    tex('pizza-blanca.webp'),
+    tex('pizza-aux.webp', false),
+    loadHeights(PHOTO_DIR + 'pizza-h-margarita.png'),
+    loadHeights(PHOTO_DIR + 'pizza-h-base.png'),
+  ]).then(([meta, margarita, base, blanca, aux, hMarg, hBase]) => ({ meta, tex: { margarita, base, blanca }, aux, heights: { margarita: hMarg, base: hBase } }));
+  _photoAssets.catch(() => (_photoAssets = null)); // si falla la red, se reintenta la próxima vez
+  return _photoAssets;
+}
+
+/** Valor del mapa polar (filas = radio 0..1, columnas = ángulo) con interpolación. */
+function polarSample(hm, rho, a) {
+  const fx = ((a / (Math.PI * 2)) * hm.w + hm.w) % hm.w;
+  const fy = Math.min(hm.h - 1, Math.max(0, rho * (hm.h - 1)));
+  const x0 = Math.floor(fx), y0 = Math.floor(fy);
+  const x1 = (x0 + 1) % hm.w, y1 = Math.min(hm.h - 1, y0 + 1);
+  const tx = fx - x0, ty = fy - y0;
+  const d = hm.data;
+  const top = d[y0 * hm.w + x0] * (1 - tx) + d[y0 * hm.w + x1] * tx;
+  const bot = d[y1 * hm.w + x0] * (1 - tx) + d[y1 * hm.w + x1] * tx;
+  return top * (1 - ty) + bot * ty;
+}
+
+/**
+ * Pizza con la foto. `look`: 'margarita' (con albahaca), 'base' (sin albahaca) o
+ * 'blanca' (sin salsa, para cuatro quesos).
+ */
+export function buildPhotoPizza(q, assets, look = 'base') {
+  const { meta, tex, aux, heights } = assets;
+  const hm = look === 'margarita' ? heights.margarita : heights.base;
+  const ro = meta.ro;
+  const NA = ro.length;
+  const rings = Math.round(40 + 56 * q.detail); // 96 / 79 / 68
+  const segs = Math.round(120 + 160 * q.detail); // 280 / 232 / 200
+  const pos = [], uv = [], idx = [];
+  const half = meta.half, hmax = meta.hmax;
+  // anillos de arriba + "falda": el costado redondeado del borde, que baja hasta el plato
+  const SKIRT = 7;
+  const total = rings + SKIRT;
+  for (let i = 0; i <= total; i++) {
+    let rho, uvRho, u = -1;
+    if (i <= rings) {
+      // más anillos cerca del borde (ahí está el relieve del borde inflado)
+      const t = i / rings;
+      rho = uvRho = 1 - (1 - t) * (1 - t) * 0.35 - (1 - t) * 0.65;
+    } else {
+      u = (i - rings) / SKIRT;
+      rho = 1 + 0.035 * Math.sin(u * Math.PI * 0.8);
+      uvRho = 1 - 0.035 * u; // el costado repite la textura del borde (como un espejo)
+    }
+    for (let j = 0; j <= segs; j++) {
+      const a = (j / segs) * Math.PI * 2;
+      const fa = (a / (Math.PI * 2)) * NA;
+      const k0 = Math.floor(fa) % NA, k1 = (k0 + 1) % NA;
+      const rEdge = ro[k0] + (ro[k1] - ro[k0]) * (fa - Math.floor(fa));
+      const c = Math.cos(a), s = Math.sin(a);
+      let y = polarSample(hm, Math.min(rho, 1), a) * hmax;
+      if (u >= 0) y *= Math.cos(u * Math.PI * 0.5) ** 0.7;
+      pos.push(c * rho * rEdge * PHOTO_R, y * PHOTO_R, s * rho * rEdge * PHOTO_R);
+      uv.push(0.5 + (c * uvRho * rEdge) / (2 * half), 1 - (0.5 + (s * uvRho * rEdge) / (2 * half)));
+    }
+  }
+  const row = segs + 1;
+  for (let i = 0; i < total; i++)
+    for (let j = 0; j < segs; j++) {
+      const a = i * row + j, b = a + 1, c = a + row, d = c + 1;
+      idx.push(a, b, c, b, d, c);
+    }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
+  g.setIndex(idx);
+  g.computeVertexNormals();
+  // las normales del centro (todos los vértices en el mismo punto) quedan raras: hacia arriba
+  for (let j = 0; j <= segs; j++) g.attributes.normal.setXYZ(j, 0, 1, 0);
+  const low = q.name === 'low';
+  const mat = new THREE.MeshPhysicalMaterial({
+    map: tex[look] || tex.base,
+    bumpMap: aux,
+    bumpScale: 1.4,
+    roughnessMap: aux,
+    roughness: 1,
+    metalness: 0,
+    clearcoat: low ? 0 : 0.35,
+    clearcoatRoughness: 0.35,
+    sheen: low ? 0 : 0.25,
+    sheenColor: new THREE.Color(1, 0.88, 0.7),
+    sheenRoughness: 0.55,
+    envMapIntensity: 0.8,
+    transparent: true,
+  });
+  const m = new THREE.Mesh(g, mat);
+  m.castShadow = true;
+  m.receiveShadow = true;
+  m.position.y = 0.072; // apoyada en el plato
+  const group = new THREE.Group();
+  group.add(m);
+  return group;
+}
